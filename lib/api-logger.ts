@@ -1,6 +1,5 @@
 "use server"
-
-import { setItem, getItem, clearStore } from './json-store'
+import { saveLogs, getLogs, clearLogs } from "./indexed-db"
 
 export type ApiLog = {
   id: string
@@ -29,13 +28,19 @@ export async function logApiCall(method: string, url: string, response: any, sta
   if (apiLogs.length > 100) {
     apiLogs.shift()
   }
-  //await setItem('apiLog', JSON.stringify(apiLogs))
+  try {
+    await saveLogs(apiLogs)
+  } catch (err) {
+    console.error("Failed to save logs to IndexedDB:", err)
+  }
 }
 
 export async function getApiLogFromLocal() {
-  const localApiLog = await getItem('apiLog')
-  if (!localApiLog) return
-  apiLogs = JSON.parse(localApiLog)
+  try {
+    apiLogs = await getLogs()
+  } catch (err) {
+    console.error("Failed to load logs from IndexedDB:", err)
+  }
 }
 
 export async function getApiLogs(): Promise<ApiLog[]> {
@@ -44,5 +49,9 @@ export async function getApiLogs(): Promise<ApiLog[]> {
 
 export async function clearApiLogs() {
   apiLogs.length = 0
-  //await clearStore()
+  try {
+    await clearLogs()
+  } catch (err) {
+    console.error("Failed to clear logs from IndexedDB:", err)
+  }
 }

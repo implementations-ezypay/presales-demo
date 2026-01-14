@@ -33,9 +33,13 @@ export function ApiLoggerViewer() {
     }
   }, [isOpen])
 
-  // useEffect(() =>{
-  //   getApiLogFromLocal()
-  // }, [])
+  useEffect(() => {
+    getApiLogFromLocal().then(() => {
+      if (isOpen) {
+        refreshLogs()
+      }
+    })
+  }, [])
 
   const getStatusColor = (status: number) => {
     if (status >= 200 && status < 300) return "bg-green-500/10 text-green-600 dark:text-green-400"
@@ -98,7 +102,13 @@ export function ApiLoggerViewer() {
             {logs.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No API calls logged yet</p>
             ) : (
-              <Accordion type="single" collapsible value={openAccordion} onValueChange={setOpenAccordion} className='w-full'>
+              <Accordion
+                type="single"
+                collapsible
+                value={openAccordion}
+                onValueChange={setOpenAccordion}
+                className="w-full"
+              >
                 {logs.map((log) => (
                   <AccordionItem key={log.id} value={log.id} className="border rounded-lg mb-2">
                     <AccordionTrigger className="px-3 py-2 hover:no-underline">
