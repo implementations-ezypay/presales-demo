@@ -13,13 +13,13 @@ export function ApiLoggerViewer() {
   const [logs, setLogs] = useState<ApiLog[]>([])
   const [openAccordion, setOpenAccordion] = useState<string>("")
 
-  const refreshLogs = () => {
-    const apiLogs = getApiLogs()
+  const refreshLogs = async () => {
+    const apiLogs = await getApiLogs()
     setLogs(apiLogs)
   }
 
-  const handleClear = () => {
-    clearApiLogs()
+  const handleClear = async () => {
+    await clearApiLogs()
     setLogs([])
     setOpenAccordion("")
   }
