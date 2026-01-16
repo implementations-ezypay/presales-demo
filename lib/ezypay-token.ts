@@ -2,7 +2,7 @@
 
 import { getBranchCredentials } from "./branch-config";
 
-export async function getEzypayToken(branch: "main" | "branch2"): Promise<{
+export async function getEzypayToken(branch: string): Promise<{
   access_token: string;
   error?: string;
 }> {

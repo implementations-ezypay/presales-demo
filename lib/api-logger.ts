@@ -1,18 +1,22 @@
-"use client"
-
 export type ApiLog = {
-  id: string
-  timestamp: string
-  method: string
-  url: string
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  requestBody?: any;
+  response: any;
+  status: number;
+};
+
+const apiLogs: ApiLog[] = [];
+
+export function logApiCall(
+  method: string,
+  url: string,
+  response: any,
+  status: number,
   requestBody?: any
-  response: any
-  status: number
-}
-
-const apiLogs: ApiLog[] = []
-
-export function logApiCall(method: string, url: string, response: any, status: number, requestBody?: any) {
+) {
   const log: ApiLog = {
     id: `${Date.now()}-${Math.random()}`,
     timestamp: new Date().toISOString(),
@@ -21,16 +25,16 @@ export function logApiCall(method: string, url: string, response: any, status: n
     requestBody,
     response,
     status,
-  }
-  apiLogs.push(log)
+  };
+  apiLogs.push(log);
   // Keep only last 100 logs in memory
   if (apiLogs.length > 100) {
-    apiLogs.shift()
+    apiLogs.shift();
   }
 }
 
 export function getApiLogs(): ApiLog[] {
-  return apiLogs
+  return apiLogs;
 }
 
 export function getApiLogFromLocal() {
@@ -38,5 +42,5 @@ export function getApiLogFromLocal() {
 }
 
 export function clearApiLogs() {
-  apiLogs.length = 0
+  apiLogs.length = 0;
 }
