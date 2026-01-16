@@ -91,7 +91,6 @@ export function PaymentMethodsList({
       fetchPaymentMethods();
     }
   }, [customerId, refreshTrigger, branch]);
-  console.log(methodToActivate, paymentMethods);
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main";
@@ -103,7 +102,6 @@ export function PaymentMethodsList({
     setError(null);
     try {
       const response = await getCustomerPaymentMethods(customerId, branch);
-      console.log(response.data);
       let items: any[] | null = null;
       if (Array.isArray(response)) items = response;
       else if (Array.isArray(response?.paymentMethods))
@@ -112,7 +110,6 @@ export function PaymentMethodsList({
       else if (Array.isArray(response?.data)) items = response.data;
       else if (response) items = [response];
       const normalized = (items || []).map((pm: any) => {
-        console.log(pm.payTo);
         return {
           id: pm.paymentMethodToken ?? pm.id,
           type: pm.card?.type ?? pm.type ?? "",
