@@ -5,7 +5,7 @@ import { Bug, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { getApiLogs, clearApiLogs, type ApiLog, getApiLogFromLocal } from "@/lib/api-logger"
+import { getApiLogs, clearApiLogs, type ApiLog } from "@/lib/api-logger"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export function ApiLoggerViewer() {
@@ -13,13 +13,13 @@ export function ApiLoggerViewer() {
   const [logs, setLogs] = useState<ApiLog[]>([])
   const [openAccordion, setOpenAccordion] = useState<string>("")
 
-  const refreshLogs = async () => {
-    const apiLogs = await getApiLogs()
+  const refreshLogs = () => {
+    const apiLogs = getApiLogs()
     setLogs(apiLogs)
   }
 
-  const handleClear = async () => {
-    await clearApiLogs()
+  const handleClear = () => {
+    clearApiLogs()
     setLogs([])
     setOpenAccordion("")
   }
@@ -32,14 +32,6 @@ export function ApiLoggerViewer() {
       return () => clearInterval(interval)
     }
   }, [isOpen])
-
-  useEffect(() => {
-    getApiLogFromLocal().then(() => {
-      if (isOpen) {
-        refreshLogs()
-      }
-    })
-  }, [])
 
   const getStatusColor = (status: number) => {
     if (status >= 200 && status < 300) return "bg-green-500/10 text-green-600 dark:text-green-400"
