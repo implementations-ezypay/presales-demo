@@ -68,6 +68,7 @@ export function normalisedEzypayCustomer(customer) {
         { id: "4", date: "2024-10-11", time: "06:30 AM", class: "Yoga" },
       ],
       paymentMethods: [],
+      originalBranch: customer.metadata?.originalBranch,
     };
   } catch (error) {
     console.error(error);

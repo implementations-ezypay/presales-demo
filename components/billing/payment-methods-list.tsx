@@ -55,8 +55,10 @@ export function PaymentMethodsList({
   showInvalid = false,
   refreshTrigger,
 }: PaymentMethodsListProps) {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
@@ -150,7 +152,7 @@ export function PaymentMethodsList({
     );
   }
 
-  if (paymentMethods.length === 0) {
+  if (paymentMethods?.length === 0) {
     return (
       <div className="text-sm text-muted-foreground py-4">
         No payment methods found
@@ -229,7 +231,7 @@ export function PaymentMethodsList({
         onValueChange={onMethodSelect}
       >
         <div className="space-y-2">
-          {paymentMethods.map((method) => {
+          {paymentMethods?.map((method) => {
             const isInvalid = !method.valid;
             const isDisabled = isInvalid && !showInvalid;
 
@@ -293,8 +295,8 @@ export function PaymentMethodsList({
 
   return (
     <>
-      <div className="max-h-[240px] overflow-y-auto space-y-2">
-        {paymentMethods.map((method) => (
+      <div className="max-h-60 overflow-y-auto space-y-2">
+        {paymentMethods?.map((method) => (
           <div
             key={method.id}
             className="flex items-center justify-between rounded-lg border border-border p-3"

@@ -66,6 +66,7 @@ export function TransferCustomerDialog({
         status: customer.status,
         startDate: Date(customer.joinDate),
         existingCustomerNumber: customer.number,
+        originalBranch: branch,
       };
       const newCustomerCreate = await createCustomer(
         newCustomer,

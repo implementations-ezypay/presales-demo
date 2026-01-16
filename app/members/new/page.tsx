@@ -31,11 +31,7 @@ import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import {
-  getEzypayToken,
-  createCustomer,
-  getCustomerPaymentMethods,
-} from "@/lib/passer-functions";
+import { getEzypayToken, createCustomer } from "@/lib/passer-functions";
 import { logApiCall } from "@/lib/api-logger";
 
 const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT;
@@ -66,24 +62,22 @@ export default function NewMemberPage() {
   const iframeOriginRef = useRef<string | null>(null);
 
   useEffect(() => {
+    console.log("it is refreshed");
     const selectedBranch = localStorage.getItem("selectedBranch") || "main";
     setBranch(selectedBranch);
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin if we have it
-      // if (iframeOriginRef.current && event.origin !== iframeOriginRef.current) {
-      //   return
-      // }
-      // // Handle payment method added successfully
-      // if (event.data) {
-      //   console.log(event.data);
-      // } else if (event.data?.type === "PAYMENT_METHOD_ERROR" || event.data?.error) {
-      //   toast.error("Failed to add payment method")
-      // }
-      //console.log(event.data ?? null)
+      // Handle payment method added successfully
+      if (event.data && JSON.parse(event.data).type === "success") {
+        console.log(
+          "Success message detected, redirecting to /members",
+          event.data
+        );
+        window.location.replace("/members");
+      }
     };
 
-    // window.addEventListener("message", handleMessage)
-    // return () => window.removeEventListener("message", handleMessage)
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   const loadIframeUrl = async (customerId: string | null = null) => {

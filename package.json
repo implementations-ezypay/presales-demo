@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev --experimental-https",
+    "dev": "next dev",
+    "dev:custom": "next dev -H example.com -p 3000",
     "generate-ssl": "node scripts/generate-ssl-certs.mjs",
+    "dev:https": "next dev --experimental-https",
     "lint": "next lint",
     "start": "next start"
   },
