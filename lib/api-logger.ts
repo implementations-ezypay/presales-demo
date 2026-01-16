@@ -1,14 +1,20 @@
 export type ApiLog = {
-  id: string
-  timestamp: string
-  method: string
-  url: string
-  requestBody?: any
-  response: any
-  status: number
-}
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  requestBody?: any;
+  response: any;
+  status: number;
+};
 
-export async function logApiCall(method: string, url: string, response: any, status: number, requestBody?: any) {
+export async function logApiCall(
+  method: string,
+  url: string,
+  response: any,
+  status: number,
+  requestBody?: any
+) {
   const log: ApiLog = {
     id: `${Date.now()}-${Math.random()}`,
     timestamp: new Date().toISOString(),
@@ -17,38 +23,44 @@ export async function logApiCall(method: string, url: string, response: any, sta
     requestBody,
     response,
     status,
-  }
+  };
 
   // Send to server-side storage
   try {
-    await fetch("/api/logs", {
+    const baseUrl =
+      typeof window !== "undefined"
+        ? ""
+        : process.env.NEXTAUTH_URL ||
+          `http://localhost:${process.env.PORT || 3000}`;
+
+    await fetch(`${baseUrl}/api/logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(log),
-    })
+    });
   } catch (error) {
-    console.error("Failed to save log to server:", error)
+    console.error("Failed to save log to server:", error);
   }
 }
 
 export async function getApiLogs(): Promise<ApiLog[]> {
   try {
-    const response = await fetch("/api/logs")
+    const response = await fetch("/api/logs");
     if (response.ok) {
-      return await response.json()
+      return await response.json();
     }
-    return []
+    return [];
   } catch (error) {
-    console.error("Failed to fetch logs from server:", error)
-    return []
+    console.error("Failed to fetch logs from server:", error);
+    return [];
   }
 }
 
 export async function clearApiLogs(): Promise<void> {
   try {
-    await fetch("/api/logs", { method: "DELETE" })
+    await fetch("/api/logs", { method: "DELETE" });
   } catch (error) {
-    console.error("Failed to clear logs on server:", error)
+    console.error("Failed to clear logs on server:", error);
   }
 }
 

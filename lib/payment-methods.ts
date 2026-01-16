@@ -261,7 +261,13 @@ export async function activatePayTo(
       body,
     });
 
-    await logApiCall("POST", url, "", response.status);
+    await logApiCall(
+      "POST",
+      url,
+      "",
+      response.status,
+      Object.fromEntries(body)
+    );
 
     if (!response.ok) {
       console.error("Activate PayTo failed:", response.status);

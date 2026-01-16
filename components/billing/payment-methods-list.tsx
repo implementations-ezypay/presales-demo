@@ -404,8 +404,8 @@ export function PaymentMethodsList({
                     Agreement
                   </Button>
                 )}
-                {!method.isDefault && method.valid && (
-                  <div className="flex gap-1">
+                <div className="flex gap-1">
+                  {!method.isDefault && method.valid && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -415,6 +415,8 @@ export function PaymentMethodsList({
                     >
                       <Star className="h-3.5 w-3.5" />
                     </Button>
+                  )}
+                  {!method.isDefault && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -424,8 +426,8 @@ export function PaymentMethodsList({
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           );
