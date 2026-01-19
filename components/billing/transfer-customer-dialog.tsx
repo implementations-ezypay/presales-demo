@@ -85,7 +85,6 @@ export function TransferCustomerDialog({
           paymentMethodToken,
           selectedBranch
         );
-        console.log(result);
       });
 
       // Close dialog on success

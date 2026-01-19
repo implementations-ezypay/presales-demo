@@ -62,7 +62,6 @@ export default function NewMemberPage() {
   const iframeOriginRef = useRef<string | null>(null);
 
   useEffect(() => {
-    console.log("it is refreshed");
     const selectedBranch = localStorage.getItem("selectedBranch") || "main";
     setBranch(selectedBranch);
     const handleMessage = (event: MessageEvent) => {

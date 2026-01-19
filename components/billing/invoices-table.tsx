@@ -61,7 +61,6 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     try {
       if (variant === "billing") {
-        console.log("inside the if billing block");
         const res = await listInvoice(branch);
         let defaultCustomerData = sessionStorage.getItem("defaultCustomerList");
         let fetchedInvoices;
@@ -124,7 +123,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
 
   const formatCellValue = (value: any) => {
     if (value === null || value === undefined) return "";
-    const val = value?.replaceAll(/MASTERCARD|VISA|AMEX/gi, "CARD");
+    const val = value?.replaceAll(/googlepay|applepay/gi, "");
     if (typeof val === "object") {
       if (val.code || val.description) {
         return `${val.code ?? ""}${
@@ -246,7 +245,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                         <div className="flex items-center gap-2">
                           <PaymentMethodIcon
                             type={invoice.paymentMethod}
-                            className="h-4 w-4 flex-shrink-0"
+                            className="h-5 w-10 flex-shrink-0"
                           />
                           <span className="truncate">
                             {formatCellValue(invoice.paymentMethod)}

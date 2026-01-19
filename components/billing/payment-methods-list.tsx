@@ -46,6 +46,7 @@ export interface PaymentMethod {
   isDefault: boolean;
   valid: boolean;
   payTo?: any;
+  origin?: any;
 }
 
 interface PaymentMethodsListProps {
@@ -126,6 +127,7 @@ export function PaymentMethodsList({
             pm.account,
           valid: pm.valid,
           payTo: pm.payTo,
+          origin: pm.card?.origin,
         };
       });
 
@@ -307,15 +309,12 @@ export function PaymentMethodsList({
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <PaymentMethodIcon type={method.type} className="h-4 w-4" />
+                    <PaymentMethodIcon
+                      type={method.origin ?? method.type}
+                      className="h-4 w-8"
+                    />
                     <div>
-                      <span className="text-sm font-medium">
-                        {method.type == "MASTERCARD" ||
-                        method.type == "VISA" ||
-                        method.type == "AMEX"
-                          ? "CARD"
-                          : method.type}
-                      </span>
+                      <span className="text-sm font-medium">{method.type}</span>
                       <span className="text-xs text-muted-foreground">
                         {method.last4 ? `****${method.last4}` : ""}{" "}
                         {method.expiry || method.account || ""}
@@ -358,22 +357,15 @@ export function PaymentMethodsList({
       <div className="max-h-60 overflow-y-auto space-y-2">
         {paymentMethods?.map((method) => {
           const isPayTo = method.type?.toUpperCase() === "PAYTO";
-
           return (
             <div
               key={method.id}
               className="flex items-center justify-between rounded-lg border border-border p-3"
             >
               <div className="flex items-center gap-3">
-                <PaymentMethodIcon type={method.type} className="h-4 w-4" />
+                <PaymentMethodIcon type={method.origin ?? method.type} />
                 <div>
-                  <p className="text-sm font-medium">
-                    {method.type == "MASTERCARD" ||
-                    method.type == "VISA" ||
-                    method.type == "AMEX"
-                      ? "CARD"
-                      : method.type}
-                  </p>
+                  <p className="text-sm font-medium">{method.type}</p>
                   <p className="text-xs text-muted-foreground">
                     {method.last4 ? `****${method.last4}` : ""}{" "}
                     {method.expiry || method.account || ""}

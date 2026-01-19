@@ -60,7 +60,6 @@ export async function createCustomer(customer, branch: string): Promise<any> {
     });
 
     const data = response.ok ? await response.json() : await response.text();
-    console.log(data);
     await logApiCall("POST", apiEndpoint, data, response.status, body);
 
     if (!response.ok) {

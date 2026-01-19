@@ -16,7 +16,9 @@ function normalisedEzypayInvoice(invoices, customerName = null) {
 
     switch (type) {
       case "card":
-        return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`;
+        return `${paymentMethodData.card?.origin ?? ""} ${
+          paymentMethodData.card?.type
+        } **** ${paymentMethodData.card?.last4}`;
         break;
       case "bank":
         return `BANK **** ${paymentMethodData.bank?.last4}`;

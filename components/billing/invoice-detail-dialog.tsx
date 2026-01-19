@@ -86,6 +86,24 @@ interface InvoiceDetailDialogProps {
   onUpdate?: () => void;
 }
 
+const formatCellValue = (value: any) => {
+  if (value === null || value === undefined) return "";
+  const val = value?.replaceAll(/googlepay|applepay/gi, "");
+  if (typeof val === "object") {
+    if (val.code || val.description) {
+      return `${val.code ?? ""}${
+        val.description ? ` - ${val.description}` : ""
+      }`.trim();
+    }
+    try {
+      return JSON.stringify(val);
+    } catch (e) {
+      return String(val);
+    }
+  }
+  return String(val);
+};
+
 export function InvoiceDetailDialog({
   invoiceProp,
   open,
@@ -454,9 +472,11 @@ export function InvoiceDetailDialog({
               <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                 <PaymentMethodIcon
                   type={invoice.paymentMethod}
-                  className="h-5 w-5"
+                  className="h-5 w-10"
                 />
-                <span className="font-medium">{invoice.paymentMethod}</span>
+                <span className="font-medium">
+                  {formatCellValue(invoice.paymentMethod)}
+                </span>
                 {invoice.paymentMethodInvalid && (
                   <Badge variant="destructive">invalid</Badge>
                 )}
@@ -505,9 +525,9 @@ export function InvoiceDetailDialog({
                           <div className="flex items-center gap-2">
                             <PaymentMethodIcon
                               type={attempt.method}
-                              className="h-4 w-4"
+                              className="h-4 w-8"
                             />
-                            <span>{attempt.method}</span>
+                            <span>{formatCellValue(attempt.method)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
