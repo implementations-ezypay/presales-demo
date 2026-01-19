@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   generator: "v0.app",
 };
 
+const getThemeFromStorage = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("theme") || "system"; // Based on your ThemeProvider config
+  }
+  return "system";
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme={getThemeFromStorage()}
+          enableSystem
+        >
           <SidebarProvider>
             <div className="flex h-screen w-full">
               <AppSidebar />
