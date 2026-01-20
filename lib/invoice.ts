@@ -3,6 +3,7 @@
 import { getEzypayToken } from "./ezypay-token";
 import { logApiCall } from "./api-logger";
 import { getBranchCredentials } from "./branch-config";
+import { getBranchCurrency } from "./branches";
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/invoices`;
 const checkoutEndpoint = `${process.env.API_ENDPOINT}/v2/billing/checkout`;
@@ -28,6 +29,10 @@ function normalisedEzypayInvoice(invoices, customerName = null) {
           paymentMethodData.payto.bbanAccountNo ??
           paymentMethodData.payto.aliasId
         }`;
+      case "qrpayment":
+        return `${paymentMethodData.qrPayment.qrType}`;
+      default:
+        return `type`;
     }
   }
 
@@ -108,7 +113,7 @@ export async function listInvoice(branch): Promise<any> {
       console.error(
         "List invoice error: Expected JSON but received:",
         contentType,
-        text.substring(0, 200)
+        text.substring(0, 200),
       );
       return [];
     }
@@ -127,7 +132,7 @@ export async function listInvoice(branch): Promise<any> {
 export async function listInvoiceByCustomer(
   customerId,
   customerName,
-  branch
+  branch,
 ): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch);
   try {
@@ -141,7 +146,7 @@ export async function listInvoiceByCustomer(
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `List customer failed: No access_token from token utility`
+        `List customer failed: No access_token from token utility`,
       );
     }
 
@@ -161,16 +166,16 @@ export async function listInvoiceByCustomer(
       console.error(
         "List Customer invoice failed:",
         invoiceResponse.status,
-        invoiceData
+        invoiceData,
       );
       throw new Error(
-        `List Customer invoice failed: ${invoiceResponse.status}`
+        `List Customer invoice failed: ${invoiceResponse.status}`,
       );
     }
 
     const normalisedInvoice = normalisedEzypayInvoice(
       invoiceData,
-      customerName
+      customerName,
     );
 
     return normalisedInvoice;
@@ -183,7 +188,7 @@ export async function listInvoiceByCustomer(
 export async function listTransactionByInvoice(
   invoiceId,
   paymentMethod,
-  branch
+  branch,
 ): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch);
   try {
@@ -197,7 +202,7 @@ export async function listTransactionByInvoice(
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `List customer failed: No access_token from token utility`
+        `List customer failed: No access_token from token utility`,
       );
     }
 
@@ -217,7 +222,7 @@ export async function listTransactionByInvoice(
       console.error(
         "List transaction failed:",
         transactionResponse.status,
-        transactionData
+        transactionData,
       );
       throw new Error(`List transaction failed: ${transactionResponse.status}`);
     }
@@ -253,7 +258,7 @@ export async function retryInvoice(invoiceId, paymentMethodId, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `List customer failed: No access_token from token utility`
+        `List customer failed: No access_token from token utility`,
       );
     }
 
@@ -342,7 +347,7 @@ export async function recordExternalInvoice(invoiceId, method, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `List customer failed: No access_token from token utility`
+        `List customer failed: No access_token from token utility`,
       );
     }
 
@@ -456,14 +461,14 @@ export async function createInvoice(invoiceData, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Create invoice failed: No access_token from token utility`
+        `Create invoice failed: No access_token from token utility`,
       );
     }
 
     const itemData: any = {
       description: invoiceData.description || "On demand Invoice",
       amount: {
-        currency: "AUD",
+        currency: getBranchCurrency(branch),
         value: invoiceData.amount,
       },
     };
@@ -518,7 +523,7 @@ export async function createCheckout(invoiceData, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Checkout session failed: No access_token from token utility`
+        `Checkout session failed: No access_token from token utility`,
       );
     }
 
@@ -547,7 +552,7 @@ export async function createCheckout(invoiceData, branch) {
       checkoutEndpoint,
       data,
       response.status,
-      requestBody
+      requestBody,
     );
 
     if (!response.ok) {

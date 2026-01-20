@@ -72,11 +72,10 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
         fetchedInvoices = res.map((invoice) => {
           const id = invoice.customerId;
           const customerName = defaultCustomerData?.filter(
-            (cus) => cus.id == id
+            (cus) => cus.id == id,
           )[0]?.name;
           return { ...invoice, member: customerName };
         });
-
         setInvoices(fetchedInvoices);
         setIsLoading(false);
         return;
@@ -86,8 +85,10 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
       const res = await listInvoiceByCustomer(
         customerData?.id,
         customerData?.name,
-        branch
+        branch,
       );
+      console.log(res);
+
       setInvoices(res);
       setIsLoading(false);
     } catch (err) {
@@ -145,7 +146,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
       fetchInvoices();
     }
   };
-
+  console.log(filteredInvoices);
   return (
     <>
       <Card>
@@ -258,7 +259,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                       <TableCell>
                         <Badge
                           variant={getStatusBadgeVariant(
-                            String(invoice.status)
+                            String(invoice.status),
                           )}
                           className="text-xs"
                         >

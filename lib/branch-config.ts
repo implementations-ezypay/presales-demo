@@ -6,6 +6,7 @@
 // Helper function to get branch credentials from environment variables
 export async function getBranchCredentials(branchId: String) {
   const isMainBranch = branchId === "main";
+
   return {
     clientId: process.env.EZYPAY_CLIENT_ID,
     clientSecret: process.env.EZYPAY_CLIENT_SECRET,

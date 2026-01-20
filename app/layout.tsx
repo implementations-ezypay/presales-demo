@@ -18,9 +18,9 @@ export const metadata: Metadata = {
 
 const getThemeFromStorage = () => {
   if (typeof window !== "undefined") {
-    return localStorage.getItem("theme") || "system"; // Based on your ThemeProvider config
+    return localStorage.getItem("theme") || "dark"; // Based on your ThemeProvider config
   }
-  return "system";
+  return "dark";
 };
 
 export default function RootLayout({

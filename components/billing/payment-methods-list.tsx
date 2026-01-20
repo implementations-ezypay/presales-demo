@@ -47,6 +47,7 @@ export interface PaymentMethod {
   valid: boolean;
   payTo?: any;
   origin?: any;
+  qrPayment?: any;
 }
 
 interface PaymentMethodsListProps {
@@ -67,17 +68,17 @@ export function PaymentMethodsList({
   refreshTrigger,
 }: PaymentMethodsListProps) {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
-    null
+    null,
   );
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
   const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
-    null
+    null,
   );
   const [defaultPaymentMethod, setDefaultPaymentMethod] =
     useState<PaymentMethod | null>(null);
@@ -117,7 +118,7 @@ export function PaymentMethodsList({
           last4: pm.card?.last4 ?? pm.bank?.last4 ?? pm.last4 ?? null,
           expiry: pm.card
             ? `${pm.card.expiryMonth}/${pm.card.expiryYear}`
-            : pm.expiry ?? null,
+            : (pm.expiry ?? null),
           isDefault: pm.primary ?? false,
           account:
             pm.payTo?.aliasId ??
@@ -128,6 +129,7 @@ export function PaymentMethodsList({
           valid: pm.valid,
           payTo: pm.payTo,
           origin: pm.card?.origin,
+          qrPayment: pm.qrPayment,
         };
       });
 
@@ -192,7 +194,7 @@ export function PaymentMethodsList({
     const deleteResult = await deletePaymentMethod(
       customerId,
       methodToDelete?.id,
-      branch
+      branch,
     );
 
     setIsProcessing(false);
@@ -224,7 +226,7 @@ export function PaymentMethodsList({
       customerId,
       defaultPaymentMethod?.id,
       methodToReplace?.id,
-      branch
+      branch,
     );
 
     setIsProcessing(false);
@@ -242,7 +244,7 @@ export function PaymentMethodsList({
 
   const handleActivatePayToClick = (
     method: PaymentMethod,
-    e: React.MouseEvent
+    e: React.MouseEvent,
   ) => {
     e.stopPropagation();
     setMethodToActivate(method);
@@ -293,7 +295,7 @@ export function PaymentMethodsList({
                 className={cn(
                   "flex items-center space-x-3 rounded-lg border p-3",
                   isInvalid && "opacity-50 bg-muted",
-                  !isDisabled && "cursor-pointer hover:bg-accent"
+                  !isDisabled && "cursor-pointer hover:bg-accent",
                 )}
               >
                 <RadioGroupItem
@@ -305,16 +307,20 @@ export function PaymentMethodsList({
                   htmlFor={method.id}
                   className={cn(
                     "flex flex-1 items-center justify-between cursor-pointer",
-                    isDisabled && "cursor-not-allowed"
+                    isDisabled && "cursor-not-allowed",
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <PaymentMethodIcon
-                      type={method.origin ?? method.type}
+                      type={
+                        method.origin ?? method.qrPayment?.qrType ?? method.type
+                      }
                       className="h-4 w-8"
                     />
                     <div>
-                      <span className="text-sm font-medium">{method.type}</span>
+                      <span className="text-sm font-medium">
+                        {method.qrPayment?.qrType ?? method.type}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         {method.last4 ? `****${method.last4}` : ""}{" "}
                         {method.expiry || method.account || ""}
@@ -363,9 +369,15 @@ export function PaymentMethodsList({
               className="flex items-center justify-between rounded-lg border border-border p-3"
             >
               <div className="flex items-center gap-3">
-                <PaymentMethodIcon type={method.origin ?? method.type} />
+                <PaymentMethodIcon
+                  type={
+                    method.origin ?? method.qrPayment?.qrType ?? method.type
+                  }
+                />
                 <div>
-                  <p className="text-sm font-medium">{method.type}</p>
+                  <p className="text-sm font-medium">
+                    {method.qrPayment?.qrType ?? method.type}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {method.last4 ? `****${method.last4}` : ""}{" "}
                     {method.expiry || method.account || ""}
@@ -474,7 +486,7 @@ export function PaymentMethodsList({
                     >
                       {methodToActivate.payTo.mandateReason.replaceAll(
                         /[^a-zA-Z0-9]/g,
-                        ""
+                        "",
                       )}
                     </Badge>
                   </div>

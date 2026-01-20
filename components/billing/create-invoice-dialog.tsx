@@ -40,6 +40,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { logApiCall } from "@/lib/api-logger";
+import { PromptPayQrCode } from "./promptpay-qrcode";
+import { getBranchCurrency } from "@/lib/branches";
 
 interface CreateInvoiceDialogProps {
   open: boolean;
@@ -59,6 +61,7 @@ export function CreateInvoiceDialog({
   const [loading, setLoading] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [showTapAnimation, setShowTapAnimation] = useState(false);
+  const [qrString, setQrString] = useState("");
   const { toast } = useToast();
   const [customers, setCustomers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -81,7 +84,7 @@ export function CreateInvoiceDialog({
           setCustomers(customerList);
           sessionStorage.setItem(
             "defaultCustomerList",
-            JSON.stringify(customerList)
+            JSON.stringify(customerList),
           );
           setLoadingCustomers(false);
         })
@@ -146,7 +149,7 @@ export function CreateInvoiceDialog({
       let selectedMemberName = customerName;
       if (!selectedMemberName) {
         const selectedCustomer = customers.find(
-          (c) => c.id === formData.memberId
+          (c) => c.id === formData.memberId,
         );
         selectedMemberName = selectedCustomer
           ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
@@ -154,7 +157,7 @@ export function CreateInvoiceDialog({
       }
 
       const selectedTerminal = terminalDevices.find(
-        (t) => t.id === formData.terminalId
+        (t) => t.id === formData.terminalId,
       );
 
       let invoiceStatus: "pending" | "paid" = "pending";
@@ -162,7 +165,7 @@ export function CreateInvoiceDialog({
       if (formData.paymentMethod === "tap-to-pay") {
         console.log(
           "[v0] Initiating tap-to-pay with terminal:",
-          selectedTerminal?.name
+          selectedTerminal?.name,
         );
 
         // Show tap-to-pay animation
@@ -184,7 +187,7 @@ export function CreateInvoiceDialog({
           items: [
             {
               amount: {
-                currency: "AUD",
+                currency: getBranchCurrency(branch),
                 value: formData.amount,
               },
               description: formData.description,
@@ -292,7 +295,7 @@ export function CreateInvoiceDialog({
       }
 
       if (formData.paymentMethod === "ondemand") {
-        await createInvoice(
+        const invoice = await createInvoice(
           {
             memberId: formData.memberId,
             amount: formData.amount,
@@ -302,8 +305,16 @@ export function CreateInvoiceDialog({
               accountingCode: formData.accountingCode,
             }),
           },
-          branch
+          branch,
         );
+        console.log(invoice);
+        if (invoice.paymentMethodData.type === "QRPAYMENT") {
+          setQrString(invoice.qrData?.qrString);
+
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+
+          setQrString("");
+        }
 
         toast({
           title: "Invoice Created",
@@ -318,7 +329,7 @@ export function CreateInvoiceDialog({
             amount: formData.amount,
             description: formData.description,
           },
-          branch
+          branch,
         );
         const checkoutUrl = response?.data;
 
@@ -376,6 +387,7 @@ export function CreateInvoiceDialog({
   return (
     <>
       <TapToPayAnimation open={showTapAnimation} />
+      <PromptPayQrCode qrString={qrString} />
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-[95vw] max-w-[1000px] max-h-[90vh] overflow-y-auto">

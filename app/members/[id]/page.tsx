@@ -43,7 +43,7 @@ import {
 import { InvoicesTable } from "@/components/billing/invoices-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { TransferCustomerDialog } from "@/components/billing/transfer-customer-dialog";
-import { BRANCHES } from "@/lib/branches";
+import { BRANCHES, getBranchName } from "@/lib/branches";
 
 export const getStatusBadgeVariant = (status: string) => {
   if (status === "paid") return "default";
@@ -143,10 +143,7 @@ export default function MemberProfilePage() {
             {memberDataState?.originalBranch && (
               <div>
                 <p className="text-sm md:text-base text-muted-foreground">
-                  Original Branch:{" "}
-                  {BRANCHES?.find(
-                    (branch) => branch?.id === memberDataState?.originalBranch
-                  )?.name ?? memberDataState?.originalBranch}
+                  Original Branch: {getBranchName(branch)}
                 </p>
               </div>
             )}
@@ -259,8 +256,8 @@ export default function MemberProfilePage() {
                           memberDataState?.status === "active"
                             ? "default"
                             : memberDataState?.status === "trial"
-                            ? "secondary"
-                            : "destructive"
+                              ? "secondary"
+                              : "destructive"
                         }
                       >
                         {memberDataState?.status}
@@ -336,7 +333,7 @@ export default function MemberProfilePage() {
                           <Button
                             onClick={() => {
                               const plan = plans.find(
-                                (p) => p.id === selectedPlanId
+                                (p) => p.id === selectedPlanId,
                               );
                               if (plan) {
                                 const now = new Date();
@@ -345,7 +342,7 @@ export default function MemberProfilePage() {
                                   plan.duration.toLowerCase().includes("year")
                                 ) {
                                   newExpiry.setFullYear(
-                                    newExpiry.getFullYear() + 1
+                                    newExpiry.getFullYear() + 1,
                                   );
                                 } else {
                                   newExpiry.setMonth(newExpiry.getMonth() + 1);

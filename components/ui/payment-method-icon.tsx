@@ -108,6 +108,20 @@ export function PaymentMethodIcon({
     );
   }
 
+  //PromptPay
+  if (normalizedType.includes("promptpay")) {
+    return (
+      <Image
+        src="/PromptPay-logo.png"
+        alt="PayTo"
+        width={60}
+        height={60}
+        className={className}
+        style={{ objectFit: "contain", ...style }}
+      />
+    );
+  }
+
   // Generic bank icon for bank transfers or other bank-related methods
   if (
     normalizedType.includes("bank") ||
