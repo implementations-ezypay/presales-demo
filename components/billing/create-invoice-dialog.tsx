@@ -61,7 +61,7 @@ export function CreateInvoiceDialog({
   const [loading, setLoading] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [showTapAnimation, setShowTapAnimation] = useState(false);
-  const [qrString, setQrString] = useState("");
+  const [qrString, setQrString] = useState("something");
   const { toast } = useToast();
   const [customers, setCustomers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
