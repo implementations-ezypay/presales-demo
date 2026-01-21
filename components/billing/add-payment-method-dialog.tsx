@@ -19,6 +19,8 @@ import { getEzypayToken } from "@/lib/ezypay-token";
 import Link from "next/link";
 import { logApiCall } from "@/lib/api-logger";
 import { Button } from "@/components/ui/button";
+import { getBranchCountry } from "@/lib/branches";
+import { linkPaymentMethod } from "@/lib/passer-functions";
 
 interface AddPaymentMethodDialogProps {
   customerId: string;
@@ -36,7 +38,6 @@ export function AddPaymentMethodDialog({
   children,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-  customerEmail,
   customerName,
 }: AddPaymentMethodDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -45,6 +46,7 @@ export function AddPaymentMethodDialog({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const iframeOriginRef = useRef<string | null>(null);
   const [branch, setBranch] = useState("");
+  const [country, setCountry] = useState("");
 
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -67,6 +69,42 @@ export function AddPaymentMethodDialog({
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main";
     setBranch(selectedBranch);
+    setCountry(getBranchCountry(selectedBranch));
+    const handleMessage = async (e: MessageEvent) => {
+      // Handle payment method added successfully
+      let listenerResponse = e.data;
+      if (typeof listenerResponse === "string") {
+        listenerResponse = JSON.parse(listenerResponse);
+      }
+      console.log(listenerResponse);
+
+      if (e.data && listenerResponse.type === "success") {
+        console.log(
+          "Success message detected, redirecting to /members",
+          e.data,
+        );
+      }
+
+      if (country === "PH" && e.data.paymentMethodToken) {
+        const { customerId, paymentMethodToken } = e.data;
+        try {
+          const res = await linkPaymentMethod(
+            customerId,
+            paymentMethodToken,
+            branch,
+          );
+          console.log(res);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setIsLoading(false);
+          setOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   const loadIframeUrl = async () => {
@@ -79,13 +117,16 @@ export function AddPaymentMethodDialog({
         throw new Error(`Token endpoint failed`);
       }
 
-      const pcpUrl = `${process.env.NEXT_PUBLIC_PCP_ENDPOINT}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true&customerId=${customerId}`;
+      const pcpUrl =
+        country === "PH"
+          ? `${process.env.NEXT_PUBLIC_HPP_ENDPOINT}/paymentmethod/embed?token=${token}&countryCode=${country}`
+          : `${process.env.NEXT_PUBLIC_PCP_ENDPOINT}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true&customerId=${customerId}`;
       setIframeUrl(pcpUrl);
       await logApiCall(
         "GET",
         pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
         "Payment Capture Page UI",
-        200
+        200,
       );
 
       try {
@@ -115,6 +156,41 @@ export function AddPaymentMethodDialog({
     if (!newOpen) {
       setIframeUrl(null);
       onSuccess?.();
+    }
+  };
+
+  const submitHpp = (e, type) => {
+    e.preventDefault();
+    if (!iframeRef.current) {
+      toast.error("Payment form not loaded");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const iframeWindow = iframeRef.current.contentWindow;
+
+      if (!iframeWindow) {
+        console.error("[postMessage] iframe window not accessible");
+        toast.error("Payment form not ready");
+        setIsLoading(false);
+        return;
+      }
+
+      const targetOrigin = iframeOriginRef.current || "*";
+      console.log("[postMessage] Sending message", {
+        actionType: type,
+        targetOrigin,
+        iframeOrigin: iframeOriginRef.current,
+        currentUrl: window.location.href,
+      });
+
+      // Send the message to the iframe
+      iframeWindow.postMessage({ actionType: type }, targetOrigin);
+      console.log("[postMessage] Message sent successfully");
+    } catch (error) {
+      console.error("[submitHpp] Error sending postMessage:", error);
+      toast.error("Failed to submit payment form");
+      setIsLoading(false);
     }
   };
 
@@ -148,8 +224,6 @@ export function AddPaymentMethodDialog({
             ref={iframeRef}
             src={iframeUrl}
             className="h-full w-full rounded-lg border border-border p-4"
-            title="Add Payment Method"
-            sandbox="allow-scripts allow-same-origin allow-forms"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -159,6 +233,15 @@ export function AddPaymentMethodDialog({
       </div>
       {/* Moved email button to dialog footer */}
       <DialogFooter>
+        {country === "PH" && (
+          <Button
+            variant="outline"
+            onClick={(e) => submitHpp(e, "create")}
+            className="gap-2 bg-transparent"
+          >
+            Submit
+          </Button>
+        )}
         <Button
           variant="outline"
           onClick={handleEmailCustomer}

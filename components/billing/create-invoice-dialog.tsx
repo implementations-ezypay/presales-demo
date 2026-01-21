@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/tooltip";
 import { logApiCall } from "@/lib/api-logger";
 import { PromptPayQrCode } from "./promptpay-qrcode";
-import { getBranchCurrency } from "@/lib/branches";
+import { getBranchCountry, getBranchCurrency } from "@/lib/branches";
 
 interface CreateInvoiceDialogProps {
   open: boolean;
@@ -61,7 +61,7 @@ export function CreateInvoiceDialog({
   const [loading, setLoading] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [showTapAnimation, setShowTapAnimation] = useState(false);
-  const [qrString, setQrString] = useState("something");
+  const [qrString, setQrString] = useState("");
   const { toast } = useToast();
   const [customers, setCustomers] = useState<any[]>([]);
   const [formData, setFormData] = useState({

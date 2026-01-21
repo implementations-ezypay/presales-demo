@@ -31,10 +31,17 @@ import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { getEzypayToken, createCustomer } from "@/lib/passer-functions";
+import {
+  getEzypayToken,
+  createCustomer,
+  linkPaymentMethod,
+} from "@/lib/passer-functions";
 import { logApiCall } from "@/lib/api-logger";
+import { getBranchCountry } from "@/lib/branches";
 
 const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT;
+const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT;
+
 const defaultformData = {
   firstName: "",
   lastName: "",
@@ -56,6 +63,7 @@ export default function NewMemberPage() {
   const [emailPreviewLink, setEmailPreviewLink] = useState("");
   const [formData, setFormData] = useState(defaultformData);
   const [branch, setBranch] = useState("");
+  const [country, setCountry] = useState("");
 
   // Track selected values from Select components separately for easier UI updates
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -64,14 +72,37 @@ export default function NewMemberPage() {
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main";
     setBranch(selectedBranch);
-    const handleMessage = (event: MessageEvent) => {
+    setCountry(getBranchCountry(selectedBranch));
+
+    const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
-      if (event.data && JSON.parse(event.data).type === "success") {
+      let listenerResponse = e.data;
+      if (typeof listenerResponse === "string") {
+        listenerResponse = JSON.parse(listenerResponse);
+      }
+      console.log(listenerResponse);
+
+      if (e.data && listenerResponse.type === "success") {
         console.log(
           "Success message detected, redirecting to /members",
-          event.data
+          e.data,
         );
-        window.location.replace("/members");
+      }
+
+      if (country === "PH" && e.data.paymentMethodToken) {
+        const { customerId, paymentMethodToken } = e.data;
+        try {
+          const res = await linkPaymentMethod(
+            customerId,
+            paymentMethodToken,
+            branch,
+          );
+          console.log(res);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     };
 
@@ -92,15 +123,18 @@ export default function NewMemberPage() {
       const token = await tokenRes.access_token;
       // Use a temporary customer ID for new members
 
-      const pcpUrl = `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
-        customerId ? "&customerId=" + customerId : ""
-      }`;
+      const pcpUrl =
+        country === "PH"
+          ? `${hppEndpoint}/paymentmethod/embed?token=${token}&countryCode=${country}`
+          : `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
+              customerId ? "&customerId=" + customerId : ""
+            }`;
       setIframeUrl(pcpUrl);
       await logApiCall(
         "GET",
         pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
         "Payment capture page UI",
-        200
+        200,
       );
 
       try {
@@ -138,6 +172,42 @@ export default function NewMemberPage() {
     setFormData((prev) => ({ ...prev, status: value }));
   }
 
+  const submitHpp = (e, type) => {
+    e.preventDefault();
+    if (!iframeRef.current) {
+      toast.error("Payment form not loaded");
+      return;
+    }
+    setIsSubmitting(false);
+    true;
+    try {
+      const iframeWindow = iframeRef.current.contentWindow;
+
+      if (!iframeWindow) {
+        console.error("[postMessage] iframe window not accessible");
+        toast.error("Payment form not ready");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const targetOrigin = iframeOriginRef.current || "*";
+      console.log("[postMessage] Sending message", {
+        actionType: type,
+        targetOrigin,
+        iframeOrigin: iframeOriginRef.current,
+        currentUrl: window.location.href,
+      });
+
+      // Send the message to the iframe
+      iframeWindow.postMessage({ actionType: type }, targetOrigin);
+      console.log("[postMessage] Message sent successfully");
+    } catch (error) {
+      console.error("[submitHpp] Error sending postMessage:", error);
+      toast.error("Failed to submit payment form");
+      setIsSubmitting(false);
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsSubmitting(true);
@@ -158,7 +228,7 @@ export default function NewMemberPage() {
     }
 
     setEmailPreviewLink(
-      `${window.location.origin}/email-preview?id=${customerId}&name=${formData.firstName} ${formData.lastName}`
+      `${window.location.origin}/email-preview?id=${customerId}&name=${formData.firstName} ${formData.lastName}`,
     );
     await loadIframeUrl(customerId);
     setIsSubmitting(false);
@@ -432,6 +502,15 @@ export default function NewMemberPage() {
                 <CardDescription className="text-sm">
                   Add payment method for recurring billing
                 </CardDescription>
+                {country === "PH" && (
+                  <Button
+                    variant="outline"
+                    onClick={(e) => submitHpp(e, "create")}
+                    className="gap-2 bg-transparent"
+                  >
+                    Submit
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={handleEmailCustomer}

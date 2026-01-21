@@ -116,7 +116,7 @@ export function PaymentMethodIcon({
         alt="PayTo"
         width={60}
         height={60}
-        className={className}
+        className={`${className} bg-white`}
         style={{ objectFit: "contain", ...style }}
       />
     );

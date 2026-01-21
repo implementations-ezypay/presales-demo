@@ -87,7 +87,6 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
         customerData?.name,
         branch,
       );
-      console.log(res);
 
       setInvoices(res);
       setIsLoading(false);
@@ -146,7 +145,6 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
       fetchInvoices();
     }
   };
-  console.log(filteredInvoices);
   return (
     <>
       <Card>
