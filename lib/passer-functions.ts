@@ -23,6 +23,7 @@ import {
   deletePaymentMethod as deleteEzypayPaymentMethod,
   linkPaymentMethod as linkEzypayPaymentMethod,
   activatePayTo as activateEzypayPayTo,
+  createPromptPay as createEzypayPromptPay,
 } from "@/lib/payment-methods";
 import {
   listSettlements as listEzypaySettlements,
@@ -60,7 +61,7 @@ export async function listInvoice(branch) {
 export async function listTransactionByInvoice(
   invoiceId,
   paymentMethod,
-  branch
+  branch,
 ) {
   return await listEzypayTransactionByInvoice(invoiceId, paymentMethod, branch);
 }
@@ -89,13 +90,13 @@ export async function replacePaymentMethod(
   customerId,
   paymentMethod,
   newPaymentMethod,
-  branch
+  branch,
 ) {
   return await replaceEzypayPaymentMethod(
     customerId,
     paymentMethod,
     newPaymentMethod,
-    branch
+    branch,
   );
 }
 
@@ -116,13 +117,18 @@ export async function downloadDocument(settlementId, documentType, branch) {
 }
 
 export async function linkPaymentMethod(customerId, paymentMethod, branch) {
+  console.log(customerId, paymentMethod, branch);
   return await linkEzypayPaymentMethod(customerId, paymentMethod, branch);
 }
 
 export async function activatePayTo(
   paymentMethodToken: string,
   branch: string,
-  action: string
+  action: string,
 ) {
   return await activateEzypayPayTo(paymentMethodToken, branch, action);
+}
+
+export async function createPromptPay(customerId: string, branch: string) {
+  return await createEzypayPromptPay(customerId, branch);
 }

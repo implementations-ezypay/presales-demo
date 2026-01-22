@@ -70,23 +70,27 @@ export function AddPaymentMethodDialog({
     const selectedBranch = localStorage.getItem("selectedBranch") || "main";
     setBranch(selectedBranch);
     setCountry(getBranchCountry(selectedBranch));
+  }, []);
+
+  useEffect(() => {
     const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
       let listenerResponse = e.data;
       if (typeof listenerResponse === "string") {
         listenerResponse = JSON.parse(listenerResponse);
       }
-      console.log(listenerResponse);
 
-      if (e.data && listenerResponse.type === "success") {
+      if (listenerResponse.type === "success") {
         console.log(
-          "Success message detected, redirecting to /members",
-          e.data,
+          "Success message detected, linking token to customer",
+          listenerResponse,
         );
       }
+      if (!listenerResponse.data) return;
+      const { paymentMethodToken } = listenerResponse.data;
+      console.log(paymentMethodToken, country, customerId);
 
-      if (country === "PH" && e.data.paymentMethodToken) {
-        const { customerId, paymentMethodToken } = e.data;
+      if (country === "PH" && paymentMethodToken) {
         try {
           const res = await linkPaymentMethod(
             customerId,
@@ -94,18 +98,17 @@ export function AddPaymentMethodDialog({
             branch,
           );
           console.log(res);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          setOpen(false);
         } catch (error) {
           console.error(error);
-        } finally {
-          setIsLoading(false);
-          setOpen(false);
         }
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [country, branch, customerId]);
 
   const loadIframeUrl = async () => {
     setIsLoading(true);
@@ -165,7 +168,6 @@ export function AddPaymentMethodDialog({
       toast.error("Payment form not loaded");
       return;
     }
-    setIsLoading(true);
     try {
       const iframeWindow = iframeRef.current.contentWindow;
 
@@ -190,7 +192,6 @@ export function AddPaymentMethodDialog({
     } catch (error) {
       console.error("[submitHpp] Error sending postMessage:", error);
       toast.error("Failed to submit payment form");
-      setIsLoading(false);
     }
   };
 

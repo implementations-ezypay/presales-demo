@@ -601,7 +601,7 @@ export function PaymentMethodsList({
               {methodToDelete && (
                 <div className="mt-2 p-2 bg-muted rounded">
                   <span className="text-sm font-medium text-foreground">
-                    {methodToDelete.type}
+                    {methodToDelete.qrPayment?.qrType ?? methodToDelete.type}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {" "}

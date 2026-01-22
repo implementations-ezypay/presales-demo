@@ -43,7 +43,8 @@ import {
 import { InvoicesTable } from "@/components/billing/invoices-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { TransferCustomerDialog } from "@/components/billing/transfer-customer-dialog";
-import { BRANCHES, getBranchName } from "@/lib/branches";
+import { getBranchCountry, getBranchName } from "@/lib/branches";
+import { createPromptPay } from "@/lib/passer-functions";
 
 export const getStatusBadgeVariant = (status: string) => {
   if (status === "paid") return "default";
@@ -58,8 +59,6 @@ export default function MemberProfilePage() {
   const customerId = getCustomerIdFromPath();
 
   const [memberDataState, setMemberDataState] = useState<any>({});
-  const [selectedInvoice, setSelectedInvoice] = useState<any[] | null>(null);
-  const [isInvoiceDetailOpen, setIsInvoiceDetailOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,11 +103,6 @@ export default function MemberProfilePage() {
     fetchData();
   }, [branch]);
 
-  const handleInvoiceClick = (invoice: any) => {
-    setSelectedInvoice(invoice);
-    setIsInvoiceDetailOpen(true);
-  };
-
   const handleAddPaymentOpenChange = (open: boolean) => {
     setAddPaymentDialogOpen(open);
     if (!open) {
@@ -120,6 +114,18 @@ export default function MemberProfilePage() {
     const idFromPath = getCustomerIdFromPath() || memberDataState?.id;
     if (idFromPath) setMemberDataState((prev) => ({ ...prev }));
   };
+
+  const addPromptPay = async (e) => {
+    e.preventDefault();
+    const res = await createPromptPay(customerId, branch);
+    if (!res.success) {
+      window.alert(
+        `Failed to create PromptPay Token: ${res.error?.message || "An unexpected error occured"}`,
+      );
+    }
+    setPaymentMethodsRefreshTrigger((prev) => prev + 1);
+  };
+
   return (
     <div className="flex flex-col h-full relative">
       <TopBar />
@@ -422,6 +428,26 @@ export default function MemberProfilePage() {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                {getBranchCountry(branch) === "TH" && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          className="w-full bg-transparent"
+                          variant="outline"
+                          size="sm"
+                          onClick={addPromptPay}
+                        >
+                          Add PromptPay
+                        </Button>
+                      </TooltipTrigger>
+
+                      <TooltipContent>
+                        <p>Trigger the API to create a PromptPay Token</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -467,7 +493,6 @@ export default function MemberProfilePage() {
                         <TableRow
                           key={invoice.id}
                           className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => handleInvoiceClick(invoice)}
                         >
                           <TableCell className="font-medium">
                             {invoice.id}

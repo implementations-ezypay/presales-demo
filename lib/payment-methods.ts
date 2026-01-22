@@ -6,12 +6,13 @@ import { getBranchCredentials } from "./branch-config";
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`;
 const mandateEndpoint = `${process.env.API_ENDPOINT}/v2/npp/mandate/status`;
+const vaultEndpoint = `${process.env.VAULT_ENDPOINT}/v2/vault`;
 
 export async function replacePaymentMethod(
   customerId,
   paymentMethod,
   newPaymentMethod,
-  branch
+  branch,
 ) {
   const { merchantId } = await getBranchCredentials(branch);
   try {
@@ -25,7 +26,7 @@ export async function replacePaymentMethod(
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Replace Payment Method failed: No access_token from token utility`
+        `Replace Payment Method failed: No access_token from token utility`,
       );
     }
 
@@ -96,7 +97,7 @@ export async function deletePaymentMethod(customerId, paymentMethod, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Delete Payment Method failed: No access_token from token utility`
+        `Delete Payment Method failed: No access_token from token utility`,
       );
     }
 
@@ -163,7 +164,7 @@ export async function linkPaymentMethod(customerId, paymentMethod, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Link Payment Method failed: No access_token from token utility`
+        `Link Payment Method failed: No access_token from token utility`,
       );
     }
 
@@ -224,7 +225,7 @@ export async function linkPaymentMethod(customerId, paymentMethod, branch) {
 export async function activatePayTo(
   paymentMethodToken: string,
   branch: string,
-  action: string
+  action: string,
 ) {
   const { merchantId } = await getBranchCredentials(branch);
   try {
@@ -238,7 +239,7 @@ export async function activatePayTo(
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Activate PayTo failed: No access_token from token utility`
+        `Activate PayTo failed: No access_token from token utility`,
       );
     }
 
@@ -266,7 +267,7 @@ export async function activatePayTo(
       url,
       "",
       response.status,
-      Object.fromEntries(body)
+      Object.fromEntries(body),
     );
 
     if (!response.ok) {
@@ -279,6 +280,86 @@ export async function activatePayTo(
     };
   } catch (err: any) {
     console.error("Activate PayTo error:", err);
+    return {
+      success: false,
+      error: {
+        message: err.message || "An unexpected error occurred",
+      },
+    };
+  }
+}
+
+export async function createPromptPay(customerId, branch) {
+  const { merchantId } = await getBranchCredentials(branch);
+  try {
+    if (!customerId) {
+      throw new Error("Missing customer ID");
+    }
+
+    // Get token directly from utility function instead of HTTP request
+    const tokenData = await getEzypayToken(branch);
+    const token = tokenData.access_token;
+    if (!token) {
+      console.error("No access_token from token utility", tokenData);
+      throw new Error(
+        `Create PromptPay Token failed: No access_token from token utility`,
+      );
+    }
+
+    const body = {
+      accountHolderName: "customer",
+      countryCode: "TH",
+      qrType: "PROMPTPAY",
+      termAndConditionAgreed: true,
+      customerId,
+    };
+
+    console.log(body);
+
+    const url = `${vaultEndpoint}/paymentmethodtokens/qrpayment`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = response.ok ? await response.json() : await response.text();
+    await logApiCall("POST", url, data, response.status, body);
+    console.log(data);
+
+    if (!response.ok) {
+      console.error("Create PromptPay failed:", response.status, data);
+
+      try {
+        const errorData = typeof data === "string" ? JSON.parse(data) : data;
+        return {
+          success: false,
+          error: {
+            type: errorData.type,
+            code: errorData.code,
+            message: errorData.message,
+          },
+        };
+      } catch (parseError) {
+        return {
+          success: false,
+          error: {
+            message: `Create PromptPay failed: ${response.status}`,
+          },
+        };
+      }
+    }
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    console.error("Create PromptPay failed error:", err);
     return {
       success: false,
       error: {
