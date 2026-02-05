@@ -314,8 +314,6 @@ export async function createPromptPay(customerId, branch) {
       customerId,
     };
 
-    console.log(body);
-
     const url = `${vaultEndpoint}/paymentmethodtokens/qrpayment`;
     const response = await fetch(url, {
       method: "POST",
@@ -329,7 +327,6 @@ export async function createPromptPay(customerId, branch) {
 
     const data = response.ok ? await response.json() : await response.text();
     await logApiCall("POST", url, data, response.status, body);
-    console.log(data);
 
     if (!response.ok) {
       console.error("Create PromptPay failed:", response.status, data);

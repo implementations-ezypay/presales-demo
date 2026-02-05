@@ -16,7 +16,7 @@ export async function createCustomer(customer, branch: string): Promise<any> {
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `Create customer failed: No access_token from token utility`
+        `Create customer failed: No access_token from token utility`,
       );
     }
 
@@ -76,7 +76,7 @@ export async function createCustomer(customer, branch: string): Promise<any> {
 
 export async function listCustomer(
   branch,
-  customerNumber = null
+  customerNumber = null,
 ): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch);
   try {
@@ -86,7 +86,7 @@ export async function listCustomer(
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `List customer failed: No access_token from token utility`
+        `List customer failed: No access_token from token utility`,
       );
     }
 
@@ -116,7 +116,7 @@ export async function listCustomer(
 
 export async function getCustomer(
   customerId: string | null,
-  branch: string
+  branch: string,
 ): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch);
   try {
@@ -130,7 +130,7 @@ export async function getCustomer(
     if (!token) {
       console.error("No access_token from token utility", tokenData);
       throw new Error(
-        `List customer failed: No access_token from token utility`
+        `List customer failed: No access_token from token utility`,
       );
     }
 
@@ -158,7 +158,7 @@ export async function getCustomer(
 
 export async function getCustomerPaymentMethods(
   customerId: string,
-  branch: string
+  branch: string,
 ): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch);
   try {

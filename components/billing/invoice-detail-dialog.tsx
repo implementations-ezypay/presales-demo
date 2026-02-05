@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { RefundDialog } from "./refund-dialog";
-import { getStatusBadgeVariant } from "@/app/members/[id]/page";
 import {
   listTransactionByInvoice,
   retryInvoice,
@@ -47,6 +46,7 @@ import {
 import { Spinner } from "../ui/spinner";
 import { PaymentMethodsList } from "./payment-methods-list";
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon";
+import { getStatusBadgeVariant } from "@/lib/utils";
 
 interface PaymentAttempt {
   id: string;
@@ -140,7 +140,7 @@ export function InvoiceDetailDialog({
     listTransactionByInvoice(
       invoiceProp?.id,
       invoiceProp?.paymentMethod,
-      branch
+      branch,
     ).then((transactions) => {
       setInvoice((prev) => ({ ...prev, paymentAttempts: transactions }));
       setIsTransactionLoading(false);
@@ -209,7 +209,7 @@ export function InvoiceDetailDialog({
       const result = await retryInvoice(
         invoice.id,
         selectedPaymentMethodId,
-        branch
+        branch,
       );
       toast.success("Payment retry initiated successfully");
       onUpdate?.();
@@ -260,7 +260,7 @@ export function InvoiceDetailDialog({
       const result = await recordExternalInvoice(
         invoice.id,
         externalPaymentMethod,
-        branch
+        branch,
       );
       toast.success("External payment recorded successfully");
       onUpdate?.();
@@ -292,7 +292,7 @@ export function InvoiceDetailDialog({
       toast.error("Failed to open email URL");
     }
   };
-
+  console.log(invoice);
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -405,7 +405,7 @@ export function InvoiceDetailDialog({
                           {(
                             Number.parseFloat(invoice.amount.replace("$", "")) -
                             Number.parseFloat(
-                              invoice.refundAmount.replace("$", "")
+                              invoice.refundAmount.replace("$", ""),
                             )
                           ).toFixed(2)}
                         </p>

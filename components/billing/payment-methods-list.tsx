@@ -1,21 +1,21 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState, useEffect } from "react";
-import { Trash2, Star, AlertCircle, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
+import { useState, useEffect } from "react"
+import { Trash2, Star, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import {
   deletePaymentMethod,
   getCustomerPaymentMethods,
   replacePaymentMethod,
   activatePayTo,
-} from "@/lib/passer-functions";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+} from "@/lib/passer-functions"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -33,30 +33,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PaymentMethodIcon } from "@/components/ui/payment-method-icon";
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 
 export interface PaymentMethod {
-  id: string;
-  type: string;
-  last4?: string | null;
-  expiry?: string | null;
-  account?: string;
-  isDefault: boolean;
-  valid: boolean;
-  payTo?: any;
-  origin?: any;
-  qrPayment?: any;
+  id: string
+  type: string
+  last4?: string | null
+  expiry?: string | null
+  account?: string
+  isDefault: boolean
+  valid: boolean
+  payTo?: any
+  origin?: any
+  qrPayment?: any
 }
 
 interface PaymentMethodsListProps {
-  customerId: string;
-  variant?: "display" | "selection";
-  selectedMethodId?: string;
-  onMethodSelect?: (methodId: string) => void;
-  showInvalid?: boolean;
-  refreshTrigger?: number;
+  customerId: string
+  variant?: "display" | "selection"
+  selectedMethodId?: string
+  onMethodSelect?: (methodId: string) => void
+  showInvalid?: boolean
+  refreshTrigger?: number
 }
 
 export function PaymentMethodsList({
@@ -67,90 +67,75 @@ export function PaymentMethodsList({
   showInvalid = false,
   refreshTrigger,
 }: PaymentMethodsListProps) {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
-    null,
-  );
-  const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
-  const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
-    null,
-  );
-  const [defaultPaymentMethod, setDefaultPaymentMethod] =
-    useState<PaymentMethod | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [branch, setBranch] = useState("");
-  const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false);
-  const [methodToActivate, setMethodToActivate] =
-    useState<PaymentMethod | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(null)
+  const [replaceDialogOpen, setReplaceDialogOpen] = useState(false)
+  const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(null)
+  const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [branch, setBranch] = useState("")
+  const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
+  const [methodToActivate, setMethodToActivate] = useState<PaymentMethod | null>(null)
   useEffect(() => {
     if (customerId && branch) {
-      fetchPaymentMethods();
+      fetchPaymentMethods()
     }
-  }, [customerId, refreshTrigger, branch]);
+  }, [customerId, refreshTrigger, branch])
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main";
-    setBranch(selectedBranch);
-  }, []);
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+  }, [])
 
   async function fetchPaymentMethods() {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const response = await getCustomerPaymentMethods(customerId, branch);
-      let items: any[] | null = null;
-      if (Array.isArray(response)) items = response;
-      else if (Array.isArray(response?.paymentMethods))
-        items = response.paymentMethods;
-      else if (Array.isArray(response?.results)) items = response.results;
-      else if (Array.isArray(response?.data)) items = response.data;
-      else if (response) items = [response];
+      const response = await getCustomerPaymentMethods(customerId, branch)
+      let items: any[] | null = null
+      if (Array.isArray(response)) items = response
+      else if (Array.isArray(response?.paymentMethods)) items = response.paymentMethods
+      else if (Array.isArray(response?.results)) items = response.results
+      else if (Array.isArray(response?.data)) items = response.data
+      else if (response) items = [response]
       const normalized = (items || []).map((pm: any) => {
         return {
           id: pm.paymentMethodToken ?? pm.id,
           type: pm.card?.type ?? pm.type ?? "",
           last4: pm.card?.last4 ?? pm.bank?.last4 ?? pm.last4 ?? null,
-          expiry: pm.card
-            ? `${pm.card.expiryMonth}/${pm.card.expiryYear}`
-            : (pm.expiry ?? null),
+          expiry: pm.card ? `${pm.card.expiryMonth}/${pm.card.expiryYear}` : (pm.expiry ?? null),
           isDefault: pm.primary ?? false,
           account:
-            pm.payTo?.aliasId ??
-            (pm.payTo?.bbanAccountNo
-              ? pm.payTo.bbanAccountNo.slice(-4)
-              : undefined) ??
-            pm.account,
+            pm.payTo?.aliasId ?? (pm.payTo?.bbanAccountNo ? pm.payTo.bbanAccountNo.slice(-4) : undefined) ?? pm.account,
           valid: pm.valid,
           payTo: pm.payTo,
           origin: pm.card?.origin,
           qrPayment: pm.qrPayment,
-        };
-      });
+        }
+      })
 
       const sorted = normalized.sort((a, b) => {
-        if (a.isDefault && !b.isDefault) return -1;
-        if (!a.isDefault && b.isDefault) return 1;
-        if (a.valid && !b.valid) return -1;
-        if (!a.valid && b.valid) return 1;
-        return 0;
-      });
+        if (a.isDefault && !b.isDefault) return -1
+        if (!a.isDefault && b.isDefault) return 1
+        if (a.valid && !b.valid) return -1
+        if (!a.valid && b.valid) return 1
+        return 0
+      })
 
-      setPaymentMethods(sorted);
-      const foundDefault = sorted.find((pm) => pm.isDefault) || null;
-      setDefaultPaymentMethod(foundDefault);
-      if (onMethodSelect && foundDefault?.id) onMethodSelect(foundDefault.id);
+      setPaymentMethods(sorted)
+      const foundDefault = sorted.find((pm) => pm.isDefault) || null
+      setDefaultPaymentMethod(foundDefault)
+      if (onMethodSelect && foundDefault?.id) onMethodSelect(foundDefault.id)
     } catch (error: any) {
-      const msg = error?.message || String(error);
-      console.error("Error fetching payment methods", msg);
-      setError(msg);
+      const msg = error?.message || String(error)
+      console.error("Error fetching payment methods", msg)
+      setError(msg)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -159,135 +144,111 @@ export function PaymentMethodsList({
       <div className="flex items-center justify-center py-6">
         <Spinner className="h-6 w-6" />
       </div>
-    );
+    )
   }
 
   if (error) {
-    return (
-      <div className="text-sm text-destructive py-4">
-        Failed to load payment methods: {error}
-      </div>
-    );
+    return <div className="text-sm text-destructive py-4">Failed to load payment methods: {error}</div>
   }
 
   if (paymentMethods?.length === 0) {
-    return (
-      <div className="text-sm text-muted-foreground py-4">
-        No payment methods found
-      </div>
-    );
+    return <div className="text-sm text-muted-foreground py-4">No payment methods found</div>
   }
 
   const handleDeleteClick = (method: PaymentMethod, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMethodToDelete(method);
-    setDeleteDialogOpen(true);
-    setActionError(null);
-  };
+    e.stopPropagation()
+    setMethodToDelete(method)
+    setDeleteDialogOpen(true)
+    setActionError(null)
+  }
 
   const handleDeleteConfirm = async () => {
-    if (!methodToDelete) return;
+    if (!methodToDelete) return
 
-    setIsProcessing(true);
-    setActionError(null);
+    setIsProcessing(true)
+    setActionError(null)
 
-    const deleteResult = await deletePaymentMethod(
-      customerId,
-      methodToDelete?.id,
-      branch,
-    );
+    const deleteResult = await deletePaymentMethod(customerId, methodToDelete?.id, branch)
 
-    setIsProcessing(false);
+    setIsProcessing(false)
 
     if (deleteResult.error) {
-      setActionError(deleteResult.error.message);
-      return;
+      setActionError(deleteResult.error.message)
+      return
     }
 
-    setMethodToDelete(null);
+    setMethodToDelete(null)
 
-    await fetchPaymentMethods();
-  };
+    await fetchPaymentMethods()
+  }
 
   const handleReplaceClick = (method: PaymentMethod, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMethodToReplace(method);
-    setReplaceDialogOpen(true);
-    setActionError(null);
-  };
+    e.stopPropagation()
+    setMethodToReplace(method)
+    setReplaceDialogOpen(true)
+    setActionError(null)
+  }
 
   const handleReplaceConfirm = async () => {
-    if (!methodToReplace) return;
+    if (!methodToReplace) return
 
-    setIsProcessing(true);
-    setActionError(null);
+    setIsProcessing(true)
+    setActionError(null)
 
-    const replaceResult = await replacePaymentMethod(
-      customerId,
-      defaultPaymentMethod?.id,
-      methodToReplace?.id,
-      branch,
-    );
+    const replaceResult = await replacePaymentMethod(customerId, defaultPaymentMethod?.id, methodToReplace?.id, branch)
 
-    setIsProcessing(false);
+    setIsProcessing(false)
 
     if (replaceResult.error) {
-      setActionError(replaceResult.error.message);
-      return;
+      setActionError(replaceResult.error.message)
+      return
     }
 
-    setDefaultPaymentMethod(methodToReplace);
-    setMethodToReplace(null);
+    setDefaultPaymentMethod(methodToReplace)
+    setMethodToReplace(null)
 
-    await fetchPaymentMethods();
-  };
+    await fetchPaymentMethods()
+  }
 
-  const handleActivatePayToClick = (
-    method: PaymentMethod,
-    e: React.MouseEvent,
-  ) => {
-    e.stopPropagation();
-    setMethodToActivate(method);
-    setActivatePayToDialogOpen(true);
-    setActionError(null);
-  };
+  const handleActivatePayToClick = (method: PaymentMethod, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setMethodToActivate(method)
+    setActivatePayToDialogOpen(true)
+    setActionError(null)
+  }
 
   const handlePayToAgreement = async (action = "decline") => {
-    if (!methodToActivate) return;
+    if (!methodToActivate) return
 
-    setIsProcessing(true);
-    setActionError(null);
+    setIsProcessing(true)
+    setActionError(null)
 
     try {
-      const result = await activatePayTo(methodToActivate.id, branch, action);
+      const result = await activatePayTo(methodToActivate.id, branch, action)
 
       if (!result.success) {
-        setActionError(result.error?.message || "Failed to activate PayTo");
-        setIsProcessing(false);
-        return;
+        setActionError(result.error?.message || "Failed to activate PayTo")
+        setIsProcessing(false)
+        return
       }
     } catch (err: any) {
-      console.error("PayTo activation error:", err);
-      setActionError(err.message || "Failed to activate PayTo");
+      console.error("PayTo activation error:", err)
+      setActionError(err.message || "Failed to activate PayTo")
     } finally {
-      setIsProcessing(false);
-      fetchPaymentMethods();
-      setActivatePayToDialogOpen(false);
+      setIsProcessing(false)
+      fetchPaymentMethods()
+      setActivatePayToDialogOpen(false)
     }
-  };
+  }
 
   if (variant === "selection") {
     return (
-      <RadioGroup
-        value={selectedMethodId || defaultPaymentMethod?.id || ""}
-        onValueChange={onMethodSelect}
-      >
+      <RadioGroup value={selectedMethodId || defaultPaymentMethod?.id || ""} onValueChange={onMethodSelect}>
         <div className="space-y-2">
           {paymentMethods?.map((method) => {
-            const isInvalid = !method.valid;
-            const isDisabled = isInvalid && !showInvalid;
-            const isPayToInvalid =
-              method.type?.toUpperCase() === "PAYTO" && isInvalid;
+            const isInvalid = !method.valid
+            const isDisabled = isInvalid && !showInvalid
+            const isPayToInvalid = method.type?.toUpperCase() === "PAYTO" && isInvalid
 
             return (
               <div
@@ -298,11 +259,7 @@ export function PaymentMethodsList({
                   !isDisabled && "cursor-pointer hover:bg-accent",
                 )}
               >
-                <RadioGroupItem
-                  value={method.id}
-                  id={method.id}
-                  disabled={isDisabled}
-                />
+                <RadioGroupItem value={method.id} id={method.id} disabled={isDisabled} />
                 <Label
                   htmlFor={method.id}
                   className={cn(
@@ -312,24 +269,19 @@ export function PaymentMethodsList({
                 >
                   <div className="flex items-center gap-3">
                     <PaymentMethodIcon
-                      type={
-                        method.origin ?? method.qrPayment?.qrType ?? method.type
-                      }
+                      type={method.origin ?? method.qrPayment?.qrType ?? method.type}
                       className="h-4 w-8"
                     />
                     <div>
-                      <span className="text-sm font-medium">
-                        {method.qrPayment?.qrType ?? method.type}
-                      </span>
+                      <span className="text-sm font-medium">{method.qrPayment?.qrType ?? method.type}</span>
                       <span className="text-xs text-muted-foreground">
-                        {method.last4 ? `****${method.last4}` : ""}{" "}
-                        {method.expiry || method.account || ""}
+                        {method.last4 ? `****${method.last4}` : ""} {method.expiry || method.account || ""}
                       </span>
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
                     {method.isDefault && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="default" className="text-xs">
                         Default
                       </Badge>
                     )}
@@ -351,42 +303,32 @@ export function PaymentMethodsList({
                   </div>
                 </Label>
               </div>
-            );
+            )
           })}
         </div>
       </RadioGroup>
-    );
+    )
   }
 
   return (
     <>
-      <div className="max-h-60 overflow-y-auto space-y-2">
+      <div className="h-full overflow-y-auto space-y-2">
         {paymentMethods?.map((method) => {
-          const isPayTo = method.type?.toUpperCase() === "PAYTO";
+          const isPayTo = method.type?.toUpperCase() === "PAYTO"
           return (
-            <div
-              key={method.id}
-              className="flex items-center justify-between rounded-lg border border-border p-3"
-            >
+            <div key={method.id} className="flex items-center justify-between rounded-lg border border-border p-2">
               <div className="flex items-center gap-3">
-                <PaymentMethodIcon
-                  type={
-                    method.origin ?? method.qrPayment?.qrType ?? method.type
-                  }
-                />
+                <PaymentMethodIcon type={method.origin ?? method.qrPayment?.qrType ?? method.type} />
                 <div>
-                  <p className="text-sm font-medium">
-                    {method.qrPayment?.qrType ?? method.type}
-                  </p>
+                  <p className="text-sm font-medium">{method.qrPayment?.qrType ?? method.type}</p>
                   <p className="text-xs text-muted-foreground">
-                    {method.last4 ? `****${method.last4}` : ""}{" "}
-                    {method.expiry || method.account || ""}
+                    {method.last4 ? `****${method.last4}` : ""} {method.expiry || method.account || ""}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 items-center">
                 {method.isDefault && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="default" className="text-xs">
                     Default
                   </Badge>
                 )}
@@ -431,32 +373,27 @@ export function PaymentMethodsList({
                 </div>
               </div>
             </div>
-          );
+          )
         })}
       </div>
 
-      <Dialog
-        open={activatePayToDialogOpen}
-        onOpenChange={setActivatePayToDialogOpen}
-      >
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={activatePayToDialogOpen} onOpenChange={setActivatePayToDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>PayTo Agreement</DialogTitle>
-            <DialogDescription>
-              Whenever customer added a PayTo payment method, they will need to
-              agree the PayTo agreement before they can be used to process
-              payments. Here is a simplify example.
+            <DialogDescription className="italic">
+              This screen it a sample on what customer might see in their banking app.
+              <br></br>
+              <br></br>
+              Customer will need to agree the PayTo agreement before they can be used to process payments.
             </DialogDescription>
           </DialogHeader>
 
           {methodToActivate && (
-            <div className="space-y-4 pt-15">
+            <div className="space-y-4 pt-18">
               <div className="rounded-lg border p-4 bg-muted/50">
                 <div className="flex items-center gap-3 mb-3">
-                  <PaymentMethodIcon
-                    type={methodToActivate.type}
-                    className="h-5 w-5"
-                  />
+                  <PaymentMethodIcon type={methodToActivate.type} className="h-5 w-5" />
                   <span className="font-medium">Agreement Details</span>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -466,9 +403,7 @@ export function PaymentMethodsList({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Account</span>
-                    <span className="font-mono">
-                      {methodToActivate.account || "N/A"}
-                    </span>
+                    <span className="font-mono">{methodToActivate.account || "N/A"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Amount</span>
@@ -478,16 +413,9 @@ export function PaymentMethodsList({
                     <span className="text-muted-foreground">Status</span>
                     <Badge
                       className="text-xs"
-                      variant={
-                        methodToActivate.payTo.mandateStatus === "ACTV"
-                          ? null
-                          : "destructive"
-                      }
+                      variant={methodToActivate.payTo.mandateStatus === "ACTV" ? null : "destructive"}
                     >
-                      {methodToActivate.payTo.mandateReason.replaceAll(
-                        /[^a-zA-Z0-9]/g,
-                        "",
-                      )}
+                      {methodToActivate.payTo.mandateReason.replaceAll(/[^a-zA-Z0-9]/g, "")}
                     </Badge>
                   </div>
                 </div>
@@ -511,11 +439,7 @@ export function PaymentMethodsList({
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setActivatePayToDialogOpen(false)}
-              disabled={isProcessing}
-            >
+            <Button variant="outline" onClick={() => setActivatePayToDialogOpen(false)} disabled={isProcessing}>
               Cancel
             </Button>
             <Button
@@ -557,14 +481,10 @@ export function PaymentMethodsList({
               All future payments will be defaulted to this payment method.
               {methodToReplace && (
                 <div className="mt-2 p-2 bg-muted rounded">
-                  <span className="text-sm font-medium text-foreground">
-                    {methodToReplace.type}
-                  </span>
+                  <span className="text-sm font-medium text-foreground">{methodToReplace.type}</span>
                   <span className="text-xs text-muted-foreground">
                     {" "}
-                    {methodToReplace.last4
-                      ? `****${methodToReplace.last4}`
-                      : ""}{" "}
+                    {methodToReplace.last4 ? `****${methodToReplace.last4}` : ""}{" "}
                     {methodToReplace.expiry || methodToReplace.account || ""}
                   </span>
                 </div>
@@ -578,13 +498,8 @@ export function PaymentMethodsList({
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleReplaceConfirm}
-              disabled={isProcessing}
-            >
+            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReplaceConfirm} disabled={isProcessing}>
               {isProcessing ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -596,8 +511,7 @@ export function PaymentMethodsList({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Payment Method</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this payment method? This action
-              cannot be undone.
+              Are you sure you want to delete this payment method? This action cannot be undone.
               {methodToDelete && (
                 <div className="mt-2 p-2 bg-muted rounded">
                   <span className="text-sm font-medium text-foreground">
@@ -605,9 +519,7 @@ export function PaymentMethodsList({
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {" "}
-                    {methodToDelete.last4
-                      ? `****${methodToDelete.last4}`
-                      : ""}{" "}
+                    {methodToDelete.last4 ? `****${methodToDelete.last4}` : ""}{" "}
                     {methodToDelete.expiry || methodToDelete.account || ""}
                   </span>
                 </div>
@@ -621,9 +533,7 @@ export function PaymentMethodsList({
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isProcessing}
@@ -635,5 +545,5 @@ export function PaymentMethodsList({
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
+  )
 }

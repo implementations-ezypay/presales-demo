@@ -51,11 +51,11 @@ export function AppSidebar() {
       .then((res) => {
         if (!mounted) return;
         const customers = res.data.map((customer) =>
-          normalisedEzypayCustomer(customer)
+          normalisedEzypayCustomer(customer),
         );
         sessionStorage.setItem(
           "defaultCustomerList",
-          JSON.stringify(customers)
+          JSON.stringify(customers),
         );
       })
       .catch((err) => {
@@ -109,7 +109,7 @@ export function AppSidebar() {
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                     )}
                     onClick={handleNavClick}
                   >

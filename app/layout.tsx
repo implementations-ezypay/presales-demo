@@ -1,7 +1,7 @@
 import type React from "react";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ApiLoggerViewer } from "@/components/api-logger-viewer";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -44,7 +44,6 @@ export default function RootLayout({
           </SidebarProvider>
           <ApiLoggerViewer />
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );

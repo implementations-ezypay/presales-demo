@@ -1,150 +1,123 @@
-"use client";
+"use client"
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
-import { InvoiceDetailDialog } from "./invoice-detail-dialog";
-import { CreateInvoiceDialog } from "./create-invoice-dialog";
-import { getStatusBadgeVariant } from "@/app/members/[id]/page";
-import { PaymentMethodIcon } from "@/components/ui/payment-method-icon";
-import { Spinner } from "../ui/spinner";
-import { listInvoice, listInvoiceByCustomer } from "@/lib/passer-functions";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, Plus } from "lucide-react"
+import { useState, useEffect } from "react"
+import { InvoiceDetailDialog } from "./invoice-detail-dialog"
+import { CreateInvoiceDialog } from "./create-invoice-dialog"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
+import { Spinner } from "../ui/spinner"
+import { listInvoice, listInvoiceByCustomer } from "@/lib/passer-functions"
+import { useToast } from "@/hooks/use-toast"
+import { getStatusBadgeVariant } from "@/lib/utils"
 
 export function InvoicesTable({ variant = "billing", customerData = null }) {
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [invoices, setInvoices] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [branch, setBranch] = useState("");
-  const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedInvoice, setSelectedInvoice] = useState(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [invoices, setInvoices] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [branch, setBranch] = useState("")
+  const { toast } = useToast()
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main";
-    setBranch(selectedBranch);
-  }, []);
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+  }, [])
 
   useEffect(() => {
-    if (!branch || isCreateOpen) return;
-    fetchInvoices();
-  }, [branch, isCreateOpen, customerData]);
+    if (!branch) return
+    fetchInvoices()
+  }, [branch, customerData])
 
   const fetchInvoices = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setIsLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 2000))
     try {
       if (variant === "billing") {
-        const res = await listInvoice(branch);
-        let defaultCustomerData = sessionStorage.getItem("defaultCustomerList");
-        let fetchedInvoices;
+        const res = await listInvoice(branch)
+        let defaultCustomerData = sessionStorage.getItem("defaultCustomerList")
+        let fetchedInvoices
 
         if (defaultCustomerData) {
-          defaultCustomerData = JSON.parse(defaultCustomerData);
+          defaultCustomerData = JSON.parse(defaultCustomerData)
         }
 
         fetchedInvoices = res.map((invoice) => {
-          const id = invoice.customerId;
-          const customerName = defaultCustomerData?.filter(
-            (cus) => cus.id == id,
-          )[0]?.name;
-          return { ...invoice, member: customerName };
-        });
-        setInvoices(fetchedInvoices);
-        setIsLoading(false);
-        return;
+          const id = invoice.customerId
+          const customerName = defaultCustomerData?.filter((cus) => cus.id == id)[0]?.name
+          return { ...invoice, member: customerName }
+        })
+        console.log(fetchedInvoices)
+        setInvoices(fetchedInvoices)
+        setIsLoading(false)
+        return
       }
 
-      if (!customerData?.id) return;
-      const res = await listInvoiceByCustomer(
-        customerData?.id,
-        customerData?.name,
-        branch,
-      );
+      if (!customerData?.id) return
+      const res = await listInvoiceByCustomer(customerData?.id, customerData?.name, branch)
 
-      setInvoices(res);
-      setIsLoading(false);
+      setInvoices(res)
+      setIsLoading(false)
     } catch (err) {
-      console.error("Failed to load invoices:", err);
+      console.error("Failed to load invoices:", err)
       toast({
         title: "Error loading invoices",
-        description:
-          "Please check if the API endpoint is configured correctly.",
+        description: "Please check if the API endpoint is configured correctly.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   const filteredInvoices = invoices?.filter((invoice) => {
-    const matchesStatus =
-      statusFilter === "all" || invoice.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter
     const matchesSearch =
       variant == "billing"
         ? invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
           invoice.member.toLowerCase().includes(searchQuery.toLowerCase())
-        : invoice.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+        : invoice.id.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesStatus && matchesSearch
+  })
 
   const handleInvoiceClick = (invoice: (typeof invoices)[0]) => {
     if (!invoice.id) {
-      console.error("Invalid invoice data (missing id):", invoice);
-      return;
+      console.error("Invalid invoice data (missing id):", invoice)
+      return
     }
-    setSelectedInvoice(invoice);
-    setIsDetailOpen(true);
-  };
+    setSelectedInvoice(invoice)
+    setIsDetailOpen(true)
+  }
 
   const formatCellValue = (value: any) => {
-    if (value === null || value === undefined) return "";
-    const val = value?.replaceAll(/googlepay|applepay/gi, "");
+    if (value === null || value === undefined) return ""
+    const val = value?.replaceAll(/googlepay|applepay/gi, "")
     if (typeof val === "object") {
       if (val.code || val.description) {
-        return `${val.code ?? ""}${
-          val.description ? ` - ${val.description}` : ""
-        }`.trim();
+        return `${val.code ?? ""}${val.description ? ` - ${val.description}` : ""}`.trim()
       }
       try {
-        return JSON.stringify(val);
+        return JSON.stringify(val)
       } catch (e) {
-        return String(val);
+        return String(val)
       }
     }
-    return String(val);
-  };
+    return String(val)
+  }
 
   const handleInvoiceCreated = () => {
-    console.log("[v0] Invoice created successfully, refreshing list");
+    console.log("[v0] Invoice created successfully, refreshing list")
     if (variant === "billing") {
-      fetchInvoices();
+      fetchInvoices()
     }
-  };
+  }
+
   return (
     <>
       <Card>
@@ -152,14 +125,9 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="text-base md:text-lg">Invoices</CardTitle>
-              <CardDescription className="text-sm">
-                Generate, send, and manage member invoices
-              </CardDescription>
+              <CardDescription className="text-sm">Generate, send, and manage member invoices</CardDescription>
             </div>
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Create Invoice
             </Button>
@@ -197,15 +165,9 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[120px]">Invoice ID</TableHead>
-                  {variant == "billing" ? (
-                    <TableHead className="min-w-[150px]">Member</TableHead>
-                  ) : (
-                    ""
-                  )}
+                  {variant == "billing" ? <TableHead className="min-w-[150px]">Member</TableHead> : ""}
                   <TableHead className="min-w-[100px]">Amount</TableHead>
-                  <TableHead className="min-w-[150px]">
-                    Payment Method
-                  </TableHead>
+                  <TableHead className="min-w-[150px]">Payment Method</TableHead>
                   <TableHead className="min-w-[100px]">Status</TableHead>
                   <TableHead className="min-w-[110px]">Date</TableHead>
                 </TableRow>
@@ -213,11 +175,17 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-18 text-center">
                       <div className="flex items-center justify-center">
                         <Spinner className="h-6 w-6 mr-2" />
                         <span>Loading Invoices...</span>
                       </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredInvoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-18 text-center">
+                      <p>No invoice to show</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -231,42 +199,24 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                         {formatCellValue(invoice.number ?? invoice.id)}
                       </TableCell>
                       {variant == "billing" ? (
-                        <TableCell className="text-sm">
-                          {formatCellValue(invoice.member)}
-                        </TableCell>
+                        <TableCell className="text-sm">{formatCellValue(invoice.member)}</TableCell>
                       ) : (
                         ""
                       )}
-                      <TableCell className="font-medium text-sm">
-                        {formatCellValue(invoice.amount)}
-                      </TableCell>
+                      <TableCell className="font-medium text-sm">{formatCellValue(invoice.amount)}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                          <PaymentMethodIcon
-                            type={invoice.paymentMethod}
-                            className="h-5 w-10 flex-shrink-0"
-                          />
-                          <span className="truncate">
-                            {formatCellValue(invoice.paymentMethod)}
-                          </span>
-                          {invoice.paymentMethodInvalid && (
-                            <Badge variant="destructive">invalid</Badge>
-                          )}
+                          <PaymentMethodIcon type={invoice.paymentMethod} className="h-5 w-10 flex-shrink-0" />
+                          <span className="truncate">{formatCellValue(invoice.paymentMethod)}</span>
+                          {invoice.paymentMethodInvalid && <Badge variant="destructive">invalid</Badge>}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={getStatusBadgeVariant(
-                            String(invoice.status),
-                          )}
-                          className="text-xs"
-                        >
+                        <Badge variant={getStatusBadgeVariant(String(invoice.status))} className="text-xs">
                           {formatCellValue(invoice.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {formatCellValue(invoice.date)}
-                      </TableCell>
+                      <TableCell className="text-sm">{formatCellValue(invoice.date)}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -282,9 +232,9 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
           open={isDetailOpen}
           onOpenChange={setIsDetailOpen}
           onUpdate={() => {
-            console.log("[v0] Invoice updated, refreshing list");
+            console.log("[v0] Invoice updated, refreshing list")
             if (variant === "billing") {
-              fetchInvoices();
+              fetchInvoices()
             }
           }}
         />
@@ -298,5 +248,5 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
         customerName={customerData?.name ? customerData.name : null}
       />
     </>
-  );
+  )
 }

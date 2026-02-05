@@ -31,6 +31,7 @@ export default function MembersPage() {
   useEffect(() => {
     if (!branch) return
     const member: any[] = []
+
     listCustomer(branch).then((e) => {
       const customers = e.data
 
@@ -124,11 +125,17 @@ export default function MembersPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       <div className="flex items-center justify-center">
                         <Spinner className="h-6 w-6 mr-2" />
                         <span>Loading members...</span>
                       </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredMembers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-24 text-center">
+                      <p>No members to show</p>
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -94,7 +94,7 @@ export async function normalisedEzypayInvoice(customerId, branch) {
     const invoices = await listInvoiceByCustomer(
       memberDataState.id,
       memberDataState.name,
-      branch
+      branch,
     );
     memberDataState.invoices = invoices;
   } catch (error) {
@@ -103,3 +103,10 @@ export async function normalisedEzypayInvoice(customerId, branch) {
 
   return memberDataState;
 }
+
+export const getStatusBadgeVariant = (status: string) => {
+  if (status === "paid") return "default";
+  if (status.includes("refund") || status.includes("written")) return "warning";
+  if (status === "pending" || status === "unpaid") return "secondary";
+  return "destructive";
+};
