@@ -1,20 +1,16 @@
-import Image from "next/image";
-import { CreditCard, Building2 } from "lucide-react";
-import { useTheme } from "next-themes";
+import Image from "next/image"
+import { CreditCard, Building2 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 interface PaymentMethodIconProps {
-  type: string;
-  className?: string;
-  style?: {};
+  type: string
+  className?: string
+  style?: {}
 }
 
-export function PaymentMethodIcon({
-  type,
-  className = "h-6 w-16",
-  style = {},
-}: PaymentMethodIconProps) {
-  const { theme } = useTheme();
-  const normalizedType = type?.toLowerCase() || "";
+export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: PaymentMethodIconProps) {
+  const { theme } = useTheme()
+  const normalizedType = type?.toLowerCase() || ""
 
   if (normalizedType.includes("google")) {
     return (
@@ -26,7 +22,7 @@ export function PaymentMethodIcon({
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
   }
 
   if (normalizedType.includes("apple")) {
@@ -39,7 +35,7 @@ export function PaymentMethodIcon({
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
   }
 
   // VISA
@@ -53,14 +49,11 @@ export function PaymentMethodIcon({
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
   }
 
   // Mastercard
-  if (
-    normalizedType.includes("mastercard") ||
-    normalizedType.includes("master card")
-  ) {
+  if (normalizedType.includes("mastercard") || normalizedType.includes("master card")) {
     return (
       <Image
         src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
@@ -70,14 +63,11 @@ export function PaymentMethodIcon({
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
   }
 
   // AMEX
-  if (
-    normalizedType.includes("amex") ||
-    normalizedType.includes("american express")
-  ) {
+  if (normalizedType.includes("amex") || normalizedType.includes("american express")) {
     return (
       <Image
         src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo_%282018%29.svg"
@@ -87,15 +77,12 @@ export function PaymentMethodIcon({
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
   }
 
   // PayTo
   if (normalizedType.includes("payto")) {
-    const payToSrc =
-      theme === "dark"
-        ? "/PayTo_symbol-White-WEB.png"
-        : "/PayTo_symbol-Black-WEB.png";
+    const payToSrc = theme === "dark" ? "/PayTo_symbol-White-WEB.png" : "/PayTo_symbol-Black-WEB.png"
     return (
       <Image
         src={payToSrc}
@@ -105,7 +92,7 @@ export function PaymentMethodIcon({
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
   }
 
   //PromptPay
@@ -119,18 +106,27 @@ export function PaymentMethodIcon({
         className={`${className} bg-white`}
         style={{ objectFit: "contain", ...style }}
       />
-    );
+    )
+  }
+
+  if (normalizedType.includes("gcash")) {
+    return (
+      <Image
+        src="https://cdn.brandfetch.io/idU5cKFAqi/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1764364200213"
+        alt="GCash"
+        width={45}
+        height={45}
+        //className={`${className} bg-white`}
+        style={{ objectFit: "contain", ...style }}
+      />
+    )
   }
 
   // Generic bank icon for bank transfers or other bank-related methods
-  if (
-    normalizedType.includes("bank") ||
-    normalizedType.includes("transfer") ||
-    normalizedType.includes("bpay")
-  ) {
-    return <Building2 className={className} />;
+  if (normalizedType.includes("bank") || normalizedType.includes("transfer") || normalizedType.includes("bpay")) {
+    return <Building2 className={className} />
   }
 
   // Default credit card icon
-  return <CreditCard className={className} />;
+  return <CreditCard className={className} />
 }

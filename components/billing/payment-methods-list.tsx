@@ -48,6 +48,7 @@ export interface PaymentMethod {
   payTo?: any
   origin?: any
   qrPayment?: any
+  wallet?: any
 }
 
 interface PaymentMethodsListProps {
@@ -115,6 +116,7 @@ export function PaymentMethodsList({
           payTo: pm.payTo,
           origin: pm.card?.origin,
           qrPayment: pm.qrPayment,
+          wallet: pm.wallet,
         }
       })
 
@@ -269,11 +271,13 @@ export function PaymentMethodsList({
                 >
                   <div className="flex items-center gap-3">
                     <PaymentMethodIcon
-                      type={method.origin ?? method.qrPayment?.qrType ?? method.type}
+                      type={method.origin ?? method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
                       className="h-4 w-8"
                     />
                     <div>
-                      <span className="text-sm font-medium">{method.qrPayment?.qrType ?? method.type}</span>
+                      <span className="text-sm font-medium">
+                        {method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         {method.last4 ? `****${method.last4}` : ""} {method.expiry || method.account || ""}
                       </span>
@@ -318,9 +322,13 @@ export function PaymentMethodsList({
           return (
             <div key={method.id} className="flex items-center justify-between rounded-lg border border-border p-2">
               <div className="flex items-center gap-3">
-                <PaymentMethodIcon type={method.origin ?? method.qrPayment?.qrType ?? method.type} />
+                <PaymentMethodIcon
+                  type={method.origin ?? method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
+                />
                 <div>
-                  <p className="text-sm font-medium">{method.qrPayment?.qrType ?? method.type}</p>
+                  <p className="text-sm font-medium">
+                    {method.qrPayment?.qrType ?? method.wallet?.walletType ?? method.type}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {method.last4 ? `****${method.last4}` : ""} {method.expiry || method.account || ""}
                   </p>
@@ -420,14 +428,6 @@ export function PaymentMethodsList({
                   </div>
                 </div>
               </div>
-
-              {/* <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/50 p-3">
-                <p className="text-sm text-amber-800 dark:text-amber-200">
-                  After clicking "Activate", you will be redirected to your
-                  bank's authorization page. Please complete the authorization
-                  to enable PayTo payments.
-                </p>
-              </div> */}
             </div>
           )}
 
