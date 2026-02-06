@@ -111,7 +111,10 @@ export function PaymentMethodsList({
           expiry: pm.card ? `${pm.card.expiryMonth}/${pm.card.expiryYear}` : (pm.expiry ?? null),
           isDefault: pm.primary ?? false,
           account:
-            pm.payTo?.aliasId ?? (pm.payTo?.bbanAccountNo ? pm.payTo.bbanAccountNo.slice(-4) : undefined) ?? pm.account,
+            pm.payTo?.aliasId ??
+            (pm.payTo?.bbanAccountNo ? pm.payTo.bbanAccountNo.slice(-4) : undefined) ??
+            pm.account ??
+            pm.wallet?.accountId,
           valid: pm.valid,
           payTo: pm.payTo,
           origin: pm.card?.origin,
@@ -321,10 +324,12 @@ export function PaymentMethodsList({
           const isPayTo = method.type?.toUpperCase() === "PAYTO"
           return (
             <div key={method.id} className="flex items-center justify-between rounded-lg border border-border p-2">
-              <div className="flex items-center gap-3">
-                <PaymentMethodIcon
-                  type={method.origin ?? method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
-                />
+              <div className="flex items-center">
+                <div className="min-w-22 justify-center flex items-center">
+                  <PaymentMethodIcon
+                    type={method.origin ?? method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
+                  />
+                </div>
                 <div>
                   <p className="text-sm font-medium">
                     {method.qrPayment?.qrType ?? method.wallet?.walletType ?? method.type}

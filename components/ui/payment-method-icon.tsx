@@ -114,8 +114,8 @@ export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: 
       <Image
         src="https://cdn.brandfetch.io/idU5cKFAqi/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1764364200213"
         alt="GCash"
-        width={45}
-        height={45}
+        width={30}
+        height={30}
         //className={`${className} bg-white`}
         style={{ objectFit: "contain", ...style }}
       />
