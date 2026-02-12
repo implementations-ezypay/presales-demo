@@ -1,3 +1,7 @@
+"use server"
+
+import { headers } from "next/headers"
+
 export type ApiLog = {
   id: string
   timestamp: string
@@ -6,6 +10,14 @@ export type ApiLog = {
   requestBody?: any
   response: any
   status: number
+}
+
+async function getOriginFromHeaders() {
+  const h = await headers()
+  const proto = h.get("x-forwarded-proto") ?? "https"
+  const host = h.get("host")
+  if (!host) throw new Error("Missing host header")
+  return `${proto}://${host}`
 }
 
 export async function logApiCall(
@@ -27,8 +39,10 @@ export async function logApiCall(
 
   // Send to server-side storage (always use relative URL for client-side)
   try {
-    console.log("Trying to create a new log")
-    await fetch(`/api/logs`, {
+    const baseUrl = await getOriginFromHeaders()
+    console.log("Trying to create a new log to: ", baseUrl)
+
+    await fetch(`${baseUrl}/api/logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(log),
@@ -40,7 +54,9 @@ export async function logApiCall(
 
 export async function getApiLogs(): Promise<ApiLog[]> {
   try {
-    const response = await fetch("/api/logs")
+    const baseUrl = await getOriginFromHeaders()
+
+    const response = await fetch(`${baseUrl}/api/logs`)
     if (response.ok) {
       return await response.json()
     }
@@ -53,13 +69,9 @@ export async function getApiLogs(): Promise<ApiLog[]> {
 
 export async function clearApiLogs(): Promise<void> {
   try {
-    await fetch("/api/logs", { method: "DELETE" })
+    const baseUrl = await getOriginFromHeaders()
+    await fetch(`${baseUrl}/api/logs`, { method: "DELETE" })
   } catch (error) {
     console.error("Failed to clear logs on server:", error)
   }
-}
-
-// Keep for backwards compatibility
-export function getApiLogFromLocal() {
-  // No-op: logs are now fetched from server
 }
