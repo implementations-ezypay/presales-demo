@@ -68,19 +68,27 @@ export function PaymentMethodsList({
   showInvalid = false,
   refreshTrigger,
 }: PaymentMethodsListProps) {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(null)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(
+    null,
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(null)
+  const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
+    null,
+  )
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false)
-  const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(null)
-  const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod | null>(null)
+  const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
+    null,
+  )
+  const [defaultPaymentMethod, setDefaultPaymentMethod] =
+    useState<PaymentMethod | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [branch, setBranch] = useState("")
   const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
-  const [methodToActivate, setMethodToActivate] = useState<PaymentMethod | null>(null)
+  const [methodToActivate, setMethodToActivate] =
+    useState<PaymentMethod | null>(null)
   useEffect(() => {
     if (customerId && branch) {
       fetchPaymentMethods()
@@ -99,7 +107,8 @@ export function PaymentMethodsList({
       const response = await getCustomerPaymentMethods(customerId, branch)
       let items: any[] | null = null
       if (Array.isArray(response)) items = response
-      else if (Array.isArray(response?.paymentMethods)) items = response.paymentMethods
+      else if (Array.isArray(response?.paymentMethods))
+        items = response.paymentMethods
       else if (Array.isArray(response?.results)) items = response.results
       else if (Array.isArray(response?.data)) items = response.data
       else if (response) items = [response]
@@ -108,11 +117,15 @@ export function PaymentMethodsList({
           id: pm.paymentMethodToken ?? pm.id,
           type: pm.card?.type ?? pm.type ?? "",
           last4: pm.card?.last4 ?? pm.bank?.last4 ?? pm.last4 ?? null,
-          expiry: pm.card ? `${pm.card.expiryMonth}/${pm.card.expiryYear}` : (pm.expiry ?? null),
+          expiry: pm.card
+            ? `${pm.card.expiryMonth}/${pm.card.expiryYear}`
+            : (pm.expiry ?? null),
           isDefault: pm.primary ?? false,
           account:
             pm.payTo?.aliasId ??
-            (pm.payTo?.bbanAccountNo ? pm.payTo.bbanAccountNo.slice(-4) : undefined) ??
+            (pm.payTo?.bbanAccountNo
+              ? pm.payTo.bbanAccountNo.slice(-4)
+              : undefined) ??
             pm.account ??
             pm.wallet?.accountId,
           valid: pm.valid,
@@ -153,11 +166,19 @@ export function PaymentMethodsList({
   }
 
   if (error) {
-    return <div className="text-sm text-destructive py-4">Failed to load payment methods: {error}</div>
+    return (
+      <div className="text-sm text-destructive py-4">
+        Failed to load payment methods: {error}
+      </div>
+    )
   }
 
   if (paymentMethods?.length === 0) {
-    return <div className="text-sm text-muted-foreground py-4">No payment methods found</div>
+    return (
+      <div className="text-sm text-muted-foreground py-4">
+        No payment methods found
+      </div>
+    )
   }
 
   const handleDeleteClick = (method: PaymentMethod, e: React.MouseEvent) => {
@@ -173,7 +194,11 @@ export function PaymentMethodsList({
     setIsProcessing(true)
     setActionError(null)
 
-    const deleteResult = await deletePaymentMethod(customerId, methodToDelete?.id, branch)
+    const deleteResult = await deletePaymentMethod(
+      customerId,
+      methodToDelete?.id,
+      branch,
+    )
 
     setIsProcessing(false)
 
@@ -200,7 +225,12 @@ export function PaymentMethodsList({
     setIsProcessing(true)
     setActionError(null)
 
-    const replaceResult = await replacePaymentMethod(customerId, defaultPaymentMethod?.id, methodToReplace?.id, branch)
+    const replaceResult = await replacePaymentMethod(
+      customerId,
+      defaultPaymentMethod?.id,
+      methodToReplace?.id,
+      branch,
+    )
 
     setIsProcessing(false)
 
@@ -215,7 +245,10 @@ export function PaymentMethodsList({
     await fetchPaymentMethods()
   }
 
-  const handleActivatePayToClick = (method: PaymentMethod, e: React.MouseEvent) => {
+  const handleActivatePayToClick = (
+    method: PaymentMethod,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation()
     setMethodToActivate(method)
     setActivatePayToDialogOpen(true)
@@ -248,12 +281,16 @@ export function PaymentMethodsList({
 
   if (variant === "selection") {
     return (
-      <RadioGroup value={selectedMethodId || defaultPaymentMethod?.id || ""} onValueChange={onMethodSelect}>
+      <RadioGroup
+        value={selectedMethodId || defaultPaymentMethod?.id || ""}
+        onValueChange={onMethodSelect}
+      >
         <div className="space-y-2">
           {paymentMethods?.map((method) => {
             const isInvalid = !method.valid
             const isDisabled = isInvalid && !showInvalid
-            const isPayToInvalid = method.type?.toUpperCase() === "PAYTO" && isInvalid
+            const isPayToInvalid =
+              method.type?.toUpperCase() === "PAYTO" && isInvalid
 
             return (
               <div
@@ -264,7 +301,11 @@ export function PaymentMethodsList({
                   !isDisabled && "cursor-pointer hover:bg-accent",
                 )}
               >
-                <RadioGroupItem value={method.id} id={method.id} disabled={isDisabled} />
+                <RadioGroupItem
+                  value={method.id}
+                  id={method.id}
+                  disabled={isDisabled}
+                />
                 <Label
                   htmlFor={method.id}
                   className={cn(
@@ -274,15 +315,23 @@ export function PaymentMethodsList({
                 >
                   <div className="flex items-center gap-3">
                     <PaymentMethodIcon
-                      type={method.origin ?? method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
+                      type={
+                        method.origin ??
+                        method.wallet?.walletType ??
+                        method.qrPayment?.qrType ??
+                        method.type
+                      }
                       className="h-4 w-8"
                     />
                     <div>
                       <span className="text-sm font-medium">
-                        {method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
+                        {method.wallet?.walletType ??
+                          method.qrPayment?.qrType ??
+                          method.type}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {method.last4 ? `****${method.last4}` : ""} {method.expiry || method.account || ""}
+                        {method.last4 ? `****${method.last4}` : ""}{" "}
+                        {method.expiry || method.account || ""}
                       </span>
                     </div>
                   </div>
@@ -323,19 +372,30 @@ export function PaymentMethodsList({
         {paymentMethods?.map((method) => {
           const isPayTo = method.type?.toUpperCase() === "PAYTO"
           return (
-            <div key={method.id} className="flex items-center justify-between rounded-lg border border-border p-2">
+            <div
+              key={method.id}
+              className="flex items-center justify-between rounded-lg border border-border p-2"
+            >
               <div className="flex items-center">
                 <div className="min-w-22 justify-center flex items-center">
                   <PaymentMethodIcon
-                    type={method.origin ?? method.wallet?.walletType ?? method.qrPayment?.qrType ?? method.type}
+                    type={
+                      method.origin ??
+                      method.wallet?.walletType ??
+                      method.qrPayment?.qrType ??
+                      method.type
+                    }
                   />
                 </div>
                 <div>
                   <p className="text-sm font-medium">
-                    {method.qrPayment?.qrType ?? method.wallet?.walletType ?? method.type}
+                    {method.qrPayment?.qrType ??
+                      method.wallet?.walletType ??
+                      method.type}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {method.last4 ? `****${method.last4}` : ""} {method.expiry || method.account || ""}
+                    {method.last4 ? `****${method.last4}` : ""}{" "}
+                    {method.expiry || method.account || ""}
                   </p>
                 </div>
               </div>
@@ -390,15 +450,20 @@ export function PaymentMethodsList({
         })}
       </div>
 
-      <Dialog open={activatePayToDialogOpen} onOpenChange={setActivatePayToDialogOpen}>
+      <Dialog
+        open={activatePayToDialogOpen}
+        onOpenChange={setActivatePayToDialogOpen}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>PayTo Agreement</DialogTitle>
             <DialogDescription className="italic">
-              This screen it a sample on what customer might see in their banking app.
+              This screen it a sample on what customer might see in their
+              banking app.
               <br></br>
               <br></br>
-              Customer will need to agree the PayTo agreement before they can be used to process payments.
+              Customer will need to agree the PayTo agreement before they can be
+              used to process payments.
             </DialogDescription>
           </DialogHeader>
 
@@ -406,7 +471,10 @@ export function PaymentMethodsList({
             <div className="space-y-4 pt-18">
               <div className="rounded-lg border p-4 bg-muted/50">
                 <div className="flex items-center gap-3 mb-3">
-                  <PaymentMethodIcon type={methodToActivate.type} className="h-5 w-5" />
+                  <PaymentMethodIcon
+                    type={methodToActivate.type}
+                    className="h-5 w-5"
+                  />
                   <span className="font-medium">Agreement Details</span>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -416,7 +484,9 @@ export function PaymentMethodsList({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Account</span>
-                    <span className="font-mono">{methodToActivate.account || "N/A"}</span>
+                    <span className="font-mono">
+                      {methodToActivate.account || "N/A"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Amount</span>
@@ -426,9 +496,16 @@ export function PaymentMethodsList({
                     <span className="text-muted-foreground">Status</span>
                     <Badge
                       className="text-xs"
-                      variant={methodToActivate.payTo.mandateStatus === "ACTV" ? null : "destructive"}
+                      variant={
+                        methodToActivate.payTo.mandateStatus === "ACTV"
+                          ? null
+                          : "destructive"
+                      }
                     >
-                      {methodToActivate.payTo.mandateReason.replaceAll(/[^a-zA-Z0-9]/g, "")}
+                      {methodToActivate.payTo.mandateReason.replaceAll(
+                        /[^a-zA-Z0-9]/g,
+                        "",
+                      )}
                     </Badge>
                   </div>
                 </div>
@@ -444,7 +521,11 @@ export function PaymentMethodsList({
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setActivatePayToDialogOpen(false)} disabled={isProcessing}>
+            <Button
+              variant="outline"
+              onClick={() => setActivatePayToDialogOpen(false)}
+              disabled={isProcessing}
+            >
               Cancel
             </Button>
             <Button
@@ -485,14 +566,18 @@ export function PaymentMethodsList({
             <AlertDialogDescription>
               All future payments will be defaulted to this payment method.
               {methodToReplace && (
-                <div className="mt-2 p-2 bg-muted rounded">
-                  <span className="text-sm font-medium text-foreground">{methodToReplace.type}</span>
+                <p className="mt-2 p-2 bg-muted rounded">
+                  <span className="text-sm font-medium text-foreground">
+                    {methodToReplace.type}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {" "}
-                    {methodToReplace.last4 ? `****${methodToReplace.last4}` : ""}{" "}
+                    {methodToReplace.last4
+                      ? `****${methodToReplace.last4}`
+                      : ""}{" "}
                     {methodToReplace.expiry || methodToReplace.account || ""}
                   </span>
-                </div>
+                </p>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -503,8 +588,13 @@ export function PaymentMethodsList({
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReplaceConfirm} disabled={isProcessing}>
+            <AlertDialogCancel disabled={isProcessing}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReplaceConfirm}
+              disabled={isProcessing}
+            >
               {isProcessing ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -516,7 +606,8 @@ export function PaymentMethodsList({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Payment Method</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this payment method? This action cannot be undone.
+              Are you sure you want to delete this payment method? This action
+              cannot be undone.
               {methodToDelete && (
                 <div className="mt-2 p-2 bg-muted rounded">
                   <span className="text-sm font-medium text-foreground">
@@ -524,7 +615,9 @@ export function PaymentMethodsList({
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {" "}
-                    {methodToDelete.last4 ? `****${methodToDelete.last4}` : ""}{" "}
+                    {methodToDelete.last4
+                      ? `****${methodToDelete.last4}`
+                      : ""}{" "}
                     {methodToDelete.expiry || methodToDelete.account || ""}
                   </span>
                 </div>
@@ -538,7 +631,9 @@ export function PaymentMethodsList({
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isProcessing}
