@@ -25,11 +25,11 @@ function normalisedEzypayInvoice(invoices, customerName = null) {
         return `BANK **** ${paymentMethodData.bank?.last4}`
         break
       case "payto":
-        return `PayTo ${paymentMethodData.payto.bbanAccountNo ?? paymentMethodData.payto.aliasId}`
+        return `PayTo ${paymentMethodData.payTo?.bbanAccountNo ?? paymentMethodData.payTo?.aliasId}`
       case "qrpayment":
-        return `${paymentMethodData.qrPayment.qrType}`
+        return `${paymentMethodData.qrPayment?.qrType}`
       case "wallet":
-        return `${paymentMethodData.wallet.walletType}`
+        return `${paymentMethodData.wallet?.walletType}`
       default:
         return `type`
     }
@@ -109,7 +109,11 @@ export async function listInvoice(branch): Promise<any> {
     const contentType = invoiceResponse.headers.get("content-type")
     if (!contentType || !contentType.includes("application/json")) {
       const text = await invoiceResponse.text()
-      console.error("List invoice error: Expected JSON but received:", contentType, text.substring(0, 200))
+      console.error(
+        "List invoice error: Expected JSON but received:",
+        contentType,
+        text.substring(0, 200),
+      )
       return []
     }
 
@@ -124,7 +128,11 @@ export async function listInvoice(branch): Promise<any> {
   }
 }
 
-export async function listInvoiceByCustomer(customerId, customerName, branch): Promise<any> {
+export async function listInvoiceByCustomer(
+  customerId,
+  customerName,
+  branch,
+): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {
@@ -136,7 +144,9 @@ export async function listInvoiceByCustomer(customerId, customerName, branch): P
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      throw new Error(`List customer failed: No access_token from token utility`)
+      throw new Error(
+        `List customer failed: No access_token from token utility`,
+      )
     }
 
     const url = `${apiEndpoint}?customerId=${customerId}&limit=30`
@@ -147,10 +157,16 @@ export async function listInvoiceByCustomer(customerId, customerName, branch): P
       },
     })
 
-    const invoiceData = invoiceResponse.ok ? await invoiceResponse.json() : await invoiceResponse.text()
+    const invoiceData = invoiceResponse.ok
+      ? await invoiceResponse.json()
+      : await invoiceResponse.text()
 
     if (!invoiceResponse.ok) {
-      console.error("List Customer invoice failed:", invoiceResponse.status, invoiceData)
+      console.error(
+        "List Customer invoice failed:",
+        invoiceResponse.status,
+        invoiceData,
+      )
       throw new Error(`List Customer invoice failed: ${invoiceResponse.status}`)
     }
 
@@ -163,7 +179,11 @@ export async function listInvoiceByCustomer(customerId, customerName, branch): P
   }
 }
 
-export async function listTransactionByInvoice(invoiceId, paymentMethod, branch): Promise<any> {
+export async function listTransactionByInvoice(
+  invoiceId,
+  paymentMethod,
+  branch,
+): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -175,7 +195,9 @@ export async function listTransactionByInvoice(invoiceId, paymentMethod, branch)
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      throw new Error(`List customer failed: No access_token from token utility`)
+      throw new Error(
+        `List customer failed: No access_token from token utility`,
+      )
     }
 
     const url = `${transactionEndpoint}?documentId=${invoiceId}&limit=10`
@@ -186,10 +208,16 @@ export async function listTransactionByInvoice(invoiceId, paymentMethod, branch)
       },
     })
 
-    const transactionData = transactionResponse.ok ? await transactionResponse.json() : await transactionResponse.text()
+    const transactionData = transactionResponse.ok
+      ? await transactionResponse.json()
+      : await transactionResponse.text()
 
     if (!transactionResponse.ok) {
-      console.error("List transaction failed:", transactionResponse.status, transactionData)
+      console.error(
+        "List transaction failed:",
+        transactionResponse.status,
+        transactionData,
+      )
       throw new Error(`List transaction failed: ${transactionResponse.status}`)
     }
 
@@ -198,7 +226,10 @@ export async function listTransactionByInvoice(invoiceId, paymentMethod, branch)
       date: transaction.createdOn?.split("T")[0],
       amount: `$${transaction.amount.value}`,
       status: transaction.status.toLowerCase(),
-      method: transaction.source == "external_payment" ? `External (${transaction.paymentMethodType})` : paymentMethod,
+      method:
+        transaction.source == "external_payment"
+          ? `External (${transaction.paymentMethodType})`
+          : paymentMethod,
     }))
 
     return transactions
@@ -220,7 +251,9 @@ export async function retryInvoice(invoiceId, paymentMethodId, branch) {
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      throw new Error(`List customer failed: No access_token from token utility`)
+      throw new Error(
+        `List customer failed: No access_token from token utility`,
+      )
     }
 
     const requestBody = {
@@ -307,7 +340,9 @@ export async function recordExternalInvoice(invoiceId, method, branch) {
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      throw new Error(`List customer failed: No access_token from token utility`)
+      throw new Error(
+        `List customer failed: No access_token from token utility`,
+      )
     }
 
     const requestBody = { paymentMethodType: method }
@@ -419,7 +454,9 @@ export async function createInvoice(invoiceData, branch) {
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      throw new Error(`Create invoice failed: No access_token from token utility`)
+      throw new Error(
+        `Create invoice failed: No access_token from token utility`,
+      )
     }
 
     const itemData: any = {
@@ -479,7 +516,9 @@ export async function createCheckout(invoiceData, branch) {
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      throw new Error(`Checkout session failed: No access_token from token utility`)
+      throw new Error(
+        `Checkout session failed: No access_token from token utility`,
+      )
     }
 
     const requestBody = {
@@ -502,7 +541,13 @@ export async function createCheckout(invoiceData, branch) {
     })
 
     const data = response.ok ? await response.json() : await response.text()
-    await logApiCall("POST", checkoutEndpoint, data, response.status, requestBody)
+    await logApiCall(
+      "POST",
+      checkoutEndpoint,
+      data,
+      response.status,
+      requestBody,
+    )
 
     if (!response.ok) {
       console.error("Refund Invoice failed:", response.status, data)
