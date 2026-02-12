@@ -1,6 +1,4 @@
-"use server"
-
-import { headers } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 
 export type ApiLog = {
   id: string
@@ -12,12 +10,15 @@ export type ApiLog = {
   status: number
 }
 
-async function getOriginFromHeaders() {
-  const h = await headers()
-  const proto = h.get("x-forwarded-proto") ?? "https"
-  const host = h.get("host")
-  if (!host) throw new Error("Missing host header")
-  return `${proto}://${host}`
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key) {
+    throw new Error("Missing Supabase credentials")
+  }
+
+  return createClient(url, key)
 }
 
 export async function logApiCall(
@@ -37,41 +38,101 @@ export async function logApiCall(
     status,
   }
 
-  // Send to server-side storage (always use relative URL for client-side)
   try {
-    const baseUrl = await getOriginFromHeaders()
-    console.log("Trying to create a new log to: ", baseUrl)
+    const client = getSupabaseClient()
+    
+    // Insert the new log
+    const { error: insertError } = await client
+      .from("api_logs")
+      .insert([{
+        id: log.id,
+        timestamp: log.timestamp,
+        method: log.method,
+        url: log.url,
+        request_body: log.requestBody,
+        response: log.response,
+        status: log.status,
+      }])
 
-    await fetch(`${baseUrl}/api/logs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(log),
-    })
+    if (insertError) {
+      console.error("[v0] Failed to insert log:", insertError)
+      return
+    }
+
+    // Clean up old logs - keep only 100 most recent
+    const { data: logs, error: fetchError } = await client
+      .from("api_logs")
+      .select("id, created_at")
+      .order("created_at", { ascending: false })
+
+    if (fetchError) {
+      console.error("[v0] Failed to fetch logs for cleanup:", fetchError)
+      return
+    }
+
+    if (logs && logs.length > 100) {
+      const logsToDelete = logs.slice(100).map(log => log.id)
+      const { error: deleteError } = await client
+        .from("api_logs")
+        .delete()
+        .in("id", logsToDelete)
+
+      if (deleteError) {
+        console.error("[v0] Failed to delete old logs:", deleteError)
+      }
+    }
+
+    console.log("[v0] API call logged successfully:", log.id)
   } catch (error) {
-    console.error("[v0] Failed to save log to server:", error)
+    console.error("[v0] Failed to save log to Supabase:", error)
   }
 }
 
 export async function getApiLogs(): Promise<ApiLog[]> {
   try {
-    const baseUrl = await getOriginFromHeaders()
+    const client = getSupabaseClient()
+    
+    const { data, error } = await client
+      .from("api_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100)
 
-    const response = await fetch(`${baseUrl}/api/logs`)
-    if (response.ok) {
-      return await response.json()
+    if (error) {
+      console.error("[v0] Failed to fetch logs from Supabase:", error)
+      return []
     }
-    return []
+
+    return (data || []).map((log: any) => ({
+      id: log.id,
+      timestamp: log.timestamp,
+      method: log.method,
+      url: log.url,
+      requestBody: log.request_body,
+      response: log.response,
+      status: log.status,
+    }))
   } catch (error) {
-    console.error("Failed to fetch logs from server:", error)
+    console.error("[v0] Failed to fetch logs:", error)
     return []
   }
 }
 
 export async function clearApiLogs(): Promise<void> {
   try {
-    const baseUrl = await getOriginFromHeaders()
-    await fetch(`${baseUrl}/api/logs`, { method: "DELETE" })
+    const client = getSupabaseClient()
+    
+    const { error } = await client
+      .from("api_logs")
+      .delete()
+      .neq("id", "")
+
+    if (error) {
+      console.error("[v0] Failed to clear logs from Supabase:", error)
+    } else {
+      console.log("[v0] All API logs cleared successfully")
+    }
   } catch (error) {
-    console.error("Failed to clear logs on server:", error)
+    console.error("[v0] Failed to clear logs:", error)
   }
 }
