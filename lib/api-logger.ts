@@ -68,3 +68,4 @@ export async function clearApiLogs(): Promise<void> {
 export function getApiLogFromLocal() {
   // No-op: logs are now fetched from server
 }
+

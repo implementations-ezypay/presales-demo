@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ApiLoggerViewer } from "@/components/api-logger-viewer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { SessionCleanup } from "@/components/session-cleanup";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -43,6 +44,7 @@ export default function RootLayout({
             </div>
           </SidebarProvider>
           <ApiLoggerViewer />
+          <SessionCleanup />
         </ThemeProvider>
       </body>
     </html>
