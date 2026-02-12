@@ -15,6 +15,7 @@ export function ApiLoggerViewer() {
 
   const refreshLogs = async () => {
     const apiLogs = await getApiLogs()
+    console.log("[v0] Fetched logs:", apiLogs.length)
     setLogs(apiLogs)
   }
 

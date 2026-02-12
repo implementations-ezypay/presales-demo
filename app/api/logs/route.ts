@@ -54,6 +54,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const log: ApiLog = await request.json()
+    console.log("[v0] POST /api/logs - Received log:", log.id, log.method, log.url)
     const logs = isProduction ? await getProdLogs() : await getDevLogs()
     
     logs.push(log)
@@ -64,10 +65,11 @@ export async function POST(request: NextRequest) {
     }
     
     isProduction ? await setProdLogs(logs) : await setDevLogs(logs)
+    console.log("[v0] POST /api/logs - Stored successfully. Total logs:", logs.length)
     
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Failed to save log:", error)
+    console.error("[v0] Failed to save log:", error)
     return NextResponse.json({ error: "Failed to save log" }, { status: 500 })
   }
 }
