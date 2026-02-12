@@ -27,19 +27,14 @@ export async function logApiCall(
 
   // Send to server-side storage (always use relative URL for client-side)
   try {
-    const baseUrl =
-      typeof window !== "undefined"
-        ? window.origin
-        : process.env.NEXTAUTH_URL ||
-          `http://localhost:${process.env.PORT || 3000}`
-
-    await fetch(`${baseUrl}/api/logs`, {
+    console.log("Trying to create a new log")
+    await fetch(`/api/logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(log),
     })
   } catch (error) {
-    console.error("[v0] Failed to save log to server:", error);
+    console.error("[v0] Failed to save log to server:", error)
   }
 }
 
@@ -68,4 +63,3 @@ export async function clearApiLogs(): Promise<void> {
 export function getApiLogFromLocal() {
   // No-op: logs are now fetched from server
 }
-
