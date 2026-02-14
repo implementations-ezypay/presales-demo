@@ -1,9 +1,9 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { getCustomer, listInvoiceByCustomer } from "./passer-functions";
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { getCustomer, listInvoiceByCustomer } from "./passer-functions"
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
 /**
@@ -18,29 +18,29 @@ export function cn(...inputs: ClassValue[]) {
 export function getCustomerIdFromPath(path?: string): string | null {
   const pathname =
     path ??
-    (typeof window !== "undefined" ? window.location.pathname : undefined);
-  if (!pathname) return null;
+    (typeof window !== "undefined" ? window.location.pathname : undefined)
+  if (!pathname) return null
 
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return null;
+  const segments = pathname.split("/").filter(Boolean)
+  if (segments.length === 0) return null
 
-  const membersIndex = segments.findIndex((s) => s.toLowerCase() === "members");
+  const membersIndex = segments.findIndex((s) => s.toLowerCase() === "members")
   if (membersIndex >= 0 && membersIndex + 1 < segments.length) {
-    return segments[membersIndex + 1];
+    return segments[membersIndex + 1]
   }
 
-  return segments[segments.length - 1] ?? null;
+  return segments[segments.length - 1] ?? null
 }
 
 export function normalisedEzypayCustomer(customer) {
-  let memberDataState = {};
+  let memberDataState = {}
 
   try {
     if (!customer.id) {
-      throw new Error("Customer not found during normalising.");
+      throw new Error("Customer not found during normalising.")
     }
 
-    const customerName = `${customer.firstName} ${customer.lastName}`;
+    const customerName = `${customer.firstName} ${customer.lastName}`
 
     memberDataState = {
       id: customer.id,
@@ -69,44 +69,42 @@ export function normalisedEzypayCustomer(customer) {
       ],
       paymentMethods: [],
       originalBranch: customer.metadata?.originalBranch,
-    };
+    }
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 
-  return memberDataState;
+  return memberDataState
 }
 
 export async function normalisedEzypayInvoice(customerId, branch) {
-  let memberDataState = {};
+  let memberDataState = {}
 
   try {
-    const customer = await getCustomer(customerId, branch);
+    const customer = await getCustomer(customerId, branch)
 
     if (!customer.id) {
-      throw new Error("Customer not found");
+      throw new Error("Customer not found")
     }
 
-    const customerName = `${customer.firstName} ${customer.lastName}`;
-
-    memberDataState = normalisedEzypayCustomer(customer);
+    memberDataState = normalisedEzypayCustomer(customer)
 
     const invoices = await listInvoiceByCustomer(
       memberDataState.id,
       memberDataState.name,
       branch,
-    );
-    memberDataState.invoices = invoices;
+    )
+    memberDataState.invoices = invoices
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 
-  return memberDataState;
+  return memberDataState
 }
 
 export const getStatusBadgeVariant = (status: string) => {
-  if (status === "paid") return "default";
-  if (status.includes("refund") || status.includes("written")) return "warning";
-  if (status === "pending" || status === "unpaid") return "secondary";
-  return "destructive";
-};
+  if (status === "paid") return "default"
+  if (status.includes("refund") || status.includes("written")) return "warning"
+  if (status === "pending" || status === "unpaid") return "secondary"
+  return "destructive"
+}

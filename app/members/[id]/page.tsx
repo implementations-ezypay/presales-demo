@@ -2,25 +2,61 @@
 
 import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Edit, Mail, Phone, Calendar, PersonStanding } from "lucide-react"
 import Link from "next/link"
 import { AddPaymentMethodDialog } from "@/components/billing/add-payment-method-dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { PaymentMethodsList } from "@/components/billing/payment-methods-list"
 import { useState, useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
-import { getCustomerIdFromPath, getStatusBadgeVariant, normalisedEzypayInvoice } from "@/lib/utils"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
+import {
+  getCustomerIdFromPath,
+  getStatusBadgeVariant,
+  normalisedEzypayInvoice,
+} from "@/lib/utils"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { InvoicesTable } from "@/components/billing/invoices-table"
 import { useSearchParams, useRouter } from "next/navigation"
 import { TransferCustomerDialog } from "@/components/billing/transfer-customer-dialog"
 import { getBranchCountry, getBranchName } from "@/lib/branches"
-import { createPromptPay } from "@/lib/passer-functions"
+import {
+  createPromptPay,
+  getCustomer,
+  updateCustomer,
+} from "@/lib/passer-functions"
+import { plans } from "@/lib/plan"
+import { add, format } from "date-fns"
 
+const defaultDateFormat = "yyyy-MM-dd"
 export default function MemberProfilePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -30,16 +66,11 @@ export default function MemberProfilePage() {
   const [renewOpen, setRenewOpen] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [paymentMethodsRefreshTrigger, setPaymentMethodsRefreshTrigger] = useState(0)
+  const [paymentMethodsRefreshTrigger, setPaymentMethodsRefreshTrigger] =
+    useState(0)
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false)
   const [branch, setBranch] = useState("")
-
-  const plans = [
-    { id: "1", name: "Basic", price: 49, duration: "Monthly" },
-    { id: "2", name: "Premium", price: 99, duration: "Monthly" },
-    { id: "3", name: "Annual", price: 999, duration: "Yearly" },
-    { id: "4", name: "Personal Training", price: 149, duration: "Monthly" },
-  ]
+  const [customerData, setCustomerData] = useState({})
 
   useEffect(() => {
     const addPayment = searchParams.get("addPayment")
@@ -59,6 +90,8 @@ export default function MemberProfilePage() {
     const fetchData = async () => {
       try {
         const memberData = await normalisedEzypayInvoice(customerId, branch)
+        const customerData = await getCustomer(customerId, branch)
+        setCustomerData(customerData)
         setMemberDataState(memberData)
         setIsLoading(false)
       } catch (error) {
@@ -77,6 +110,41 @@ export default function MemberProfilePage() {
     }
   }
 
+  const updateMembership = async (e) => {
+    e.preventDefault()
+
+    const calculateNewDueDate = (duration: string) => {
+      const d = duration.toLowerCase()
+      switch (d) {
+        case "weekly":
+          return format(add(new Date(), { days: 7 }), defaultDateFormat)
+        case "fortnightly":
+          return format(add(new Date(), { weeks: 2 }), defaultDateFormat)
+        case "monthly":
+          return format(add(new Date(), { months: 1 }), defaultDateFormat)
+        case "yearly":
+          return format(add(new Date(), { years: 1 }), defaultDateFormat)
+        default:
+          return format(new Date(), defaultDateFormat)
+      }
+    }
+
+    const found = plans.find((plan) => plan.id === selectedPlanId)
+    if (!found) return
+    const { name, duration } = found
+
+    const newStartDate = format(new Date(), defaultDateFormat)
+    const newDueDate: string = calculateNewDueDate(duration)
+    setMemberDataState((prev) => ({
+      ...prev,
+      plan: name,
+      joinDate: newStartDate,
+      expiryDate: newDueDate,
+      status: "active",
+    }))
+    setRenewOpen(false)
+  }
+
   const handleAddPaymentSuccess = () => {
     const idFromPath = getCustomerIdFromPath() || memberDataState?.id
     if (idFromPath) setMemberDataState((prev) => ({ ...prev }))
@@ -86,7 +154,9 @@ export default function MemberProfilePage() {
     e.preventDefault()
     const res = await createPromptPay(customerId, branch)
     if (!res.success) {
-      window.alert(`Failed to create PromptPay Token: ${res.error?.message || "An unexpected error occured"}`)
+      window.alert(
+        `Failed to create PromptPay Token: ${res.error?.message || "An unexpected error occured"}`,
+      )
     }
     setPaymentMethodsRefreshTrigger((prev) => prev + 1)
   }
@@ -94,7 +164,7 @@ export default function MemberProfilePage() {
   return (
     <div className="flex flex-col h-full relative">
       <TopBar />
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
+      <main className="flex-1 overflow-y-auto p4 md:p-6">
         <div className="space-y-4 md:space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-h-15">
             {isLoading ? (
@@ -103,13 +173,19 @@ export default function MemberProfilePage() {
               </div>
             ) : (
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">{memberDataState?.name}</h1>
-                <p className="text-sm md:text-base text-muted-foreground">Member profile and activity</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
+                  {memberDataState?.name}
+                </h1>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Member profile and activity
+                </p>
               </div>
             )}
             {memberDataState?.originalBranch && (
               <div>
-                <p className="text-sm md:text-base text-muted-foreground">Original Branch: {getBranchName(branch)}</p>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Original Branch: {getBranchName(branch)}
+                </p>
               </div>
             )}
             <div></div>
@@ -119,20 +195,29 @@ export default function MemberProfilePage() {
             <div></div>
             <div></div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Link href={`/members/${memberDataState?.id}/edit`} className="flex-1 sm:flex-none">
+              <Link
+                href={`/members/${memberDataState?.id}/edit`}
+                className="flex-1 sm:flex-none"
+              >
                 <Button className="w-full sm:w-auto">
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Profile
                 </Button>
               </Link>
-              <TransferCustomerDialog customer={memberDataState} customerName={memberDataState?.name} />
+              <TransferCustomerDialog
+                customer={memberDataState}
+                customerName={memberDataState?.name}
+              />
             </div>
           </div>
 
-          <div className="grid gap-4 md:gap-6 lg:grid-cols-3 min-h-[500px]">
+          <div className="grid gap-4 md:gap-6 lg:grid-cols-3 min-h-[400px]">
+            {/* Personal Information Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Personal Information</CardTitle>
+                <CardTitle className="text-base md:text-lg">
+                  Personal Information
+                </CardTitle>
               </CardHeader>
               {isLoading ? (
                 <div className="flex items-center justify-center py-6">
@@ -144,45 +229,60 @@ export default function MemberProfilePage() {
                     <PersonStanding className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium">Customer Number</p>
-                      <p className="text-sm text-muted-foreground truncate">{memberDataState?.number}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {memberDataState?.number}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium">Email</p>
-                      <p className="text-sm text-muted-foreground truncate">{memberDataState?.email}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {memberDataState?.email}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium">Phone</p>
-                      <p className="text-sm text-muted-foreground">{memberDataState?.phone}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {memberDataState?.phone}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium">Date of Birth</p>
-                      <p className="text-sm text-muted-foreground">{memberDataState?.dateOfBirth}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {memberDataState?.dateOfBirth}
+                      </p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Address</p>
-                    <p className="text-sm text-muted-foreground break-words">{memberDataState?.address}</p>
+                    <p className="text-sm text-muted-foreground break-words">
+                      {memberDataState?.address}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Emergency Contact</p>
-                    <p className="text-sm text-muted-foreground break-words">{memberDataState?.emergencyContact}</p>
+                    <p className="text-sm text-muted-foreground break-words">
+                      {memberDataState?.emergencyContact}
+                    </p>
                   </div>
                 </CardContent>
               )}
             </Card>
 
+            {/* Membership Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Membership Status</CardTitle>
+                <CardTitle className="text-base md:text-lg">
+                  Membership Status
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
@@ -208,15 +308,21 @@ export default function MemberProfilePage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Current Plan</p>
-                      <p className="text-sm text-muted-foreground">{memberDataState?.plan}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {memberDataState?.plan}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">Join Date</p>
-                      <p className="text-sm text-muted-foreground">{memberDataState?.joinDate}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {memberDataState?.joinDate}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">Expiry Date</p>
-                      <p className="text-sm text-muted-foreground">{memberDataState?.expiryDate}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {memberDataState?.expiryDate}
+                      </p>
                     </div>
                   </>
                 )}
@@ -226,7 +332,7 @@ export default function MemberProfilePage() {
                       <span>Renew Membership</span>
                     </DialogTrigger>
 
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-120">
                       <DialogHeader>
                         <DialogTitle>Renew Membership</DialogTitle>
                       </DialogHeader>
@@ -237,52 +343,43 @@ export default function MemberProfilePage() {
                         </p>
                         <div className="grid gap-2">
                           {plans.map((plan) => (
-                            <label key={plan.id} className="flex items-center gap-3 rounded-md border p-3">
-                              <input
-                                type="radio"
-                                name="plan"
-                                value={plan.id}
-                                checked={selectedPlanId === plan.id}
-                                onChange={() => setSelectedPlanId(plan.id)}
-                              />
-                              <div>
-                                <div className="font-medium">{plan.name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  ${plan.price} / {plan.duration}
-                                </div>
-                              </div>
-                            </label>
+                            <Card className="mt-1">
+                              <CardContent className="px-4 py-0">
+                                <label
+                                  key={plan.id}
+                                  className="flex items-center gap-4"
+                                >
+                                  <input
+                                    type="radio"
+                                    name="plan"
+                                    value={plan.id}
+                                    checked={selectedPlanId === plan.id}
+                                    onChange={() => setSelectedPlanId(plan.id)}
+                                  />
+                                  <div>
+                                    <div className="font-medium">
+                                      {plan.name}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      ${plan.price} / {plan.duration}
+                                    </div>
+                                  </div>
+                                </label>
+                              </CardContent>
+                            </Card>
                           ))}
                         </div>
                       </div>
 
                       <DialogFooter>
                         <div className="flex gap-2">
-                          <Button onClick={() => setRenewOpen(false)} variant="outline">
+                          <Button
+                            onClick={() => setRenewOpen(false)}
+                            variant="outline"
+                          >
                             Cancel
                           </Button>
-                          <Button
-                            onClick={() => {
-                              const plan = plans.find((p) => p.id === selectedPlanId)
-                              if (plan) {
-                                const now = new Date()
-                                const newExpiry = new Date(now)
-                                if (plan.duration.toLowerCase().includes("year")) {
-                                  newExpiry.setFullYear(newExpiry.getFullYear() + 1)
-                                } else {
-                                  newExpiry.setMonth(newExpiry.getMonth() + 1)
-                                }
-                                setMemberDataState((prev) => ({
-                                  ...prev,
-                                  plan: plan.name,
-                                  expiryDate: newExpiry.toISOString().split("T")[0],
-                                }))
-                              }
-                              setRenewOpen(false)
-                            }}
-                          >
-                            Confirm
-                          </Button>
+                          <Button onClick={updateMembership}>Confirm</Button>
                         </div>
                       </DialogFooter>
                     </DialogContent>
@@ -291,13 +388,17 @@ export default function MemberProfilePage() {
               </CardContent>
             </Card>
 
+            {/* Payment Methods Card */}
             <Card>
               <CardHeader>
                 <CardTitle>Payment Methods</CardTitle>
                 <CardDescription className="italic">
-                  This should appear in customer portal to allow customer to&nbsp;
+                  This should appear in customer portal to allow customer
+                  to&nbsp;
                   <Link
-                    href={"https://developer.ezypay.com/docs/payment-method-management#/"}
+                    href={
+                      "https://developer.ezypay.com/docs/payment-method-management#/"
+                    }
                     target="_blank"
                     className="underline"
                   >
@@ -324,14 +425,21 @@ export default function MemberProfilePage() {
                       customerName={memberDataState?.name}
                     >
                       <TooltipTrigger asChild>
-                        <Button className="w-full bg-transparent" variant="outline" size="sm">
+                        <Button
+                          className="w-full bg-transparent"
+                          variant="outline"
+                          size="sm"
+                        >
                           Add Payment Method
                         </Button>
                       </TooltipTrigger>
                     </AddPaymentMethodDialog>
 
                     <TooltipContent>
-                      <p>Use the Ezypay's Payment capture page to collect new payment methods</p>
+                      <p>
+                        Use the Ezypay's Payment capture page to collect new
+                        payment methods
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -339,7 +447,12 @@ export default function MemberProfilePage() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button className="w-full bg-transparent" variant="outline" size="sm" onClick={addPromptPay}>
+                        <Button
+                          className="w-full bg-transparent"
+                          variant="outline"
+                          size="sm"
+                          onClick={addPromptPay}
+                        >
                           Add PromptPay
                         </Button>
                       </TooltipTrigger>
@@ -367,13 +480,18 @@ export default function MemberProfilePage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="invoices">
-              <InvoicesTable variant="customer" customerData={memberDataState} />
+              <InvoicesTable
+                variant="customer"
+                customerData={memberDataState}
+              />
             </TabsContent>
             <TabsContent value="upcoming">
               <Card>
                 <CardHeader>
                   <CardTitle>Upcoming Invoices</CardTitle>
-                  <CardDescription>Planned invoices with pending status</CardDescription>
+                  <CardDescription>
+                    Planned invoices with pending status
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -387,10 +505,17 @@ export default function MemberProfilePage() {
                     </TableHeader>
                     <TableBody>
                       {memberDataState.upcomingInvoices?.map((invoice) => (
-                        <TableRow key={invoice.id} className="cursor-pointer hover:bg-muted/50">
-                          <TableCell className="font-medium">{invoice.id}</TableCell>
+                        <TableRow
+                          key={invoice.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                        >
+                          <TableCell className="font-medium">
+                            {invoice.id}
+                          </TableCell>
                           <TableCell>{invoice.dueDate}</TableCell>
-                          <TableCell className="font-medium">{invoice.amount}</TableCell>
+                          <TableCell className="font-medium">
+                            {invoice.amount}
+                          </TableCell>
                           <TableCell>
                             <Badge variant="secondary">{invoice.status}</Badge>
                           </TableCell>
@@ -405,7 +530,9 @@ export default function MemberProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Attendance Logs</CardTitle>
-                  <CardDescription>Recent gym and class attendance</CardDescription>
+                  <CardDescription>
+                    Recent gym and class attendance
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>

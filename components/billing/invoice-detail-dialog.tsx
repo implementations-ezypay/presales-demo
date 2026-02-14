@@ -1,16 +1,16 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -18,91 +18,91 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import {
   CheckCircle,
   XCircle,
   DollarSign,
   RefreshCw,
   MailIcon,
-} from "lucide-react";
-import { toast } from "sonner";
-import { RefundDialog } from "./refund-dialog";
+} from "lucide-react"
+import { toast } from "sonner"
+import { RefundDialog } from "./refund-dialog"
 import {
   listTransactionByInvoice,
   retryInvoice,
   writeOffInvoice,
   recordExternalInvoice,
   refundInvoice,
-} from "@/lib/passer-functions";
-import { Spinner } from "../ui/spinner";
-import { PaymentMethodsList } from "./payment-methods-list";
-import { PaymentMethodIcon } from "@/components/ui/payment-method-icon";
-import { getStatusBadgeVariant } from "@/lib/utils";
+} from "@/lib/passer-functions"
+import { Spinner } from "../ui/spinner"
+import { PaymentMethodsList } from "./payment-methods-list"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
+import { getStatusBadgeVariant } from "@/lib/utils"
 
 interface PaymentAttempt {
-  id: string;
-  date: string;
-  amount: string;
-  status: "success" | "failed" | "pending" | "settled";
-  method: string;
-  errorMessage?: string;
+  id: string
+  date: string
+  amount: string
+  status: "success" | "failed" | "pending" | "settled"
+  method: string
+  errorMessage?: string
 }
 
 export interface Invoice {
-  id: string;
-  member: string;
-  amount: string;
-  status: string;
-  date: string;
-  dueDate: string;
-  paymentMethod?: string;
-  items?: any[];
-  number: string;
-  paymentAttempts?: PaymentAttempt[];
-  refundAmount?: string;
-  refundDate?: string;
-  refundType?: "full" | "partial";
-  customerId?: string;
-  failedPaymentReason?: any;
-  paymentProviderResponse?: any;
-  payNowUrl?: string;
-  accountingCode?: string | null;
-  paymentMethodInvalid?: Boolean;
+  id: string
+  member: string
+  amount: string
+  status: string
+  date: string
+  dueDate: string
+  paymentMethod?: string
+  items?: any[]
+  number: string
+  paymentAttempts?: PaymentAttempt[]
+  refundAmount?: string
+  refundDate?: string
+  refundType?: "full" | "partial"
+  customerId?: string
+  failedPaymentReason?: any
+  paymentProviderResponse?: any
+  payNowUrl?: string
+  accountingCode?: string | null
+  paymentMethodInvalid?: Boolean
 }
 
 interface InvoiceDetailDialogProps {
-  invoiceProp: Invoice | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUpdate?: () => void;
+  invoiceProp: Invoice | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onUpdate?: () => void
 }
 
 const formatCellValue = (value: any) => {
-  if (value === null || value === undefined) return "";
-  const val = value?.replaceAll(/googlepay|applepay/gi, "");
+  if (value === null || value === undefined) return ""
+  const val = value?.replaceAll(/googlepay|applepay/gi, "")
   if (typeof val === "object") {
     if (val.code || val.description) {
       return `${val.code ?? ""}${
         val.description ? ` - ${val.description}` : ""
-      }`.trim();
+      }`.trim()
     }
     try {
-      return JSON.stringify(val);
+      return JSON.stringify(val)
     } catch (e) {
-      return String(val);
+      return String(val)
     }
   }
-  return String(val);
-};
+  return String(val)
+}
 
 export function InvoiceDetailDialog({
   invoiceProp,
@@ -110,169 +110,168 @@ export function InvoiceDetailDialog({
   onOpenChange,
   onUpdate,
 }: InvoiceDetailDialogProps) {
-  const [invoice, setInvoice] = useState<Invoice | null>(invoiceProp);
-  const [isTransactionLoading, setIsTransactionLoading] = useState(true);
-  const [isRetrying, setIsRetrying] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showExternalPayment, setShowExternalPayment] = useState(false);
-  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [invoice, setInvoice] = useState<Invoice | null>(invoiceProp)
+  const [isTransactionLoading, setIsTransactionLoading] = useState(true)
+  const [isRetrying, setIsRetrying] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showExternalPayment, setShowExternalPayment] = useState(false)
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
   const [showRetryPaymentSelection, setShowRetryPaymentSelection] =
-    useState(false);
+    useState(false)
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<
     string | null
-  >(null);
-  const [externalPaymentMethod, setExternalPaymentMethod] =
-    useState<string>("");
-  const [refundError, setRefundError] = useState<string | null>(null);
-  const [branch, setBranch] = useState("");
+  >(null)
+  const [externalPaymentMethod, setExternalPaymentMethod] = useState<string>("")
+  const [refundError, setRefundError] = useState<string | null>(null)
+  const [branch, setBranch] = useState("")
 
   useEffect(() => {
-    setInvoice(invoiceProp);
-  }, [invoiceProp]);
+    setInvoice(invoiceProp)
+  }, [invoiceProp])
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main";
-    setBranch(selectedBranch);
-  }, []);
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+  }, [])
 
   useEffect(() => {
-    if (!branch) return;
+    if (!branch) return
     listTransactionByInvoice(
       invoiceProp?.id,
       invoiceProp?.paymentMethod,
       branch,
     ).then((transactions) => {
-      setInvoice((prev) => ({ ...prev, paymentAttempts: transactions }));
-      setIsTransactionLoading(false);
-    });
-  }, [branch]);
+      setInvoice((prev) => ({ ...prev, paymentAttempts: transactions }))
+      setIsTransactionLoading(false)
+    })
+  }, [branch])
 
-  if (!invoice) return null;
+  if (!invoice) return null
 
   const handleRefund = async (amount: number | null) => {
-    setIsProcessing(true);
-    setIsRetrying(true);
-    setRefundError(null);
+    setIsProcessing(true)
+    setIsRetrying(true)
+    setRefundError(null)
 
     try {
-      const refundAmount = amount === null ? null : amount;
+      const refundAmount = amount === null ? null : amount
 
-      const result = await refundInvoice(invoice.id, refundAmount, branch);
+      const result = await refundInvoice(invoice.id, refundAmount, branch)
 
       if (result.success) {
-        toast.success("Refund initiated successfully");
-        onUpdate?.();
-        onOpenChange(false);
-        window.location.reload();
+        toast.success("Refund initiated successfully")
+        onUpdate?.()
+        onOpenChange(false)
+        window.location.reload()
       } else {
-        setRefundError(result.error?.message || "Failed to refund payment");
+        setRefundError(result.error?.message || "Failed to refund payment")
       }
     } catch (error) {
-      setRefundError("An unexpected error occurred");
+      setRefundError("An unexpected error occurred")
     } finally {
-      setIsProcessing(false);
-      setIsRetrying(false);
+      setIsProcessing(false)
+      setIsRetrying(false)
     }
-  };
+  }
 
   const handleWriteOff = async () => {
-    setIsProcessing(true);
-    setIsRetrying(true);
+    setIsProcessing(true)
+    setIsRetrying(true)
     try {
-      const result = await writeOffInvoice(invoice.id, branch);
-      toast.success("Write off initiated successfully");
-      onUpdate?.();
-      onOpenChange(false);
-      window.location.reload();
+      const result = await writeOffInvoice(invoice.id, branch)
+      toast.success("Write off initiated successfully")
+      onUpdate?.()
+      onOpenChange(false)
+      window.location.reload()
     } catch (error) {
-      toast.error("Failed to write off payment");
+      toast.error("Failed to write off payment")
     } finally {
-      setIsProcessing(false);
-      setIsRetrying(false);
+      setIsProcessing(false)
+      setIsRetrying(false)
     }
-  };
+  }
 
   const handleRetry = async () => {
     if (!showRetryPaymentSelection) {
-      setShowRetryPaymentSelection(true);
-      return;
+      setShowRetryPaymentSelection(true)
+      return
     }
 
     if (!selectedPaymentMethodId) {
-      toast.error("Please select a payment method");
-      return;
+      toast.error("Please select a payment method")
+      return
     }
 
-    setIsProcessing(true);
-    setIsRetrying(true);
+    setIsProcessing(true)
+    setIsRetrying(true)
     try {
       const result = await retryInvoice(
         invoice.id,
         selectedPaymentMethodId,
         branch,
-      );
-      toast.success("Payment retry initiated successfully");
-      onUpdate?.();
-      onOpenChange(false);
+      )
+      toast.success("Payment retry initiated successfully")
+      onUpdate?.()
+      onOpenChange(false)
     } catch (error) {
-      toast.error("Failed to retry payment");
+      toast.error("Failed to retry payment")
     } finally {
-      setIsProcessing(false);
-      setIsRetrying(false);
+      setIsProcessing(false)
+      setIsRetrying(false)
     }
-  };
+  }
 
   const handlePayNow = async () => {
     if (!invoice?.payNowUrl) {
-      toast.error("No Pay Now URL available for this invoice");
-      return;
+      toast.error("No Pay Now URL available for this invoice")
+      return
     }
 
     try {
-      if (typeof invoice.payNowUrl !== "string") throw new Error("Invalid URL");
+      if (typeof invoice.payNowUrl !== "string") throw new Error("Invalid URL")
       // validate URL
       // eslint-disable-next-line no-new
-      new URL(invoice.payNowUrl);
+      new URL(invoice.payNowUrl)
 
       if (typeof window !== "undefined") {
-        window.open(invoice.payNowUrl, "_blank", "noopener,noreferrer");
+        window.open(invoice.payNowUrl, "_blank", "noopener,noreferrer")
       }
     } catch (err) {
-      console.error("[v0] Failed to open Pay Now URL", err, invoice.payNowUrl);
-      toast.error("Failed to open Pay Now URL");
+      console.error("[v0] Failed to open Pay Now URL", err, invoice.payNowUrl)
+      toast.error("Failed to open Pay Now URL")
     }
-  };
+  }
 
   const handleTrackExternal = async () => {
     if (!invoice.id) {
-      toast.error("No Invoice ID");
-      return;
+      toast.error("No Invoice ID")
+      return
     }
 
     if (!externalPaymentMethod) {
-      toast.error("Please select a payment method");
-      return;
+      toast.error("Please select a payment method")
+      return
     }
 
-    setIsProcessing(true);
-    setIsRetrying(true);
+    setIsProcessing(true)
+    setIsRetrying(true)
     try {
       const result = await recordExternalInvoice(
         invoice.id,
         externalPaymentMethod,
         branch,
-      );
-      toast.success("External payment recorded successfully");
-      onUpdate?.();
-      onOpenChange(false);
-      window.location.reload();
+      )
+      toast.success("External payment recorded successfully")
+      onUpdate?.()
+      onOpenChange(false)
+      window.location.reload()
     } catch (error) {
-      toast.error("Failed to record external payment");
+      toast.error("Failed to record external payment")
     } finally {
-      setIsProcessing(false);
-      setIsRetrying(false);
+      setIsProcessing(false)
+      setIsRetrying(false)
     }
-  };
+  }
 
   const handleEmail = async () => {
     try {
@@ -284,15 +283,14 @@ export function InvoiceDetailDialog({
         invoice.failedPaymentReason.code +
         ": " +
         invoice.paymentProviderResponse.description
-      }`;
-      window.open(emailPreviewLink, "_blank");
-      toast.success("Email draft opened in new tab");
+      }`
+      window.open(emailPreviewLink, "_blank")
+      toast.success("Email draft opened in new tab")
     } catch (err) {
-      console.error("[v0] Failed to open email URL", err, invoice.payNowUrl);
-      toast.error("Failed to open email URL");
+      console.error("[v0] Failed to open email URL", err, invoice.payNowUrl)
+      toast.error("Failed to open email URL")
     }
-  };
-  console.log(invoice);
+  }
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -713,5 +711,5 @@ export function InvoiceDetailDialog({
         error={refundError}
       />
     </>
-  );
+  )
 }

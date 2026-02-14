@@ -1,9 +1,12 @@
 export type CreateCustomer = {
-  firstName: string,
-  lastName: string,
-  email: string,
-  address?: string | null,
-  mobilePhone?: string | null,
-  dateOfBirth?: string | null,
-  emergencyContact?: string | null,
+  firstName: string
+  lastName: string
+  email: string
+  dateOfBirth?: string
+  address?: string
+  emergencyContact?: string
+  startDate: Number
+  plan: string
+  status: string
+  existingCustomerNumber: string
 }
