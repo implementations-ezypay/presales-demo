@@ -1,10 +1,26 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 import { Download, TrendingDown, TrendingUp } from "lucide-react"
 
 const churnData = [
@@ -30,7 +46,9 @@ export function MembershipChurnReport() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Membership Churn Analysis</h2>
-          <p className="text-sm text-muted-foreground">Track member retention and cancellation trends</p>
+          <p className="text-sm text-muted-foreground">
+            Track member retention and cancellation trends
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select defaultValue="6months">
@@ -54,7 +72,9 @@ export function MembershipChurnReport() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Current Churn Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Current Churn Rate
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
@@ -64,17 +84,23 @@ export function MembershipChurnReport() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Canceled This Month</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Canceled This Month
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">38</div>
-            <p className="text-xs text-muted-foreground">Out of 1,284 members</p>
+            <p className="text-xs text-muted-foreground">
+              Out of 1,284 members
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Retention Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Retention Rate
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
@@ -97,14 +123,29 @@ export function MembershipChurnReport() {
                 color: "hsl(var(--chart-1))",
               },
             }}
-            className="h-[300px]"
+            className="h-[300px] min-w-0"
           >
             <LineChart data={churnData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
-              <YAxis className="text-xs" tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
+              <XAxis
+                dataKey="month"
+                className="text-xs"
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                className="text-xs"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}%`}
+              />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Line type="monotone" dataKey="churnRate" stroke="var(--color-chart-1)" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="churnRate"
+                stroke="var(--color-chart-1)"
+                strokeWidth={2}
+              />
             </LineChart>
           </ChartContainer>
         </CardContent>
@@ -113,7 +154,9 @@ export function MembershipChurnReport() {
       <Card>
         <CardHeader>
           <CardTitle>Cancellation Reasons</CardTitle>
-          <CardDescription>Top reasons for membership cancellations</CardDescription>
+          <CardDescription>
+            Top reasons for membership cancellations
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -126,7 +169,10 @@ export function MembershipChurnReport() {
                   </span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full bg-primary" style={{ width: `${reason.percentage}%` }} />
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${reason.percentage}%` }}
+                  />
                 </div>
               </div>
             ))}

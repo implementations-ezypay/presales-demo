@@ -1,5 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, DollarSign, Calendar, TrendingUp, TrendingDown } from "lucide-react"
+import {
+  Users,
+  UserCheck,
+  DollarSign,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react"
 
 const stats = [
   {
@@ -41,11 +48,13 @@ const stats = [
 
 export function OverviewCards() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {stats.map((stat) => (
         <Card key={stat.title}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {stat.title}
+            </CardTitle>
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -56,7 +65,13 @@ export function OverviewCards() {
               ) : (
                 <TrendingDown className="h-3 w-3 text-destructive" />
               )}
-              <span className={stat.trend === "up" ? "text-accent" : "text-destructive"}>{stat.change}</span>
+              <span
+                className={
+                  stat.trend === "up" ? "text-accent" : "text-destructive"
+                }
+              >
+                {stat.change}
+              </span>
               <span className="text-muted-foreground">from last month</span>
             </div>
           </CardContent>

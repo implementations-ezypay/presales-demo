@@ -4,6 +4,7 @@ import { getEzypayToken } from "./ezypay-token"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
 import { getBranchCurrency } from "./branches"
+import { randomUUID } from "node:crypto"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/invoices`
 const checkoutEndpoint = `${process.env.API_ENDPOINT}/v2/billing/checkout`
@@ -474,6 +475,9 @@ export async function createInvoice(invoiceData, branch) {
     const requestBody = {
       customerId: invoiceData.memberId,
       items: [itemData],
+      processingModel: "cardonfile",
+      paymentMethodToken: null,
+      externalInvoiceId: randomUUID(),
     }
 
     if (invoiceData.paymentMethodId) {

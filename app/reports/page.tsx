@@ -41,15 +41,21 @@ export default function ReportsPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-balance">Reports & Analytics</h1>
-            <p className="text-muted-foreground">Comprehensive insights into your gym's performance</p>
+            <h1 className="text-3xl font-bold tracking-tight text-balance">
+              Reports & Analytics
+            </h1>
+            <p className="text-muted-foreground">
+              Comprehensive insights into your gym's performance
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => (
               <Card key={stat.title}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
                   <stat.icon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -61,7 +67,7 @@ export default function ReportsPage() {
           </div>
 
           <Tabs defaultValue="revenue" className="space-y-4">
-            <TabsList>
+            <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="revenue">Revenue</TabsTrigger>
               <TabsTrigger value="churn">Membership Churn</TabsTrigger>
               <TabsTrigger value="classes">Class Popularity</TabsTrigger>

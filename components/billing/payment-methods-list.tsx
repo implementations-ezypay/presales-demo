@@ -368,7 +368,7 @@ export function PaymentMethodsList({
 
   return (
     <>
-      <div className="h-full overflow-y-auto space-y-2">
+      <div className="h-56 overflow-auto space-y-2">
         {paymentMethods?.map((method) => {
           const isPayTo = method.type?.toUpperCase() === "PAYTO"
           return (

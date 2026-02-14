@@ -2,11 +2,24 @@
 
 import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -20,7 +33,7 @@ import {
 import { Trash2, Plus, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { AutoBillingSettings } from "@/components/billing/auto-billing-settings"
-import { logApiCall } from '@/lib/api-logger'
+import { logApiCall } from "@/lib/api-logger"
 
 type DeviceStatus = "active" | "inactive" | "pending"
 
@@ -64,7 +77,9 @@ const initialDevices: Device[] = [
 export default function SettingsPage() {
   const [ezypayUsername, setEzypayUsername] = useState("EzypayDemoAccount")
   const [ezypayPassword, setEzypayPassword] = useState("********")
-  const [ezypayMerchantId, setEzypayMerchantId] = useState("5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d")
+  const [ezypayMerchantId, setEzypayMerchantId] = useState(
+    "5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d",
+  )
   const [devices, setDevices] = useState<Device[]>(initialDevices)
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false)
   const [isRegistrationCodeOpen, setIsRegistrationCodeOpen] = useState(false)
@@ -117,18 +132,18 @@ export default function SettingsPage() {
       }),
     }
 
-    const url = 'https://api-sandbox.ezypay.com/v2/billing/terminal/invoices'
+    const url = "https://api-sandbox.ezypay.com/v2/billing/terminal/invoices"
     const requestBody = {
       appDeviceId: newDeviceId,
-      deviceName: newDeviceName
+      deviceName: newDeviceName,
     }
     const responseBody = {
       code: code,
       deviceName: newDeviceName,
       appDeviceId: newDeviceId,
-      message: "New activation code sent"
+      message: "New activation code sent",
     }
-    logApiCall('POST', url, responseBody, 200, requestBody)
+    logApiCall("POST", url, responseBody, 200, requestBody)
     setDevices([...devices, newDevice])
     setNewDeviceName("")
     setNewDeviceId("")
@@ -159,11 +174,11 @@ export default function SettingsPage() {
 
   const getStatusBadgeVariant = (status: DeviceStatus) => {
     switch (status) {
-      case 'active':
+      case "active":
         return "default"
-      case 'inactive':
+      case "inactive":
         return "secondary"
-      case 'pending':
+      case "pending":
         return "outline"
       default:
         return "secondary"
@@ -172,11 +187,11 @@ export default function SettingsPage() {
 
   const getStatusText = (status: DeviceStatus) => {
     switch (status) {
-      case 'active':
+      case "active":
         return "Active"
-      case 'inactive':
+      case "inactive":
         return "Inactive"
-      case 'pending':
+      case "pending":
         return "Pending Registration"
       default:
         return status
@@ -196,8 +211,19 @@ export default function SettingsPage() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
               </svg>
               <div className="text-sm font-medium">Saving credentials…</div>
             </div>
@@ -207,12 +233,16 @@ export default function SettingsPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-balance">Settings</h1>
-            <p className="text-muted-foreground">Manage integrations and device registrations</p>
+            <h1 className="text-3xl font-bold tracking-tight text-balance">
+              Settings
+            </h1>
+            <p className="text-muted-foreground">
+              Manage integrations and device registrations
+            </p>
           </div>
 
           <Tabs defaultValue="ezypay" className="space-y-4">
-            <TabsList>
+            <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="ezypay">Ezypay Integration</TabsTrigger>
               <TabsTrigger value="terminals">Terminal Registration</TabsTrigger>
               <TabsTrigger value="auto-billing">Auto-Billing</TabsTrigger>
@@ -222,7 +252,9 @@ export default function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Ezypay Integration</CardTitle>
-                  <CardDescription>Configure your Ezypay payment gateway credentials</CardDescription>
+                  <CardDescription>
+                    Configure your Ezypay payment gateway credentials
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -259,7 +291,11 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="pt-4">
-                    <Button onClick={handleSaveEzypay} size="lg" disabled={isSaving}>
+                    <Button
+                      onClick={handleSaveEzypay}
+                      size="lg"
+                      disabled={isSaving}
+                    >
                       {isSaving ? "Saving..." : "Save Credentials"}
                     </Button>
                   </div>
@@ -272,9 +308,14 @@ export default function SettingsPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle>Terminal Registration</CardTitle>
-                    <CardDescription>Manage registered payment terminals and devices</CardDescription>
+                    <CardDescription>
+                      Manage registered payment terminals and devices
+                    </CardDescription>
                   </div>
-                  <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
+                  <Dialog
+                    open={isAddDeviceOpen}
+                    onOpenChange={setIsAddDeviceOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button disabled={isSaving}>
                         <Plus className="mr-2 h-4 w-4" />
@@ -284,7 +325,9 @@ export default function SettingsPage() {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Add New Device</DialogTitle>
-                        <DialogDescription>Register a new payment terminal or device</DialogDescription>
+                        <DialogDescription>
+                          Register a new payment terminal or device
+                        </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -307,7 +350,11 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddDeviceOpen(false)} disabled={isSaving}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddDeviceOpen(false)}
+                          disabled={isSaving}
+                        >
                           Cancel
                         </Button>
                         <Button onClick={handleAddDevice} disabled={isSaving}>
@@ -317,23 +364,35 @@ export default function SettingsPage() {
                     </DialogContent>
                   </Dialog>
 
-                  <Dialog open={isRegistrationCodeOpen} onOpenChange={setIsRegistrationCodeOpen}>
+                  <Dialog
+                    open={isRegistrationCodeOpen}
+                    onOpenChange={setIsRegistrationCodeOpen}
+                  >
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Device Registration Code</DialogTitle>
                         <DialogDescription>
-                          Use this code to complete the device registration on your terminal
+                          Use this code to complete the device registration on
+                          your terminal
                         </DialogDescription>
                       </DialogHeader>
                       <div className="flex flex-col items-center justify-center py-8">
-                        <p className="text-sm text-muted-foreground mb-4">Registration Code</p>
-                        <div className="text-5xl font-bold tracking-wider text-primary mb-2">{registrationCode}</div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Registration Code
+                        </p>
+                        <div className="text-5xl font-bold tracking-wider text-primary mb-2">
+                          {registrationCode}
+                        </div>
                         <p className="text-sm text-muted-foreground mt-4 text-center">
-                          Enter this code on your device to complete registration
+                          Enter this code on your device to complete
+                          registration
                         </p>
                       </div>
                       <DialogFooter>
-                        <Button onClick={() => setIsRegistrationCodeOpen(false)} disabled={isSaving}>
+                        <Button
+                          onClick={() => setIsRegistrationCodeOpen(false)}
+                          disabled={isSaving}
+                        >
                           Close
                         </Button>
                       </DialogFooter>
@@ -355,11 +414,17 @@ export default function SettingsPage() {
                     <TableBody>
                       {devices.map((device) => (
                         <TableRow key={device.id}>
-                          <TableCell className="font-medium">{device.name}</TableCell>
+                          <TableCell className="font-medium">
+                            {device.name}
+                          </TableCell>
                           <TableCell>{device.deviceId}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono">{visibleCodes.has(device.id) ? device.code : "••••••"}</span>
+                              <span className="font-mono">
+                                {visibleCodes.has(device.id)
+                                  ? device.code
+                                  : "••••••"}
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -376,9 +441,15 @@ export default function SettingsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusBadgeVariant(device.status)}>{getStatusText(device.status)}</Badge>
+                            <Badge
+                              variant={getStatusBadgeVariant(device.status)}
+                            >
+                              {getStatusText(device.status)}
+                            </Badge>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{device.lastSeen}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {device.lastSeen}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"

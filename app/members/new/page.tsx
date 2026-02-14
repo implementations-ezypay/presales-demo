@@ -1,126 +1,123 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { TopBar } from "@/components/top-bar";
-import { Button } from "@/components/ui/button";
+import { TopBar } from "@/components/top-bar"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { ArrowLeft, Mail } from "lucide-react";
-import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { toast } from "sonner";
+} from "@/components/ui/tooltip"
+import { ArrowLeft, Mail } from "lucide-react"
+import Link from "next/link"
+import { useState, useEffect, useRef } from "react"
+import { toast } from "sonner"
 import {
   getEzypayToken,
   createCustomer,
   linkPaymentMethod,
-} from "@/lib/passer-functions";
-import { logApiCall } from "@/lib/api-logger";
-import { getBranchCountry } from "@/lib/branches";
+} from "@/lib/passer-functions"
+import { logApiCall } from "@/lib/api-logger"
+import { getBranchCountry } from "@/lib/branches"
+import { plans } from "@/lib/plan"
+import type { CreateCustomer } from "@/lib/shared-type"
 
-const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT;
-const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT;
+const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT
+const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT
 
 const defaultformData = {
   firstName: "",
   lastName: "",
   email: "",
-  dateOfBirth: null,
-  address: null,
-  emergencyContact: null,
+  dateOfBirth: undefined,
+  address: undefined,
+  emergencyContact: undefined,
   startDate: Date.now(),
   plan: "Trial",
   status: "trial",
   existingCustomerNumber: "", // Added optional existing customer number field
-};
+}
 
 export default function NewMemberPage() {
-  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
-  const [isLoadingIframe, setIsLoadingIframe] = useState(false);
-  const [isCustomerCreated, setIsCustomerCreated] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailPreviewLink, setEmailPreviewLink] = useState("");
-  const [formData, setFormData] = useState(defaultformData);
-  const [branch, setBranch] = useState("");
-  const [country, setCountry] = useState("");
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null)
+  const [isLoadingIframe, setIsLoadingIframe] = useState(false)
+  const [isCustomerCreated, setIsCustomerCreated] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [emailPreviewLink, setEmailPreviewLink] = useState("")
+  const [formData, setFormData] = useState<CreateCustomer>(defaultformData)
+  const [branch, setBranch] = useState("")
+  const [country, setCountry] = useState("")
 
   // Track selected values from Select components separately for easier UI updates
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const iframeOriginRef = useRef<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const iframeOriginRef = useRef<string | null>(null)
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main";
-    setBranch(selectedBranch);
-    setCountry(getBranchCountry(selectedBranch));
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+    setCountry(getBranchCountry(selectedBranch))
 
     const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
-      let listenerResponse = e.data;
+      let listenerResponse = e.data
       if (typeof listenerResponse === "string") {
-        listenerResponse = JSON.parse(listenerResponse);
+        listenerResponse = JSON.parse(listenerResponse)
       }
-      console.log(listenerResponse);
 
       if (e.data && listenerResponse.type === "success") {
-        console.log(
-          "Success message detected, redirecting to /members",
-          e.data,
-        );
+        console.log("Success message detected, redirecting to /members", e.data)
       }
 
       if (country === "PH" && e.data.paymentMethodToken) {
-        const { customerId, paymentMethodToken } = e.data;
+        const { customerId, paymentMethodToken } = e.data
         try {
           const res = await linkPaymentMethod(
             customerId,
             paymentMethodToken,
             branch,
-          );
-          console.log(res);
+          )
         } catch (error) {
-          console.error(error);
+          console.error(error)
         } finally {
-          setIsSubmitting(false);
+          setIsSubmitting(false)
         }
       }
-    };
+    }
 
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
 
   const loadIframeUrl = async (customerId: string | null = null) => {
-    setIsLoadingIframe(true);
+    setIsLoadingIframe(true)
     try {
       // Request access token from our server-side token route
-      const tokenRes = await getEzypayToken((branch as "main") || "branch2");
+      const tokenRes = await getEzypayToken((branch as "main") || "branch2")
 
       if (tokenRes.error) {
-        throw new Error(`Token endpoint failed`);
+        throw new Error(`Token endpoint failed`)
       }
 
-      const token = await tokenRes.access_token;
+      const token = await tokenRes.access_token
       // Use a temporary customer ID for new members
 
       const pcpUrl =
@@ -128,118 +125,118 @@ export default function NewMemberPage() {
           ? `${hppEndpoint}/paymentmethod/embed?token=${token}&countryCode=${country}`
           : `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
               customerId ? "&customerId=" + customerId : ""
-            }`;
-      setIframeUrl(pcpUrl);
+            }`
+      setIframeUrl(pcpUrl)
       await logApiCall(
         "GET",
         pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
         "Payment capture page UI",
         200,
-      );
+      )
 
       try {
         // Record origin from the iframe URL so we can validate messages
-        const url = new URL(pcpUrl);
-        iframeOriginRef.current = url.origin;
+        const url = new URL(pcpUrl)
+        iframeOriginRef.current = url.origin
       } catch (e) {
-        iframeOriginRef.current = null;
+        iframeOriginRef.current = null
       }
     } catch (error) {
-      console.error("[v0] Error loading iframe URL:", error);
-      toast.error("Failed to load payment form");
+      console.error("[v0] Error loading iframe URL:", error)
+      toast.error("Failed to load payment form")
     } finally {
-      setIsLoadingIframe(false);
+      setIsLoadingIframe(false)
     }
-  };
+  }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const field = (e.target as HTMLInputElement).id;
-    const value = (e.target as HTMLInputElement).value;
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const field = (e.target as HTMLInputElement).id
+    const value = (e.target as HTMLInputElement).value
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const field = (e.target as HTMLInputElement).id;
-    const value = (e.target as HTMLInputElement).value;
-    setFormData((prev) => ({ ...prev, [field]: new Date(value).getTime() }));
+    const field = (e.target as HTMLInputElement).id
+    const value = (e.target as HTMLInputElement).value
+    setFormData((prev) => ({ ...prev, [field]: new Date(value).getTime() }))
   }
 
   function handlePlanChange(value: string) {
-    setFormData((prev) => ({ ...prev, plan: value }));
+    setFormData((prev) => ({ ...prev, plan: value }))
   }
 
   function handleStatusChange(value: string) {
-    setFormData((prev) => ({ ...prev, status: value }));
+    setFormData((prev) => ({ ...prev, status: value }))
   }
 
   const submitHpp = (e, type) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!iframeRef.current) {
-      toast.error("Payment form not loaded");
-      return;
+      toast.error("Payment form not loaded")
+      return
     }
-    setIsSubmitting(false);
-    true;
+    setIsSubmitting(false)
+    true
     try {
-      const iframeWindow = iframeRef.current.contentWindow;
+      const iframeWindow = iframeRef.current.contentWindow
 
       if (!iframeWindow) {
-        console.error("[postMessage] iframe window not accessible");
-        toast.error("Payment form not ready");
-        setIsSubmitting(false);
-        return;
+        console.error("[postMessage] iframe window not accessible")
+        toast.error("Payment form not ready")
+        setIsSubmitting(false)
+        return
       }
 
-      const targetOrigin = iframeOriginRef.current || "*";
+      const targetOrigin = iframeOriginRef.current || "*"
       console.log("[postMessage] Sending message", {
         actionType: type,
         targetOrigin,
         iframeOrigin: iframeOriginRef.current,
         currentUrl: window.location.href,
-      });
+      })
 
       // Send the message to the iframe
-      iframeWindow.postMessage({ actionType: type }, targetOrigin);
-      console.log("[postMessage] Message sent successfully");
+      iframeWindow.postMessage({ actionType: type }, targetOrigin)
+      console.log("[postMessage] Message sent successfully")
     } catch (error) {
-      console.error("[submitHpp] Error sending postMessage:", error);
-      toast.error("Failed to submit payment form");
-      setIsSubmitting(false);
+      console.error("[submitHpp] Error sending postMessage:", error)
+      toast.error("Failed to submit payment form")
+      setIsSubmitting(false)
     }
-  };
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsSubmitting(true);
-    let customerId = "";
+    e.preventDefault()
+    setIsSubmitting(true)
+    let customerId = ""
 
     try {
-      const response = await createCustomer(formData, branch);
-      toast.success("Member created successfully");
+      const response = await createCustomer(formData, branch)
+      toast.success("Member created successfully")
       if (!response?.id) {
-        console.error("Failed to create customer");
-        throw new Error("Failed to create customer");
+        console.error("Failed to create customer")
+        throw new Error("Failed to create customer")
       }
-      customerId = response.id;
+      customerId = response.id
     } catch (error) {
-      toast.error("Failed to create member");
-      console.error("Error creating member:", error);
-      setIsSubmitting(false);
+      toast.error("Failed to create member")
+      console.error("Error creating member:", error)
+      setIsSubmitting(false)
     }
 
     setEmailPreviewLink(
       `${window.location.origin}/email-preview?id=${customerId}&name=${formData.firstName} ${formData.lastName}`,
-    );
-    await loadIframeUrl(customerId);
-    setIsSubmitting(false);
-    setIsCustomerCreated(true);
-    setFormData(defaultformData);
+    )
+    await loadIframeUrl(customerId)
+    setIsSubmitting(false)
+    setIsCustomerCreated(true)
+    setFormData(defaultformData)
   }
 
   const handleEmailCustomer = () => {
-    window.open(emailPreviewLink, "_blank");
-    toast.success("Email draft opened in new tab");
-  };
+    window.open(emailPreviewLink, "_blank")
+    toast.success("Email draft opened in new tab")
+  }
 
   return (
     <div className="relative flex flex-col h-full">
@@ -416,16 +413,11 @@ export default function NewMemberPage() {
                         <SelectValue placeholder="Select a plan" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="basic">Basic - $49/month</SelectItem>
-                        <SelectItem value="premium">
-                          Premium - $99/month
-                        </SelectItem>
-                        <SelectItem value="annual">
-                          Annual - $999/year
-                        </SelectItem>
-                        <SelectItem value="personal">
-                          Personal Training - $149/month
-                        </SelectItem>
+                        {plans.map((plan) => (
+                          <SelectItem value={plan.name.toLowerCase()}>
+                            {plan.name} - ${plan.price}/{plan.duration}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -544,5 +536,5 @@ export default function NewMemberPage() {
         </div>
       </main>
     </div>
-  );
+  )
 }
