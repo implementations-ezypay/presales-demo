@@ -1,11 +1,30 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Search, Plus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { InvoiceDetailDialog } from "./invoice-detail-dialog"
@@ -52,7 +71,9 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
 
         fetchedInvoices = res.map((invoice) => {
           const id = invoice.customerId
-          const customerName = defaultCustomerData?.filter((cus) => cus.id == id)[0]?.name
+          const customerName = defaultCustomerData?.filter(
+            (cus) => cus.id == id
+          )[0]?.name
           return { ...invoice, member: customerName }
         })
         console.log(fetchedInvoices)
@@ -62,7 +83,11 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
       }
 
       if (!customerData?.id) return
-      const res = await listInvoiceByCustomer(customerData?.id, customerData?.name, branch)
+      const res = await listInvoiceByCustomer(
+        customerData?.id,
+        customerData?.name,
+        branch
+      )
 
       setInvoices(res)
       setIsLoading(false)
@@ -70,14 +95,16 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
       console.error("Failed to load invoices:", err)
       toast({
         title: "Error loading invoices",
-        description: "Please check if the API endpoint is configured correctly.",
+        description:
+          "Please check if the API endpoint is configured correctly.",
         variant: "destructive",
       })
     }
   }
 
   const filteredInvoices = invoices?.filter((invoice) => {
-    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter
+    const matchesStatus =
+      statusFilter === "all" || invoice.status === statusFilter
     const matchesSearch =
       variant == "billing"
         ? invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,9 +152,14 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="text-base md:text-lg">Invoices</CardTitle>
-              <CardDescription className="text-sm">Generate, send, and manage member invoices</CardDescription>
+              <CardDescription className="text-sm">
+                Generate, send, and manage member invoices
+              </CardDescription>
             </div>
-            <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
+            <Button
+              onClick={() => setIsCreateOpen(true)}
+              className="w-full sm:w-auto"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Create Invoice
             </Button>
@@ -165,9 +197,15 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[120px]">Invoice ID</TableHead>
-                  {variant == "billing" ? <TableHead className="min-w-[150px]">Member</TableHead> : ""}
+                  {variant == "billing" ? (
+                    <TableHead className="min-w-[150px]">Member</TableHead>
+                  ) : (
+                    ""
+                  )}
                   <TableHead className="min-w-[100px]">Amount</TableHead>
-                  <TableHead className="min-w-[150px]">Payment Method</TableHead>
+                  <TableHead className="min-w-[150px]">
+                    Payment Method
+                  </TableHead>
                   <TableHead className="min-w-[100px]">Status</TableHead>
                   <TableHead className="min-w-[110px]">Date</TableHead>
                 </TableRow>
@@ -199,24 +237,42 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                         {formatCellValue(invoice.number ?? invoice.id)}
                       </TableCell>
                       {variant == "billing" ? (
-                        <TableCell className="text-sm">{formatCellValue(invoice.member)}</TableCell>
+                        <TableCell className="text-sm">
+                          {formatCellValue(invoice.member)}
+                        </TableCell>
                       ) : (
                         ""
                       )}
-                      <TableCell className="font-medium text-sm">{formatCellValue(invoice.amount)}</TableCell>
+                      <TableCell className="font-medium text-sm">
+                        {formatCellValue(invoice.amount)}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                          <PaymentMethodIcon type={invoice.paymentMethod} className="h-5 w-10 flex-shrink-0" />
-                          <span className="truncate">{formatCellValue(invoice.paymentMethod)}</span>
-                          {invoice.paymentMethodInvalid && <Badge variant="destructive">invalid</Badge>}
+                          <PaymentMethodIcon
+                            type={invoice.paymentMethod}
+                            className="h-5 w-10 flex-shrink-0"
+                          />
+                          <span className="truncate">
+                            {formatCellValue(invoice.paymentMethod)}
+                          </span>
+                          {invoice.paymentMethodInvalid && (
+                            <Badge variant="destructive">invalid</Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(String(invoice.status))} className="text-xs">
+                        <Badge
+                          variant={getStatusBadgeVariant(
+                            String(invoice.status)
+                          )}
+                          className="text-xs"
+                        >
                           {formatCellValue(invoice.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{formatCellValue(invoice.date)}</TableCell>
+                      <TableCell className="text-sm">
+                        {formatCellValue(invoice.date)}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

@@ -59,7 +59,9 @@ export function TapToPayAnimation({ open }: TapToPayAnimationProps) {
             >
               <div className="w-20 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg relative overflow-hidden">
                 <div className="absolute top-2 left-2 w-8 h-6 bg-yellow-400 rounded opacity-80" />
-                <div className="absolute bottom-1 right-2 text-white text-xs font-bold">CARD</div>
+                <div className="absolute bottom-1 right-2 text-white text-xs font-bold">
+                  CARD
+                </div>
                 <motion.div
                   className="absolute inset-0 bg-white"
                   initial={{ x: "-100%" }}
@@ -91,8 +93,12 @@ export function TapToPayAnimation({ open }: TapToPayAnimationProps) {
             </motion.div>
           </div>
 
-          <p className="text-sm text-muted-foreground text-center">Please tap your card on the terminal</p>
-          <p className="text-xs text-muted-foreground mt-2">Processing payment...</p>
+          <p className="text-sm text-muted-foreground text-center">
+            Please tap your card on the terminal
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Processing payment...
+          </p>
         </div>
       </DialogContent>
     </Dialog>

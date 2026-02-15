@@ -1,11 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { InvoiceDetailDialog } from "./invoice-detail-dialog"
-import { PaymentMethodIcon } from '../ui/payment-method-icon'
+import { PaymentMethodIcon } from "../ui/payment-method-icon"
 
 const upcomingInvoicesData = [
   {
@@ -14,7 +27,9 @@ const upcomingInvoicesData = [
     date: new Date().toISOString().split("T")[0],
     amount: "$99.00",
     status: "pending" as const,
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
     paymentMethod: "Visa ****4242",
     paymentAttempts: [],
   },
@@ -24,7 +39,9 @@ const upcomingInvoicesData = [
     date: new Date().toISOString().split("T")[0],
     amount: "$49.00",
     status: "pending" as const,
-    dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
     paymentMethod: "Mastercard ****5678",
     paymentAttempts: [],
   },
@@ -34,7 +51,9 @@ const upcomingInvoicesData = [
     date: new Date().toISOString().split("T")[0],
     amount: "$149.00",
     status: "pending" as const,
-    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
     paymentMethod: "Visa ****9012",
     paymentAttempts: [],
   },
@@ -44,7 +63,9 @@ const upcomingInvoicesData = [
     date: new Date().toISOString().split("T")[0],
     amount: "$99.00",
     status: "pending" as const,
-    dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
     paymentMethod: "Visa ****3456",
     paymentAttempts: [],
   },
@@ -65,7 +86,9 @@ export function UpcomingInvoicesTable() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Upcoming Invoices</CardTitle>
-            <CardDescription>Scheduled invoices pending payment</CardDescription>
+            <CardDescription>
+              Scheduled invoices pending payment
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -90,10 +113,15 @@ export function UpcomingInvoicesTable() {
                   <TableCell className="font-medium">{invoice.id}</TableCell>
                   <TableCell>{invoice.member}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell className="font-medium">{invoice.amount}</TableCell>
+                  <TableCell className="font-medium">
+                    {invoice.amount}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <PaymentMethodIcon type={invoice.paymentMethod} className="h-4 w-4 flex-shrink-0" />
+                      <PaymentMethodIcon
+                        type={invoice.paymentMethod}
+                        className="h-4 w-4 flex-shrink-0"
+                      />
                       {invoice.paymentMethod}
                     </div>
                   </TableCell>
@@ -108,7 +136,11 @@ export function UpcomingInvoicesTable() {
       </Card>
 
       {isDetailOpen && selectedInvoice && (
-        <InvoiceDetailDialog invoiceProp={selectedInvoice} open={isDetailOpen} onOpenChange={setIsDetailOpen} />
+        <InvoiceDetailDialog
+          invoiceProp={selectedInvoice}
+          open={isDetailOpen}
+          onOpenChange={setIsDetailOpen}
+        />
       )}
     </>
   )

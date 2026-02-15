@@ -84,7 +84,7 @@ export function CreateInvoiceDialog({
           setCustomers(customerList)
           sessionStorage.setItem(
             "defaultCustomerList",
-            JSON.stringify(customerList),
+            JSON.stringify(customerList)
           )
           setLoadingCustomers(false)
         })
@@ -149,7 +149,7 @@ export function CreateInvoiceDialog({
       let selectedMemberName = customerName
       if (!selectedMemberName) {
         const selectedCustomer = customers.find(
-          (c) => c.id === formData.memberId,
+          (c) => c.id === formData.memberId
         )
         selectedMemberName = selectedCustomer
           ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
@@ -157,7 +157,7 @@ export function CreateInvoiceDialog({
       }
 
       const selectedTerminal = terminalDevices.find(
-        (t) => t.id === formData.terminalId,
+        (t) => t.id === formData.terminalId
       )
 
       let invoiceStatus: "pending" | "paid" = "pending"
@@ -165,7 +165,7 @@ export function CreateInvoiceDialog({
       if (formData.paymentMethod === "tap-to-pay") {
         console.log(
           "[v0] Initiating tap-to-pay with terminal:",
-          selectedTerminal?.name,
+          selectedTerminal?.name
         )
 
         // Show tap-to-pay animation
@@ -305,7 +305,7 @@ export function CreateInvoiceDialog({
               accountingCode: formData.accountingCode,
             }),
           },
-          branch,
+          branch
         )
         if (invoice.paymentMethodData.type === "QRPAYMENT") {
           setQrString(invoice.qrData?.qrString)
@@ -328,7 +328,7 @@ export function CreateInvoiceDialog({
             amount: formData.amount,
             description: formData.description,
           },
-          branch,
+          branch
         )
         const checkoutUrl = response?.data
 

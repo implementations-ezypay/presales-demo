@@ -4,10 +4,28 @@ import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Search, Plus, MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -44,9 +62,14 @@ export default function MembersPage() {
           phone: customer.mobilePhone,
           status: customer.metadata?.status ?? "trial",
           plan: customer.metadata?.plan ?? "Trial",
-          joinDate: customer.metadata?.joinDate ?? new Date(Date.now()).toISOString().split("T")[0],
+          joinDate:
+            customer.metadata?.joinDate ??
+            new Date(Date.now()).toISOString().split("T")[0],
           expiryDate:
-            customer.metadata?.expiryDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            customer.metadata?.expiryDate ??
+            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0],
           originalBranch: customer.metadata?.originalBranch,
         })
       })
@@ -57,7 +80,8 @@ export default function MembersPage() {
   }, [branch])
 
   const filteredMembers = members.filter((member) => {
-    const matchesStatus = statusFilter === "all" || member.status === statusFilter
+    const matchesStatus =
+      statusFilter === "all" || member.status === statusFilter
     const matchesSearch =
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,12 +96,17 @@ export default function MembersPage() {
         <div className="space-y-4 md:space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">Members</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
+                Members
+              </h1>
               <p className="text-sm md:text-base text-muted-foreground">
                 Manage your gym members and their memberships
               </p>
             </div>
-            <Button className="w-full sm:w-auto" onClick={() => router.push("/members/new")}>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={() => router.push("/members/new")}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Member
             </Button>
@@ -118,7 +147,9 @@ export default function MembersPage() {
                   <TableHead className="min-w-[120px]">Plan</TableHead>
                   <TableHead className="min-w-[110px]">Join Date</TableHead>
                   <TableHead className="min-w-[110px]">Expiry Date</TableHead>
-                  <TableHead className="min-w-[110px]">Original Branch</TableHead>
+                  <TableHead className="min-w-[110px]">
+                    Original Branch
+                  </TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -154,12 +185,18 @@ export default function MembersPage() {
                         }
                       }}
                     >
-                      <TableCell className="font-medium">{member.number}</TableCell>
-                      <TableCell className="font-medium">{member.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {member.number}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {member.name}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <span className="text-sm">{member.email}</span>
-                          <span className="text-sm text-muted-foreground">{member.phone}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {member.phone}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -180,8 +217,9 @@ export default function MembersPage() {
                       <TableCell>{member.expiryDate}</TableCell>
                       <TableCell>
                         {member.originalBranch
-                          ? (BRANCHES?.find((branch) => branch?.id === member.originalBranch)?.name ??
-                            member.originalBranch)
+                          ? (BRANCHES?.find(
+                              (branch) => branch?.id === member.originalBranch
+                            )?.name ?? member.originalBranch)
                           : "-"}
                       </TableCell>
                       <TableCell>
@@ -198,10 +236,14 @@ export default function MembersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link href={`/members/${member.id}`}>View Profile</Link>
+                              <Link href={`/members/${member.id}`}>
+                                View Profile
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/members/${member.id}/edit`}>Edit Member</Link>
+                              <Link href={`/members/${member.id}/edit`}>
+                                Edit Member
+                              </Link>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

@@ -1,6 +1,12 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
   ChartContainer,
@@ -47,13 +53,36 @@ export function ClassAttendanceChart() {
         >
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="day" className="text-xs" tickLine={false} axisLine={false} />
+            <XAxis
+              dataKey="day"
+              className="text-xs"
+              tickLine={false}
+              axisLine={false}
+            />
             <YAxis className="text-xs" tickLine={false} axisLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <ChartLegend content={<ChartLegendContent />} />
-            <Line type="monotone" dataKey="yoga" stroke="var(--color-chart-1)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="spinning" stroke="var(--color-chart-2)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="crossfit" stroke="var(--color-chart-3)" strokeWidth={2} dot={false} />
+            <Line
+              type="monotone"
+              dataKey="yoga"
+              stroke="var(--color-chart-1)"
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="spinning"
+              stroke="var(--color-chart-2)"
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="crossfit"
+              stroke="var(--color-chart-3)"
+              strokeWidth={2}
+              dot={false}
+            />
           </LineChart>
         </ChartContainer>
       </CardContent>

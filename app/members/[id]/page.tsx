@@ -155,7 +155,7 @@ export default function MemberProfilePage() {
     const res = await createPromptPay(customerId, branch)
     if (!res.success) {
       window.alert(
-        `Failed to create PromptPay Token: ${res.error?.message || "An unexpected error occured"}`,
+        `Failed to create PromptPay Token: ${res.error?.message || "An unexpected error occured"}`
       )
     }
     setPaymentMethodsRefreshTrigger((prev) => prev + 1)

@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react"
+import { ArrowRight } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,51 +10,51 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { BRANCHES } from "@/lib/branches";
-import Link from "next/link";
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { BRANCHES } from "@/lib/branches"
+import Link from "next/link"
 import {
   createCustomer,
   getCustomer,
   getCustomerPaymentMethods,
   linkPaymentMethod,
-} from "@/lib/passer-functions";
+} from "@/lib/passer-functions"
 
 interface TransferCustomerDialogProps {
-  customer: {};
-  customerName: string;
+  customer: {}
+  customerName: string
 }
 
 export function TransferCustomerDialog({
   customer,
   customerName,
 }: TransferCustomerDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [transferPaymentMethods, setTransferPaymentMethods] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [branch, setBranch] = useState("");
-  const [country, setCountry] = useState("");
+  const [open, setOpen] = useState(false)
+  const [selectedBranch, setSelectedBranch] = useState("")
+  const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [branch, setBranch] = useState("")
+  const [country, setCountry] = useState("")
 
   const availableBranches = BRANCHES.filter(
     (b) => b.id !== branch && b.country === country
-  );
+  )
   const handleTransfer = async () => {
-    if (!selectedBranch) return;
+    if (!selectedBranch) return
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const currentCustomerData = await getCustomer(customer.id, branch);
+      const currentCustomerData = await getCustomer(customer.id, branch)
       const newCustomer = {
         firstName: currentCustomerData.firstName,
         lastName: currentCustomerData.lastName,
@@ -67,44 +67,44 @@ export function TransferCustomerDialog({
         startDate: Date(customer.joinDate),
         existingCustomerNumber: customer.number,
         originalBranch: branch,
-      };
+      }
       const newCustomerCreate = await createCustomer(
         newCustomer,
         selectedBranch
-      );
+      )
 
       const { data: currentPaymentMethods } = await getCustomerPaymentMethods(
         customer.id,
         branch
-      );
+      )
 
       currentPaymentMethods.forEach(async (paymentMethod) => {
-        const { paymentMethodToken } = paymentMethod;
+        const { paymentMethodToken } = paymentMethod
         const result = await linkPaymentMethod(
           newCustomerCreate.id,
           paymentMethodToken,
           selectedBranch
-        );
-      });
+        )
+      })
 
       // Close dialog on success
-      setOpen(false);
-      setSelectedBranch("");
-      setTransferPaymentMethods(true);
+      setOpen(false)
+      setSelectedBranch("")
+      setTransferPaymentMethods(true)
     } catch (error) {
-      console.error("Transfer failed:", error);
+      console.error("Transfer failed:", error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main";
-    setBranch(selectedBranch);
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
 
-    const selectedCountry = localStorage.getItem("selectedCountry") || "AU";
-    setCountry(selectedCountry);
-  }, []);
+    const selectedCountry = localStorage.getItem("selectedCountry") || "AU"
+    setCountry(selectedCountry)
+  }, [])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -188,5 +188,5 @@ export function TransferCustomerDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

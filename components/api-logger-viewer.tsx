@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { getApiLogs, clearApiLogs, type ApiLog } from "@/lib/api-logger"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 export function ApiLoggerViewer() {
   const [isOpen, setIsOpen] = useState(false)
@@ -35,8 +40,10 @@ export function ApiLoggerViewer() {
   }, [isOpen])
 
   const getStatusColor = (status: number) => {
-    if (status >= 200 && status < 300) return "bg-green-500/10 text-green-600 dark:text-green-400"
-    if (status >= 400 && status < 500) return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+    if (status >= 200 && status < 300)
+      return "bg-green-500/10 text-green-600 dark:text-green-400"
+    if (status >= 400 && status < 500)
+      return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
     if (status >= 500) return "bg-red-500/10 text-red-600 dark:text-red-400"
     return "bg-gray-500/10 text-gray-600 dark:text-gray-400"
   }
@@ -71,7 +78,10 @@ export function ApiLoggerViewer() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsOpen(false)} />
+      <div
+        className="fixed inset-0 bg-black/50 z-40"
+        onClick={() => setIsOpen(false)}
+      />
 
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1400px] h-[85vh] bg-background border rounded-lg shadow-xl flex flex-col z-50">
         <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
@@ -84,7 +94,11 @@ export function ApiLoggerViewer() {
             <Button variant="outline" size="sm" onClick={handleClear}>
               Clear
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsOpen(false)}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -93,7 +107,9 @@ export function ApiLoggerViewer() {
         <ScrollArea className="flex-1">
           <div className="p-4">
             {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No API calls logged yet</p>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No API calls logged yet
+              </p>
             ) : (
               <Accordion
                 type="single"
@@ -103,15 +119,29 @@ export function ApiLoggerViewer() {
                 className="w-full"
               >
                 {logs.map((log) => (
-                  <AccordionItem key={log.id} value={log.id} className="border rounded-lg mb-2">
+                  <AccordionItem
+                    key={log.id}
+                    value={log.id}
+                    className="border rounded-lg mb-2"
+                  >
                     <AccordionTrigger className="px-3 py-2 hover:no-underline">
                       <div className="flex items-center gap-2 w-full">
-                        <Badge className={`${getMethodColor(log.method)} flex-shrink-0`}>{log.method}</Badge>
-                        <Badge className={`${getStatusColor(log.status)} flex-shrink-0`}>{log.status}</Badge>
+                        <Badge
+                          className={`${getMethodColor(log.method)} flex-shrink-0`}
+                        >
+                          {log.method}
+                        </Badge>
+                        <Badge
+                          className={`${getStatusColor(log.status)} flex-shrink-0`}
+                        >
+                          {log.status}
+                        </Badge>
                         <span className="text-xs text-muted-foreground flex-shrink-0">
                           {new Date(log.timestamp).toLocaleTimeString()}
                         </span>
-                        <span className="text-sm truncate flex-1 text-left">{log.url}</span>
+                        <span className="text-sm truncate flex-1 text-left">
+                          {log.url}
+                        </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -129,8 +159,12 @@ export function ApiLoggerViewer() {
                               </ScrollArea>
                             </div>
                           )}
-                          <div className={log.requestBody ? "" : "lg:col-span-2"}>
-                            <p className="text-xs font-semibold mb-2 text-green-600 dark:text-green-400">Response:</p>
+                          <div
+                            className={log.requestBody ? "" : "lg:col-span-2"}
+                          >
+                            <p className="text-xs font-semibold mb-2 text-green-600 dark:text-green-400">
+                              Response:
+                            </p>
                             <ScrollArea className="h-[400px] w-full rounded border bg-muted/30">
                               <pre className="text-xs font-mono p-3 whitespace-pre-wrap break-words">
                                 {JSON.stringify(log.response, null, 2)}

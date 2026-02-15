@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { PaymentMethodIcon } from "@/components/ui/payment-method-icon";
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 
 function EmailPreviewContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()
 
-  const id = searchParams.get("id");
-  const customerName = searchParams.get("name");
-  const paymentMethod = searchParams.get("paymentMethod");
+  const id = searchParams.get("id")
+  const customerName = searchParams.get("name")
+  const paymentMethod = searchParams.get("paymentMethod")
   const paymentMethodInvalid =
-    searchParams.get("paymentMethodInvalid") === "true";
-  const failedReason = searchParams.get("reason");
+    searchParams.get("paymentMethodInvalid") === "true"
+  const failedReason = searchParams.get("reason")
 
-  const memberPageUrl = `${typeof window !== "undefined" ? window.location.origin : "https://example.com"}/members/${id}?addPayment=true`;
+  const memberPageUrl = `${typeof window !== "undefined" ? window.location.origin : "https://example.com"}/members/${id}?addPayment=true`
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
@@ -211,7 +211,7 @@ function EmailPreviewContent() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export default function EmailPreviewPage() {
@@ -225,5 +225,5 @@ export default function EmailPreviewPage() {
     >
       <EmailPreviewContent />
     </Suspense>
-  );
+  )
 }

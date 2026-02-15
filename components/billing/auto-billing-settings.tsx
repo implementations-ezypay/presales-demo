@@ -1,8 +1,20 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 
 export function AutoBillingSettings() {
@@ -11,13 +23,19 @@ export function AutoBillingSettings() {
       <Card>
         <CardHeader>
           <CardTitle>Recurring Payments</CardTitle>
-          <CardDescription>Configure automatic billing for memberships</CardDescription>
+          <CardDescription>
+            Configure automatic billing for memberships
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between rounded-lg border border-border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="enable-recurring">Enable Recurring Payments</Label>
-              <p className="text-sm text-muted-foreground">Automatically charge members on renewal date</p>
+              <Label htmlFor="enable-recurring">
+                Enable Recurring Payments
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically charge members on renewal date
+              </p>
             </div>
             <Switch id="enable-recurring" defaultChecked />
           </div>
@@ -30,7 +48,9 @@ export function AutoBillingSettings() {
               <SelectContent>
                 <SelectItem value="1">1st of the month</SelectItem>
                 <SelectItem value="15">15th of the month</SelectItem>
-                <SelectItem value="membership">Membership anniversary</SelectItem>
+                <SelectItem value="membership">
+                  Membership anniversary
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -45,13 +65,17 @@ export function AutoBillingSettings() {
       <Card>
         <CardHeader>
           <CardTitle>Failed Payment Handling</CardTitle>
-          <CardDescription>Configure retry logic and notifications</CardDescription>
+          <CardDescription>
+            Configure retry logic and notifications
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between rounded-lg border border-border p-4">
             <div className="space-y-0.5">
               <Label htmlFor="retry-failed">Retry Failed Payments</Label>
-              <p className="text-sm text-muted-foreground">Automatically retry failed payment attempts</p>
+              <p className="text-sm text-muted-foreground">
+                Automatically retry failed payment attempts
+              </p>
             </div>
             <Switch id="retry-failed" defaultChecked />
           </div>

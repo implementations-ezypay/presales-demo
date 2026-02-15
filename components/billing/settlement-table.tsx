@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Card,
@@ -6,9 +6,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -16,88 +16,88 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Download, Search, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { listSettlements, downloadDocument } from "@/lib/passer-functions";
-import Link from "next/link";
+} from "@/components/ui/dropdown-menu"
+import { Download, Search, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useToast } from "@/hooks/use-toast"
+import { listSettlements, downloadDocument } from "@/lib/passer-functions"
+import Link from "next/link"
 
 export function SettlementTable() {
-  const [settlements, setSettlements] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDownloading, setIsDownloading] = useState<string | null>(null);
-  const { toast } = useToast();
-  const [branch, setBranch] = useState("");
+  const [settlements, setSettlements] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isDownloading, setIsDownloading] = useState<string | null>(null)
+  const { toast } = useToast()
+  const [branch, setBranch] = useState("")
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main";
-    setBranch(selectedBranch);
-    setIsLoading(true);
-  }, []);
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+    setIsLoading(true)
+  }, [])
 
   useEffect(() => {
-    if (!branch) return;
+    if (!branch) return
     listSettlements(branch).then((settlements) => {
-      setSettlements(settlements);
-      setIsLoading(false);
-    });
-  }, [branch]);
+      setSettlements(settlements)
+      setIsLoading(false)
+    })
+  }, [branch])
 
   const filteredSettlements = settlements.filter((settlement) => {
     const matchesSearch =
       settlement.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      settlement.period.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+      settlement.period.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesSearch
+  })
 
   const formatAmount = (amount: string | number) => {
     const numAmount =
       typeof amount === "string"
         ? parseFloat(amount.replace(/[^0-9.-]+/g, ""))
-        : amount;
+        : amount
     return new Intl.NumberFormat("en-AU", {
       style: "currency",
       currency: "AUD",
-    }).format(numAmount);
-  };
+    }).format(numAmount)
+  }
 
   const handleDownloadDocument = async (settlementId: string, docType) => {
-    setIsDownloading(settlementId);
+    setIsDownloading(settlementId)
     try {
-      const downloadUrl = await downloadDocument(settlementId, docType, branch);
+      const downloadUrl = await downloadDocument(settlementId, docType, branch)
 
-      window.open(downloadUrl, "_blank");
+      window.open(downloadUrl, "_blank")
 
       const typeLabels = {
         tax_invoice: "Tax Invoice",
         detail_report: "Detail Report",
         summary_report: "Summary Report",
-      };
+      }
 
       toast({
         title: "Report Downloaded",
         description: `${typeLabels[docType]} for settlement ${settlementId} is ready.`,
-      });
+      })
     } catch (error) {
       toast({
         title: "Download Failed",
         description:
           "Failed to download the settlement document. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsDownloading(null);
+      setIsDownloading(null)
     }
-  };
+  }
 
   return (
     <Card>
@@ -224,5 +224,5 @@ export function SettlementTable() {
         </Table>
       </CardContent>
     </Card>
-  );
+  )
 }

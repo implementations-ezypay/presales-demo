@@ -1,8 +1,18 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
 const data = [
   { month: "Jan", members: 1142 },
@@ -32,10 +42,19 @@ export function MemberGrowthChart() {
         >
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
+            <XAxis
+              dataKey="month"
+              className="text-xs"
+              tickLine={false}
+              axisLine={false}
+            />
             <YAxis className="text-xs" tickLine={false} axisLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="members" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="members"
+              fill="var(--color-chart-2)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

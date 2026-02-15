@@ -62,7 +62,7 @@ export async function listInvoice(branch) {
 export async function listTransactionByInvoice(
   invoiceId,
   paymentMethod,
-  branch,
+  branch
 ) {
   return await listEzypayTransactionByInvoice(invoiceId, paymentMethod, branch)
 }
@@ -91,13 +91,13 @@ export async function replacePaymentMethod(
   customerId,
   paymentMethod,
   newPaymentMethod,
-  branch,
+  branch
 ) {
   return await replaceEzypayPaymentMethod(
     customerId,
     paymentMethod,
     newPaymentMethod,
-    branch,
+    branch
   )
 }
 
@@ -124,7 +124,7 @@ export async function linkPaymentMethod(customerId, paymentMethod, branch) {
 export async function activatePayTo(
   paymentMethodToken: string,
   branch: string,
-  action: string,
+  action: string
 ) {
   return await activateEzypayPayTo(paymentMethodToken, branch, action)
 }

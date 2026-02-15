@@ -78,7 +78,7 @@ export default function SettingsPage() {
   const [ezypayUsername, setEzypayUsername] = useState("EzypayDemoAccount")
   const [ezypayPassword, setEzypayPassword] = useState("********")
   const [ezypayMerchantId, setEzypayMerchantId] = useState(
-    "5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d",
+    "5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d"
   )
   const [devices, setDevices] = useState<Device[]>(initialDevices)
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false)

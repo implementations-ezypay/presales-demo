@@ -8,7 +8,11 @@ interface PaymentMethodIconProps {
   style?: {}
 }
 
-export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: PaymentMethodIconProps) {
+export function PaymentMethodIcon({
+  type,
+  className = "h-6 w-16",
+  style = {},
+}: PaymentMethodIconProps) {
   const { theme } = useTheme()
   const normalizedType = type?.toLowerCase() || ""
 
@@ -53,7 +57,10 @@ export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: 
   }
 
   // Mastercard
-  if (normalizedType.includes("mastercard") || normalizedType.includes("master card")) {
+  if (
+    normalizedType.includes("mastercard") ||
+    normalizedType.includes("master card")
+  ) {
     return (
       <Image
         src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
@@ -67,7 +74,10 @@ export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: 
   }
 
   // AMEX
-  if (normalizedType.includes("amex") || normalizedType.includes("american express")) {
+  if (
+    normalizedType.includes("amex") ||
+    normalizedType.includes("american express")
+  ) {
     return (
       <Image
         src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo_%282018%29.svg"
@@ -82,7 +92,10 @@ export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: 
 
   // PayTo
   if (normalizedType.includes("payto")) {
-    const payToSrc = theme === "dark" ? "/PayTo_symbol-White-WEB.png" : "/PayTo_symbol-Black-WEB.png"
+    const payToSrc =
+      theme === "dark"
+        ? "/PayTo_symbol-White-WEB.png"
+        : "/PayTo_symbol-Black-WEB.png"
     return (
       <Image
         src={payToSrc}
@@ -123,7 +136,11 @@ export function PaymentMethodIcon({ type, className = "h-6 w-16", style = {} }: 
   }
 
   // Generic bank icon for bank transfers or other bank-related methods
-  if (normalizedType.includes("bank") || normalizedType.includes("transfer") || normalizedType.includes("bpay")) {
+  if (
+    normalizedType.includes("bank") ||
+    normalizedType.includes("transfer") ||
+    normalizedType.includes("bpay")
+  ) {
     return <Building2 className={className} />
   }
 

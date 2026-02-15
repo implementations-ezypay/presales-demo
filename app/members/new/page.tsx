@@ -93,7 +93,7 @@ export default function NewMemberPage() {
           const res = await linkPaymentMethod(
             customerId,
             paymentMethodToken,
-            branch,
+            branch
           )
         } catch (error) {
           console.error(error)
@@ -131,7 +131,7 @@ export default function NewMemberPage() {
         "GET",
         pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
         "Payment capture page UI",
-        200,
+        200
       )
 
       try {
@@ -225,7 +225,7 @@ export default function NewMemberPage() {
     }
 
     setEmailPreviewLink(
-      `${window.location.origin}/email-preview?id=${customerId}&name=${formData.firstName} ${formData.lastName}`,
+      `${window.location.origin}/email-preview?id=${customerId}&name=${formData.firstName} ${formData.lastName}`
     )
     await loadIframeUrl(customerId)
     setIsSubmitting(false)

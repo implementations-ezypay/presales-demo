@@ -92,7 +92,7 @@ export async function normalisedEzypayInvoice(customerId, branch) {
     const invoices = await listInvoiceByCustomer(
       memberDataState.id,
       memberDataState.name,
-      branch,
+      branch
     )
     memberDataState.invoices = invoices
   } catch (error) {

@@ -1,11 +1,30 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Search, Download } from "lucide-react"
 import { useState } from "react"
 
@@ -62,7 +81,8 @@ export function PaymentHistory() {
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredPayments = payments.filter((payment) => {
-    const matchesStatus = statusFilter === "all" || payment.status === statusFilter
+    const matchesStatus =
+      statusFilter === "all" || payment.status === statusFilter
     const matchesSearch =
       payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       payment.member.toLowerCase().includes(searchQuery.toLowerCase())
@@ -73,7 +93,9 @@ export function PaymentHistory() {
     <Card>
       <CardHeader>
         <CardTitle>Payment History</CardTitle>
-        <CardDescription>Complete transaction history with filtering options</CardDescription>
+        <CardDescription>
+          Complete transaction history with filtering options
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4">
@@ -137,7 +159,9 @@ export function PaymentHistory() {
                   </Badge>
                 </TableCell>
                 <TableCell>{payment.date}</TableCell>
-                <TableCell className="text-muted-foreground">{payment.invoice}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {payment.invoice}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

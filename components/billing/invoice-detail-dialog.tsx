@@ -139,7 +139,7 @@ export function InvoiceDetailDialog({
     listTransactionByInvoice(
       invoiceProp?.id,
       invoiceProp?.paymentMethod,
-      branch,
+      branch
     ).then((transactions) => {
       setInvoice((prev) => ({ ...prev, paymentAttempts: transactions }))
       setIsTransactionLoading(false)
@@ -208,7 +208,7 @@ export function InvoiceDetailDialog({
       const result = await retryInvoice(
         invoice.id,
         selectedPaymentMethodId,
-        branch,
+        branch
       )
       toast.success("Payment retry initiated successfully")
       onUpdate?.()
@@ -259,7 +259,7 @@ export function InvoiceDetailDialog({
       const result = await recordExternalInvoice(
         invoice.id,
         externalPaymentMethod,
-        branch,
+        branch
       )
       toast.success("External payment recorded successfully")
       onUpdate?.()
@@ -403,7 +403,7 @@ export function InvoiceDetailDialog({
                           {(
                             Number.parseFloat(invoice.amount.replace("$", "")) -
                             Number.parseFloat(
-                              invoice.refundAmount.replace("$", ""),
+                              invoice.refundAmount.replace("$", "")
                             )
                           ).toFixed(2)}
                         </p>

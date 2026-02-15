@@ -69,17 +69,17 @@ export function PaymentMethodsList({
   refreshTrigger,
 }: PaymentMethodsListProps) {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(
-    null,
+    null
   )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
-    null,
+    null
   )
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false)
   const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
-    null,
+    null
   )
   const [defaultPaymentMethod, setDefaultPaymentMethod] =
     useState<PaymentMethod | null>(null)
@@ -197,7 +197,7 @@ export function PaymentMethodsList({
     const deleteResult = await deletePaymentMethod(
       customerId,
       methodToDelete?.id,
-      branch,
+      branch
     )
 
     setIsProcessing(false)
@@ -229,7 +229,7 @@ export function PaymentMethodsList({
       customerId,
       defaultPaymentMethod?.id,
       methodToReplace?.id,
-      branch,
+      branch
     )
 
     setIsProcessing(false)
@@ -247,7 +247,7 @@ export function PaymentMethodsList({
 
   const handleActivatePayToClick = (
     method: PaymentMethod,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.stopPropagation()
     setMethodToActivate(method)
@@ -298,7 +298,7 @@ export function PaymentMethodsList({
                 className={cn(
                   "flex items-center space-x-3 rounded-lg border p-3",
                   isInvalid && "opacity-50 bg-muted",
-                  !isDisabled && "cursor-pointer hover:bg-accent",
+                  !isDisabled && "cursor-pointer hover:bg-accent"
                 )}
               >
                 <RadioGroupItem
@@ -310,7 +310,7 @@ export function PaymentMethodsList({
                   htmlFor={method.id}
                   className={cn(
                     "flex flex-1 items-center justify-between cursor-pointer",
-                    isDisabled && "cursor-not-allowed",
+                    isDisabled && "cursor-not-allowed"
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -504,7 +504,7 @@ export function PaymentMethodsList({
                     >
                       {methodToActivate.payTo.mandateReason.replaceAll(
                         /[^a-zA-Z0-9]/g,
-                        "",
+                        ""
                       )}
                     </Badge>
                   </div>

@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { QRCode } from "react-qrcode-logo";
-import { Smartphone } from "lucide-react";
+} from "@/components/ui/dialog"
+import { QRCode } from "react-qrcode-logo"
+import { Smartphone } from "lucide-react"
 
 export function PromptPayQrCode({ qrString }: { qrString?: string }) {
   return (
@@ -51,5 +51,5 @@ export function PromptPayQrCode({ qrString }: { qrString?: string }) {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

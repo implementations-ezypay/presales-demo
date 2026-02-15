@@ -83,7 +83,7 @@ export function AddPaymentMethodDialog({
       if (listenerResponse.type === "success") {
         console.log(
           "Success message detected, linking token to customer",
-          listenerResponse,
+          listenerResponse
         )
       }
       if (!listenerResponse.data) return
@@ -95,7 +95,7 @@ export function AddPaymentMethodDialog({
           const res = await linkPaymentMethod(
             customerId,
             paymentMethodToken,
-            branch,
+            branch
           )
           await new Promise((resolve) => setTimeout(resolve, 2000))
           setOpen(false)
@@ -128,7 +128,7 @@ export function AddPaymentMethodDialog({
         "GET",
         pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
         "Payment Capture Page UI",
-        200,
+        200
       )
 
       try {
