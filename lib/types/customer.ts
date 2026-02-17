@@ -13,11 +13,13 @@ export type Customer = {
   firstName?: string
   lastName?: string
   gender?: string
-  homePhone?: string
+  mobilePhone?: string
   metadata?: {
     plan?: string
     status?: string
     dueDate?: string
     startDate?: string
+    originalBranch?: string
   }
+  number: string
 }

@@ -28,6 +28,7 @@ import { Card, CardContent } from "./ui/card"
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import { Customer } from "@/lib/types/customer"
 import { listCustomerOptions } from "@/lib/query-options/customer"
+import { Branch } from "@/lib/types/banch"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -51,7 +52,7 @@ export function AppSidebar() {
     data: fullCustomerList,
     isSuccess,
   }: UseQueryResult<{ data: Customer[] }> = useQuery(
-    listCustomerOptions(branch)
+    listCustomerOptions(branch as unknown as Branch)
   )
 
   if (isSuccess) {

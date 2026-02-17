@@ -4,6 +4,7 @@ import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
 import axios from "axios"
 import { Customer } from "./types/customer"
+import { Branch } from "./types/banch"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`
 
@@ -75,7 +76,7 @@ export async function createCustomer(customer, branch: string): Promise<any> {
 }
 
 export async function listCustomer(
-  branch: string,
+  branch: Branch,
   customerNumber = null
 ): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch)
@@ -98,11 +99,12 @@ export async function listCustomer(
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       throw new Error(
-        `List Customer error: ${err.response?.data || err.message}`
+        `List Customer error: ${err.response?.data || err.message}`,
+        { cause: err }
       )
     }
     if (err instanceof Error) {
-      throw new Error(`List Customer error: ${err.message}`)
+      throw new Error(`List Customer error: ${err.message}`, { cause: err })
     }
     throw err
   }
