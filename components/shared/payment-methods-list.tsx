@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Trash2, Star, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -10,11 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import {
   deletePaymentMethod,
-  getCustomerPaymentMethods,
   replacePaymentMethod,
   activatePayTo,
 } from "@/lib/passer-functions"
-import { cn } from "@/lib/utils"
+import {
+  cn,
+  formatPaymentMethodDisplay,
+  getPaymentMethodType,
+} from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -36,23 +37,12 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
-
-export interface PaymentMethod {
-  id: string
-  type: string
-  last4?: string | null
-  expiry?: string | null
-  account?: string
-  isDefault: boolean
-  valid: boolean
-  payTo?: any
-  origin?: any
-  qrPayment?: any
-  wallet?: any
-}
+import { PaymentMethod } from "@/lib/types/payment-method"
+import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import { getCustomerPaymentMethodsOptions } from "@/lib/query-options/payment-method"
 
 interface PaymentMethodsListProps {
-  customerId: string
+  customerId: string | null
   variant?: "display" | "selection"
   selectedMethodId?: string
   onMethodSelect?: (methodId: string) => void
@@ -68,10 +58,6 @@ export function PaymentMethodsList({
   showInvalid = false,
   refreshTrigger,
 }: PaymentMethodsListProps) {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(
-    null
-  )
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
@@ -89,75 +75,27 @@ export function PaymentMethodsList({
   const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
   const [methodToActivate, setMethodToActivate] =
     useState<PaymentMethod | null>(null)
-  useEffect(() => {
-    if (customerId && branch) {
-      fetchPaymentMethods()
-    }
-  }, [customerId, refreshTrigger, branch])
+
+  // useEffect(() => {
+  //   if (customerId && branch) {
+  //     fetchPaymentMethods()
+  //   }
+  // }, [customerId, refreshTrigger, branch])
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
   }, [])
 
-  async function fetchPaymentMethods() {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await getCustomerPaymentMethods(customerId, branch)
-      let items: any[] | null = null
-      if (Array.isArray(response)) items = response
-      else if (Array.isArray(response?.paymentMethods))
-        items = response.paymentMethods
-      else if (Array.isArray(response?.results)) items = response.results
-      else if (Array.isArray(response?.data)) items = response.data
-      else if (response) items = [response]
-      const normalized = (items || []).map((pm: any) => {
-        return {
-          id: pm.paymentMethodToken ?? pm.id,
-          type: pm.card?.type ?? pm.type ?? "",
-          last4: pm.card?.last4 ?? pm.bank?.last4 ?? pm.last4 ?? null,
-          expiry: pm.card
-            ? `${pm.card.expiryMonth}/${pm.card.expiryYear}`
-            : (pm.expiry ?? null),
-          isDefault: pm.primary ?? false,
-          account:
-            pm.payTo?.aliasId ??
-            (pm.payTo?.bbanAccountNo
-              ? pm.payTo.bbanAccountNo.slice(-4)
-              : undefined) ??
-            pm.account ??
-            pm.wallet?.accountId,
-          valid: pm.valid,
-          payTo: pm.payTo,
-          origin: pm.card?.origin,
-          qrPayment: pm.qrPayment,
-          wallet: pm.wallet,
-        }
-      })
+  const {
+    data,
+    isPending,
+    isError,
+  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
+    getCustomerPaymentMethodsOptions(customerId, branch)
+  )
 
-      const sorted = normalized.sort((a, b) => {
-        if (a.isDefault && !b.isDefault) return -1
-        if (!a.isDefault && b.isDefault) return 1
-        if (a.valid && !b.valid) return -1
-        if (!a.valid && b.valid) return 1
-        return 0
-      })
-
-      setPaymentMethods(sorted)
-      const foundDefault = sorted.find((pm) => pm.isDefault) || null
-      setDefaultPaymentMethod(foundDefault)
-      if (onMethodSelect && foundDefault?.id) onMethodSelect(foundDefault.id)
-    } catch (error: any) {
-      const msg = error?.message || String(error)
-      console.error("Error fetching payment methods", msg)
-      setError(msg)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex items-center justify-center py-6">
         <Spinner className="h-6 w-6" />
@@ -165,7 +103,7 @@ export function PaymentMethodsList({
     )
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="text-sm text-destructive py-4">
         Failed to load payment methods: {error}
@@ -173,13 +111,24 @@ export function PaymentMethodsList({
     )
   }
 
-  if (paymentMethods?.length === 0) {
+  if (data?.data?.length === 0) {
     return (
       <div className="text-sm text-muted-foreground py-4">
         No payment methods found
       </div>
     )
   }
+
+  const customerPaymentMethods = data.data.sort((a, b) => {
+    if (a.primary && !b.primary) return -1
+    if (!a.primary && b.primary) return 1
+    if (a.valid && !b.valid) return -1
+    if (!a.valid && b.valid) return 1
+    return 0
+  })
+  // const foundDefault = customerPaymentMethods.find((pm) => pm.primary) || null
+  // setDefaultPaymentMethod(foundDefault)
+  // if (onMethodSelect && foundDefault?.id) onMethodSelect(foundDefault.id)
 
   const handleDeleteClick = (method: PaymentMethod, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -196,7 +145,7 @@ export function PaymentMethodsList({
 
     const deleteResult = await deletePaymentMethod(
       customerId,
-      methodToDelete?.id,
+      methodToDelete?.paymentMethodToken,
       branch
     )
 
@@ -227,8 +176,8 @@ export function PaymentMethodsList({
 
     const replaceResult = await replacePaymentMethod(
       customerId,
-      defaultPaymentMethod?.id,
-      methodToReplace?.id,
+      defaultPaymentMethod?.paymentMethodToken,
+      methodToReplace?.paymentMethodToken,
       branch
     )
 
@@ -262,7 +211,11 @@ export function PaymentMethodsList({
     setActionError(null)
 
     try {
-      const result = await activatePayTo(methodToActivate.id, branch, action)
+      const result = await activatePayTo(
+        methodToActivate.paymentMethodToken,
+        branch,
+        action
+      )
 
       if (!result.success) {
         setActionError(result.error?.message || "Failed to activate PayTo")
@@ -282,19 +235,17 @@ export function PaymentMethodsList({
   if (variant === "selection") {
     return (
       <RadioGroup
-        value={selectedMethodId || defaultPaymentMethod?.id || ""}
-        onValueChange={onMethodSelect}
+        value={selectedMethodId || ""}
+        onValueChange={(value) => onMethodSelect?.(value)}
       >
         <div className="space-y-2">
-          {paymentMethods?.map((method) => {
+          {customerPaymentMethods?.map((method) => {
             const isInvalid = !method.valid
             const isDisabled = isInvalid && !showInvalid
-            const isPayToInvalid =
-              method.type?.toUpperCase() === "PAYTO" && isInvalid
 
             return (
               <div
-                key={method.id}
+                key={method.paymentMethodToken}
                 className={cn(
                   "flex items-center space-x-3 rounded-lg border p-3",
                   isInvalid && "opacity-50 bg-muted",
@@ -302,41 +253,40 @@ export function PaymentMethodsList({
                 )}
               >
                 <RadioGroupItem
-                  value={method.id}
-                  id={method.id}
+                  value={method.paymentMethodToken}
+                  id={method.paymentMethodToken}
                   disabled={isDisabled}
                 />
                 <Label
-                  htmlFor={method.id}
+                  htmlFor={method.paymentMethodToken}
                   className={cn(
-                    "flex flex-1 items-center justify-between cursor-pointer",
+                    "flex flex-1 items-center justify-between w-full",
                     isDisabled && "cursor-not-allowed"
                   )}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onMethodSelect?.(method.paymentMethodToken)
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <PaymentMethodIcon
-                      type={
-                        method.origin ??
-                        method.wallet?.walletType ??
-                        method.qrPayment?.qrType ??
-                        method.type
-                      }
+                      type={getPaymentMethodType(method)}
                       className="h-4 w-8"
                     />
                     <div>
-                      <span className="text-sm font-medium">
-                        {method.wallet?.walletType ??
-                          method.qrPayment?.qrType ??
-                          method.type}
-                      </span>
                       <span className="text-xs text-muted-foreground">
-                        {method.last4 ? `****${method.last4}` : ""}{" "}
-                        {method.expiry || method.account || ""}
+                        {formatPaymentMethodDisplay(method)?.replace(
+                          /amex|visa|mastercard/i,
+                          ""
+                        )}{" "}
+                        {method.card
+                          ? `${method.card?.expiryMonth}/${method.card?.expiryYear}`
+                          : ""}
                       </span>
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
-                    {method.isDefault && (
+                    {method.primary && (
                       <Badge variant="default" className="text-xs">
                         Default
                       </Badge>
@@ -345,16 +295,6 @@ export function PaymentMethodsList({
                       <Badge variant="destructive" className="text-xs">
                         Invalid
                       </Badge>
-                    )}
-                    {isPayToInvalid && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 bg-transparent"
-                        onClick={(e) => handleActivatePayToClick(method, e)}
-                      >
-                        Activate
-                      </Button>
                     )}
                   </div>
                 </Label>
@@ -369,38 +309,34 @@ export function PaymentMethodsList({
   return (
     <>
       <div className="h-56 overflow-auto space-y-2">
-        {paymentMethods?.map((method) => {
+        {customerPaymentMethods?.map((method) => {
           const isPayTo = method.type?.toUpperCase() === "PAYTO"
           return (
             <div
-              key={method.id}
+              key={method.paymentMethodToken}
               className="flex items-center justify-between rounded-lg border border-border p-2"
             >
               <div className="flex items-center">
-                <div className="min-w-22 justify-center flex items-center">
-                  <PaymentMethodIcon
-                    type={
-                      method.origin ??
-                      method.wallet?.walletType ??
-                      method.qrPayment?.qrType ??
-                      method.type
-                    }
-                  />
+                <div className="min-w-20 justify-center flex items-center relative h-4 w-4">
+                  <PaymentMethodIcon type={getPaymentMethodType(method)} />
                 </div>
                 <div>
                   <p className="text-sm font-medium">
-                    {method.qrPayment?.qrType ??
-                      method.wallet?.walletType ??
-                      method.type}
+                    {getPaymentMethodType(method, "card-type")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {method.last4 ? `****${method.last4}` : ""}{" "}
-                    {method.expiry || method.account || ""}
+                    {formatPaymentMethodDisplay(method)?.replace(
+                      /amex|visa|mastercard/i,
+                      ""
+                    )}{" "}
+                    {method.card
+                      ? `${method.card?.expiryMonth}/${method.card?.expiryYear}`
+                      : ""}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 items-center">
-                {method.isDefault && (
+                {method.primary && (
                   <Badge variant="default" className="text-xs">
                     Default
                   </Badge>
@@ -421,7 +357,7 @@ export function PaymentMethodsList({
                   </Button>
                 )}
                 <div className="flex gap-1">
-                  {!method.isDefault && method.valid && (
+                  {!method.primary && method.valid && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -432,7 +368,7 @@ export function PaymentMethodsList({
                       <Star className="h-3.5 w-3.5" />
                     </Button>
                   )}
-                  {!method.isDefault && (
+                  {!method.primary && (
                     <Button
                       variant="ghost"
                       size="icon"

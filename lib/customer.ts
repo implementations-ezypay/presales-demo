@@ -76,9 +76,9 @@ export async function createCustomer(customer, branch: string): Promise<any> {
 }
 
 export async function listCustomer(
-  branch: Branch,
-  customerNumber = null
-): Promise<any> {
+  branch: string,
+  customerNumber: string | null = null
+): Promise<{ data: Customer[] }> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     // Get token directly from utility function instead of HTTP request
@@ -86,7 +86,7 @@ export async function listCustomer(
     const token = tokenData.access_token
 
     const url = customerNumber
-      ? `${apiEndpoint}?customerNumber=${customerNumber}&limit=30`
+      ? `${apiEndpoint}?customerNumber=${customerNumber}`
       : `${apiEndpoint}?limit=30`
     const { data }: { data: { data: Customer[] } } = await axios.get(url, {
       headers: {
@@ -99,7 +99,7 @@ export async function listCustomer(
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       throw new Error(
-        `List Customer error: ${err.response?.data || err.message}`,
+        `List Customer error: ${JSON.stringify(err.response?.data) || err.message}`,
         { cause: err }
       )
     }
@@ -114,6 +114,7 @@ export async function getCustomer(
   customerId: string | null,
   branch: string
 ): Promise<any> {
+  console.log(branch, customerId)
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {

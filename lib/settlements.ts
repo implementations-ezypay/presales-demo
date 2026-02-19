@@ -139,7 +139,7 @@ export async function listSettlements(branch): Promise<any> {
       throw new Error(`List settlement failed: ${response.status}`)
     }
 
-    return normalisedEzypaySettlement(settlements.data)
+    return settlements.data
   } catch (err) {
     console.error("List settlement error:", err)
     throw err

@@ -25,13 +25,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { TapToPayAnimation } from "./tap-to-pay-animation"
-import {
-  createCheckout,
-  listCustomer,
-  createInvoice,
-} from "@/lib/passer-functions"
+import { createCheckout, createInvoice } from "@/lib/passer-functions"
 import { Spinner } from "@/components/ui/spinner"
-import { PaymentMethodsList } from "./payment-methods-list"
+import { PaymentMethodsList } from "../shared/payment-methods-list"
 import Link from "next/link"
 import {
   Tooltip,
@@ -42,6 +38,9 @@ import {
 import { logApiCall } from "@/lib/api-logger"
 import { PromptPayQrCode } from "./promptpay-qrcode"
 import { getBranchCountry, getBranchCurrency } from "@/lib/branches"
+import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import { listCustomerOptions } from "@/lib/query-options/customer"
+import { Customer } from "@/lib/types/customer"
 
 interface CreateInvoiceDialogProps {
   open: boolean
@@ -59,11 +58,9 @@ export function CreateInvoiceDialog({
   customerName,
 }: CreateInvoiceDialogProps) {
   const [loading, setLoading] = useState(false)
-  const [loadingCustomers, setLoadingCustomers] = useState(false)
   const [showTapAnimation, setShowTapAnimation] = useState(false)
   const [qrString, setQrString] = useState("")
   const { toast } = useToast()
-  const [customers, setCustomers] = useState<any[]>([])
   const [formData, setFormData] = useState({
     memberId: "",
     amount: "",
@@ -76,36 +73,16 @@ export function CreateInvoiceDialog({
   const [branch, setBranch] = useState("")
 
   useEffect(() => {
-    if (open && !customerId) {
-      setLoadingCustomers(true)
-      listCustomer(branch)
-        .then((response) => {
-          const customerList = response?.data || []
-          setCustomers(customerList)
-          sessionStorage.setItem(
-            "defaultCustomerList",
-            JSON.stringify(customerList)
-          )
-          setLoadingCustomers(false)
-        })
-        .catch((err) => {
-          console.error("Failed to load customers:", err)
-          toast({
-            title: "Error",
-            description: "Failed to load customer list.",
-            variant: "destructive",
-          })
-          setLoadingCustomers(false)
-        })
-    } else if (open && customerId) {
-      setFormData((prev) => ({ ...prev, memberId: customerId }))
-    }
-  }, [open, customerId, toast])
-
-  useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
   }, [])
+
+  const {
+    data: fullCustomerData,
+    isPending,
+  }: UseQueryResult<{ data: Customer[] }> = useQuery(
+    listCustomerOptions(branch)
+  )
 
   const terminalDevices = [
     {
@@ -148,7 +125,7 @@ export function CreateInvoiceDialog({
     try {
       let selectedMemberName = customerName
       if (!selectedMemberName) {
-        const selectedCustomer = customers.find(
+        const selectedCustomer = fullCustomerData?.data.find(
           (c) => c.id === formData.memberId
         )
         selectedMemberName = selectedCustomer
@@ -337,7 +314,7 @@ export function CreateInvoiceDialog({
           if (typeof checkoutUrl !== "string")
             throw new Error("checkoutUrl is not a string")
           // This will throw if the URL is invalid
-          // eslint-disable-next-line no-new
+
           new URL(checkoutUrl)
 
           toast({
@@ -449,28 +426,26 @@ export function CreateInvoiceDialog({
                       setFormData((prev) => ({ ...prev, memberId: value }))
                     }
                     required
-                    disabled={loadingCustomers}
+                    disabled={isPending}
                   >
                     <SelectTrigger id="member">
                       <SelectValue
                         placeholder={
-                          loadingCustomers
-                            ? "Loading customers..."
-                            : "Select a member"
+                          isPending ? "Loading customers..." : "Select a member"
                         }
                       />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      {loadingCustomers ? (
+                      {isPending ? (
                         <div className="flex justify-center py-4">
                           <Spinner className="h-6 w-6" />
                         </div>
-                      ) : customers.length === 0 ? (
+                      ) : fullCustomerData?.data?.length === 0 ? (
                         <div className="py-4 text-center text-sm text-muted-foreground">
                           No customers found
                         </div>
                       ) : (
-                        customers.map((customer) => (
+                        fullCustomerData?.data.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
                             {customer.firstName} {customer.lastName}
                           </SelectItem>
@@ -642,7 +617,7 @@ export function CreateInvoiceDialog({
                   <TooltipTrigger asChild>
                     <Button
                       type="submit"
-                      disabled={loading || loadingCustomers}
+                      disabled={loading || isPending}
                       className="w-full sm:w-auto"
                     >
                       {loading ? "Creating..." : "Create"}

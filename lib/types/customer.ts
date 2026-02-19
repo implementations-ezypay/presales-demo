@@ -12,8 +12,8 @@ export type Customer = {
   email?: string
   firstName?: string
   lastName?: string
-  gender?: string
   mobilePhone?: string
+  homePhone?: string
   metadata?: {
     plan?: string
     status?: string

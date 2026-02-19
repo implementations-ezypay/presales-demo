@@ -4,8 +4,8 @@ import { TopBar } from "@/components/top-bar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, AlertCircle, Clock, TrendingUp } from "lucide-react"
-import { InvoicesTable } from "@/components/billing/invoices-table"
-import { UpcomingInvoicesTable } from "@/components/billing/upcoming-invoices-table"
+import { InvoicesTable } from "@/components/shared/invoices-table"
+import { UpcomingInvoicesTable } from "@/components/shared/upcoming-invoices-table"
 import { SettlementTable } from "@/components/billing/settlement-table"
 
 const stats = [

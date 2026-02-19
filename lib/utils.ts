@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { getCustomer, listInvoiceByCustomer } from "./passer-functions"
+import { PaymentMethod } from "./types/payment-method"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -103,8 +104,57 @@ export async function normalisedEzypayInvoice(customerId, branch) {
 }
 
 export const getStatusBadgeVariant = (status: string) => {
-  if (status === "paid") return "default"
-  if (status.includes("refund") || status.includes("written")) return "warning"
-  if (status === "pending" || status === "unpaid") return "secondary"
+  if (status.toLowerCase() === "paid") return "default"
+  if (
+    status.toLowerCase().includes("refund") ||
+    status.toLowerCase().includes("processing")
+  )
+    return "secondary"
+  if (status.toLowerCase() === "pending" || status.toLowerCase() === "unpaid")
+    return "secondary"
   return "destructive"
+}
+
+export const parseCurrency = (amount: number) => {
+  return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+}
+
+export const formatPaymentMethodDisplay = (
+  paymentMethodData: PaymentMethod
+): string | undefined => {
+  switch (paymentMethodData.type) {
+    case "CARD":
+      return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
+    case "BANK":
+      return `**** ${paymentMethodData.bank?.last4}`
+    case "QRPAYMENT":
+      return paymentMethodData.qrPayment?.qrType
+    case "WALLET":
+      return paymentMethodData.wallet?.accountId
+    case "PAYTO":
+      return (
+        paymentMethodData.payTo?.aliasId ??
+        paymentMethodData.payTo?.bBanAccountNo
+      )
+  }
+}
+
+export const getPaymentMethodType = (
+  paymentMethodData: PaymentMethod,
+  variant?: string
+) => {
+  switch (paymentMethodData.type) {
+    case "CARD":
+      if (!variant)
+        return paymentMethodData.card?.origin ?? paymentMethodData.card?.type
+      else return paymentMethodData.card?.type
+    case "BANK":
+      return "Bank"
+    case "QRPAYMENT":
+      return paymentMethodData.qrPayment?.qrType
+    case "WALLET":
+      return paymentMethodData.wallet?.walletType
+    case "PAYTO":
+      return "PayTo"
+  }
 }

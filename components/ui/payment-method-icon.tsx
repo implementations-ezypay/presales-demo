@@ -3,7 +3,7 @@ import { CreditCard, Building2 } from "lucide-react"
 import { useTheme } from "next-themes"
 
 interface PaymentMethodIconProps {
-  type: string
+  type: string | undefined
   className?: string
   style?: {}
 }
@@ -46,10 +46,10 @@ export function PaymentMethodIcon({
   if (normalizedType.includes("visa")) {
     return (
       <Image
-        src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg"
+        src="/visa.png"
         alt="Visa"
-        width={60}
-        height={60}
+        width={30}
+        height={30}
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
@@ -63,10 +63,10 @@ export function PaymentMethodIcon({
   ) {
     return (
       <Image
-        src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
+        src="/mastercard.svg"
         alt="Mastercard"
-        width={32}
-        height={32}
+        width={30}
+        height={30}
         className={className}
         style={{ objectFit: "contain", ...style }}
       />

@@ -35,9 +35,8 @@ import {
   MailIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-import { RefundDialog } from "./refund-dialog"
+import { RefundDialog } from "../billing/refund-dialog"
 import {
-  listTransactionByInvoice,
   retryInvoice,
   writeOffInvoice,
   recordExternalInvoice,
@@ -46,62 +45,21 @@ import {
 import { Spinner } from "../ui/spinner"
 import { PaymentMethodsList } from "./payment-methods-list"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
-import { getStatusBadgeVariant } from "@/lib/utils"
-
-interface PaymentAttempt {
-  id: string
-  date: string
-  amount: string
-  status: "success" | "failed" | "pending" | "settled"
-  method: string
-  errorMessage?: string
-}
-
-export interface Invoice {
-  id: string
-  member: string
-  amount: string
-  status: string
-  date: string
-  dueDate: string
-  paymentMethod?: string
-  items?: any[]
-  number: string
-  paymentAttempts?: PaymentAttempt[]
-  refundAmount?: string
-  refundDate?: string
-  refundType?: "full" | "partial"
-  customerId?: string
-  failedPaymentReason?: any
-  paymentProviderResponse?: any
-  payNowUrl?: string
-  accountingCode?: string | null
-  paymentMethodInvalid?: Boolean
-}
+import {
+  formatPaymentMethodDisplay,
+  getPaymentMethodType,
+  getStatusBadgeVariant,
+  parseCurrency,
+} from "@/lib/utils"
+import { Invoice, Transaction } from "@/lib/types/invoice"
+import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import { listTransaction } from "@/lib/query-options/invoice"
 
 interface InvoiceDetailDialogProps {
   invoiceProp: Invoice | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdate?: () => void
-}
-
-const formatCellValue = (value: any) => {
-  if (value === null || value === undefined) return ""
-  const val = value?.replaceAll(/googlepay|applepay/gi, "")
-  if (typeof val === "object") {
-    if (val.code || val.description) {
-      return `${val.code ?? ""}${
-        val.description ? ` - ${val.description}` : ""
-      }`.trim()
-    }
-    try {
-      return JSON.stringify(val)
-    } catch (e) {
-      return String(val)
-    }
-  }
-  return String(val)
 }
 
 export function InvoiceDetailDialog({
@@ -111,7 +69,6 @@ export function InvoiceDetailDialog({
   onUpdate,
 }: InvoiceDetailDialogProps) {
   const [invoice, setInvoice] = useState<Invoice | null>(invoiceProp)
-  const [isTransactionLoading, setIsTransactionLoading] = useState(true)
   const [isRetrying, setIsRetrying] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showExternalPayment, setShowExternalPayment] = useState(false)
@@ -134,17 +91,12 @@ export function InvoiceDetailDialog({
     setBranch(selectedBranch)
   }, [])
 
-  useEffect(() => {
-    if (!branch) return
-    listTransactionByInvoice(
-      invoiceProp?.id,
-      invoiceProp?.paymentMethod,
-      branch
-    ).then((transactions) => {
-      setInvoice((prev) => ({ ...prev, paymentAttempts: transactions }))
-      setIsTransactionLoading(false)
-    })
-  }, [branch])
+  const {
+    data: transactionData,
+    isPending,
+  }: UseQueryResult<{ data: Transaction[] }> = useQuery(
+    listTransaction(invoice?.id, branch)
+  )
 
   if (!invoice) return null
 
@@ -230,7 +182,7 @@ export function InvoiceDetailDialog({
     try {
       if (typeof invoice.payNowUrl !== "string") throw new Error("Invalid URL")
       // validate URL
-      // eslint-disable-next-line no-new
+
       new URL(invoice.payNowUrl)
 
       if (typeof window !== "undefined") {
@@ -314,19 +266,23 @@ export function InvoiceDetailDialog({
                 <p className="text-sm font-medium text-muted-foreground">
                   Invoice ID
                 </p>
-                <p className="text-lg font-semibold">{invoice.number}</p>
+                <p className="text-lg font-semibold">
+                  {invoice.documentNumber}
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Member
                 </p>
-                <p className="text-lg font-semibold">{invoice.member}</p>
+                <p className="text-lg font-semibold">{`${invoice.customerFirstName} ${invoice.customerLastName}`}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Amount
                 </p>
-                <p className="text-lg font-semibold">{invoice.amount}</p>
+                <p className="text-lg font-semibold">
+                  {parseCurrency(invoice.amount.value)}
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
@@ -340,27 +296,29 @@ export function InvoiceDetailDialog({
                 <p className="text-sm font-medium text-muted-foreground">
                   Invoice Date
                 </p>
-                <p className="text-base">{invoice.date}</p>
+                <p className="text-base">{invoice.dueDate}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Scheduled Date
                 </p>
-                <p className="text-base">{invoice.dueDate}</p>
+                <p className="text-base">
+                  {invoice.scheduledPaymentDate ?? "null"}
+                </p>
               </div>
-              {invoice.accountingCode && (
+              {invoice.items[0].accountingCode && (
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     Accounting Code
                   </p>
                   <p className="text-base font-mono">
-                    {invoice.accountingCode}
+                    {invoice.items[0].accountingCode}
                   </p>
                 </div>
               )}
             </div>
 
-            {invoice.status === "refunded" && invoice.refundAmount && (
+            {invoice.status.match(/refund/i) && (
               <>
                 <Separator />
                 <div className="rounded-lg border border-orange-500/50 bg-orange-50 dark:bg-orange-950/20 p-4">
@@ -376,7 +334,11 @@ export function InvoiceDetailDialog({
                         Refund Type
                       </p>
                       <p className="text-base font-semibold capitalize">
-                        {invoice.refundType || "Full"} Refund
+                        $
+                        {invoice.status.match(/partial/i)
+                          ? "Partial "
+                          : "Full "}
+                        Refund
                       </p>
                     </div>
                     <div>
@@ -384,7 +346,7 @@ export function InvoiceDetailDialog({
                         Refund Amount
                       </p>
                       <p className="text-base font-semibold text-orange-600 dark:text-orange-400">
-                        {invoice.refundAmount}
+                        {parseCurrency(invoice.totalRefunded.value)}
                       </p>
                     </div>
                     <div>
@@ -393,19 +355,15 @@ export function InvoiceDetailDialog({
                       </p>
                       <p className="text-base">{invoice.refundDate}</p>
                     </div>
-                    {invoice.refundType === "partial" && (
+                    {invoice.status.match(/partial/i) && (
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">
                           Remaining Balance
                         </p>
                         <p className="text-base font-semibold">
-                          $
-                          {(
-                            Number.parseFloat(invoice.amount.replace("$", "")) -
-                            Number.parseFloat(
-                              invoice.refundAmount.replace("$", "")
-                            )
-                          ).toFixed(2)}
+                          {parseCurrency(
+                            invoice.amount.value - invoice.totalRefunded.value
+                          )}
                         </p>
                       </div>
                     )}
@@ -431,7 +389,7 @@ export function InvoiceDetailDialog({
                     <TableRow key={item.description}>
                       <TableCell>{item.description}</TableCell>
                       <TableCell className="font-medium">
-                        {item.amount}
+                        {item.amount.value}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -449,10 +407,10 @@ export function InvoiceDetailDialog({
                 </p>
                 <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                   <p className="font-medium">
-                    {invoice.failedPaymentReason.code}:
+                    {invoice.failedPaymentReason?.code}:
                   </p>
                   <p className="font-medium">
-                    {invoice.paymentProviderResponse.description}
+                    {invoice.paymentProviderResponse?.description}
                   </p>
                 </div>
               </div>
@@ -469,11 +427,11 @@ export function InvoiceDetailDialog({
               </p>
               <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                 <PaymentMethodIcon
-                  type={invoice.paymentMethod}
+                  type={getPaymentMethodType(invoice.paymentMethodData)}
                   className="h-5 w-10"
                 />
                 <span className="font-medium">
-                  {formatCellValue(invoice.paymentMethod)}
+                  {formatPaymentMethodDisplay(invoice.paymentMethodData)}
                 </span>
                 {invoice.paymentMethodInvalid && (
                   <Badge variant="destructive">invalid</Badge>
@@ -487,11 +445,6 @@ export function InvoiceDetailDialog({
             <div>
               <p className="text-sm font-medium mb-3">Payment History</p>
 
-              {/* {isTransactionLoading ? (
-                <div className="relative flex justify-center items-center">
-                  <Spinner className="w-10 h-10" />
-                </div>
-              ) : ( */}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -503,7 +456,7 @@ export function InvoiceDetailDialog({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isTransactionLoading ? (
+                  {isPending ? (
                     <TableRow>
                       <TableCell colSpan={7} className="pt-2 text-center">
                         <div className="flex items-center justify-center">
@@ -513,36 +466,52 @@ export function InvoiceDetailDialog({
                       </TableCell>
                     </TableRow>
                   ) : (
-                    invoice.paymentAttempts.map((attempt) => (
-                      <TableRow key={attempt.id}>
-                        <TableCell>{attempt.date}</TableCell>
+                    transactionData?.data.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>
+                          {transaction.createdOn.split("T")[0]}
+                        </TableCell>
                         <TableCell className="font-medium">
-                          {attempt.amount}
+                          {parseCurrency(transaction.amount.value)}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <PaymentMethodIcon
-                              type={attempt.method}
+                              type={
+                                transaction.source !== "external_payment"
+                                  ? getPaymentMethodType(
+                                      invoice.paymentMethodData
+                                    )
+                                  : ""
+                              }
                               className="h-4 w-8"
                             />
-                            <span>{formatCellValue(attempt.method)}</span>
+                            <span>
+                              {transaction.source === "external_payment"
+                                ? `External (${transaction.paymentMethodType})`
+                                : getPaymentMethodType(
+                                    invoice.paymentMethodData
+                                  )}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {attempt.status === "success" ||
-                            attempt.status === "settled" ? (
+                            {transaction.status.toLowerCase() === "success" ||
+                            transaction.status.toLowerCase() === "settled" ? (
                               <CheckCircle className="h-4 w-4 text-accent" />
                             ) : (
                               <XCircle className="h-4 w-4 text-destructive" />
                             )}
-                            <span className="capitalize">{attempt.status}</span>
+                            <span className="capitalize">
+                              {transaction.status}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          {attempt.errorMessage && (
+                          {transaction.failedPaymentReason && (
                             <span className="text-xs text-destructive">
-                              {attempt.errorMessage}
+                              {transaction.failedPaymentReason.code}
                             </span>
                           )}
                         </TableCell>
@@ -635,7 +604,7 @@ export function InvoiceDetailDialog({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2">
-              {invoice.status === "paid" && (
+              {invoice.status.toLowerCase() === "paid" && (
                 <Button
                   variant="destructive"
                   onClick={() => setShowRefundDialog(true)}
@@ -645,9 +614,9 @@ export function InvoiceDetailDialog({
                 </Button>
               )}
 
-              {(invoice.status === "failed" ||
-                invoice.status === "past_due" ||
-                invoice.status === "unpaid") && (
+              {(invoice.status.toLowerCase() === "failed" ||
+                invoice.status.toLowerCase() === "past_due" ||
+                invoice.status.toLowerCase() === "unpaid") && (
                 <>
                   <Button
                     variant="secondary"
@@ -705,7 +674,7 @@ export function InvoiceDetailDialog({
       <RefundDialog
         open={showRefundDialog}
         onOpenChange={setShowRefundDialog}
-        invoiceAmount={Number.parseFloat(invoice.amount.replace("$", ""))}
+        invoiceAmount={invoice.amount.value}
         onConfirm={handleRefund}
         isProcessing={isProcessing}
         error={refundError}

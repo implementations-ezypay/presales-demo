@@ -28,87 +28,74 @@ import {
 import { Search, Plus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { InvoiceDetailDialog } from "./invoice-detail-dialog"
-import { CreateInvoiceDialog } from "./create-invoice-dialog"
+import { CreateInvoiceDialog } from "../billing/create-invoice-dialog"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 import { Spinner } from "../ui/spinner"
-import { listInvoice, listInvoiceByCustomer } from "@/lib/passer-functions"
-import { useToast } from "@/hooks/use-toast"
-import { getStatusBadgeVariant } from "@/lib/utils"
+import { getCustomerIdFromPath, getStatusBadgeVariant } from "@/lib/utils"
+import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import {
+  listInvoiceOptions,
+  listSingleInvoiceOptions,
+} from "@/lib/query-options/invoice"
+import { Invoice } from "@/lib/types/invoice"
+import { PaymentMethod } from "@/lib/types/payment-method"
 
 export function InvoicesTable({ variant = "billing", customerData = null }) {
+  const customerId = getCustomerIdFromPath()
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedInvoice, setSelectedInvoice] = useState(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [invoices, setInvoices] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
   const [branch, setBranch] = useState("")
-  const { toast } = useToast()
+
+  let invoices: Invoice[] | undefined = undefined
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
   }, [])
 
-  useEffect(() => {
-    if (!branch) return
-    fetchInvoices()
-  }, [branch, customerData])
+  let customerInvoiceData, isPending, isSuccess
 
-  const fetchInvoices = async () => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    try {
-      if (variant === "billing") {
-        const res = await listInvoice(branch)
-        let defaultCustomerData = sessionStorage.getItem("defaultCustomerList")
-        let fetchedInvoices
-
-        if (defaultCustomerData) {
-          defaultCustomerData = JSON.parse(defaultCustomerData)
-        }
-
-        fetchedInvoices = res.map((invoice) => {
-          const id = invoice.customerId
-          const customerName = defaultCustomerData?.filter(
-            (cus) => cus.id == id
-          )[0]?.name
-          return { ...invoice, member: customerName }
-        })
-        console.log(fetchedInvoices)
-        setInvoices(fetchedInvoices)
-        setIsLoading(false)
-        return
-      }
-
-      if (!customerData?.id) return
-      const res = await listInvoiceByCustomer(
-        customerData?.id,
-        customerData?.name,
-        branch
-      )
-
-      setInvoices(res)
-      setIsLoading(false)
-    } catch (err) {
-      console.error("Failed to load invoices:", err)
-      toast({
-        title: "Error loading invoices",
-        description:
-          "Please check if the API endpoint is configured correctly.",
-        variant: "destructive",
-      })
-    }
+  if (customerId) {
+    const {
+      data,
+      isPending: isQueryPending,
+      isSuccess: isQuerySuccess,
+    }: UseQueryResult<{ data: Invoice[] }> = useQuery(
+      listInvoiceOptions(branch)
+    )
+    customerInvoiceData = data
+    isPending = isQueryPending
+    isSuccess = isQuerySuccess
+  } else {
+    const {
+      data,
+      isPending: isQueryPending,
+      isSuccess: isQuerySuccess,
+    }: UseQueryResult<{ data: Invoice[] }> = useQuery(
+      listSingleInvoiceOptions(customerId, branch)
+    )
+    customerInvoiceData = data
+    isPending = isQueryPending
+    isSuccess = isQuerySuccess
   }
+
+  if (isSuccess) invoices = customerInvoiceData?.data
 
   const filteredInvoices = invoices?.filter((invoice) => {
     const matchesStatus =
-      statusFilter === "all" || invoice.status === statusFilter
+      statusFilter === "all" || invoice.status.toLowerCase() === statusFilter
     const matchesSearch =
       variant == "billing"
         ? invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          invoice.member.toLowerCase().includes(searchQuery.toLowerCase())
+          invoice.customerFirstName
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          invoice.customerLastName
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
         : invoice.id.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesStatus && matchesSearch
   })
@@ -122,20 +109,37 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
     setIsDetailOpen(true)
   }
 
-  const formatCellValue = (value: any) => {
-    if (value === null || value === undefined) return ""
-    const val = value?.replaceAll(/googlepay|applepay/gi, "")
-    if (typeof val === "object") {
-      if (val.code || val.description) {
-        return `${val.code ?? ""}${val.description ? ` - ${val.description}` : ""}`.trim()
-      }
-      try {
-        return JSON.stringify(val)
-      } catch (e) {
-        return String(val)
-      }
+  const formatPaymentMethodDisplay = (paymentMethodData: PaymentMethod) => {
+    switch (paymentMethodData.type) {
+      case "CARD":
+        return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
+      case "BANK":
+        return `**** ${paymentMethodData.bank?.last4}`
+      case "QRPAYMENT":
+        return paymentMethodData.qrPayment?.type
+      case "WALLET":
+        return paymentMethodData.wallet?.accountId
+      case "PAYTO":
+        return (
+          paymentMethodData.payTo?.aliasId ??
+          paymentMethodData.payTo?.bBanAccountNo
+        )
     }
-    return String(val)
+  }
+
+  const getPaymentMethodType = (paymentMethodData: PaymentMethod) => {
+    switch (paymentMethodData.type) {
+      case "CARD":
+        return paymentMethodData.card?.origin ?? paymentMethodData.card?.type
+      case "BANK":
+        return "Bank"
+      case "QRPAYMENT":
+        return paymentMethodData.qrPayment?.type
+      case "WALLET":
+        return paymentMethodData.wallet?.walletType
+      case "PAYTO":
+        return "PayTo"
+    }
   }
 
   const handleInvoiceCreated = () => {
@@ -211,7 +215,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isPending ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-18 text-center">
                       <div className="flex items-center justify-center">
@@ -220,7 +224,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredInvoices.length === 0 ? (
+                ) : filteredInvoices?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-18 text-center">
                       <p>No invoice to show</p>
@@ -234,26 +238,31 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                       onClick={() => handleInvoiceClick(invoice)}
                     >
                       <TableCell className="font-medium text-sm">
-                        {formatCellValue(invoice.number ?? invoice.id)}
+                        {invoice.documentNumber}
                       </TableCell>
                       {variant == "billing" ? (
-                        <TableCell className="text-sm">
-                          {formatCellValue(invoice.member)}
-                        </TableCell>
+                        <TableCell className="text-sm">{`${invoice.customerFirstName} ${invoice.customerLastName}`}</TableCell>
                       ) : (
                         ""
                       )}
                       <TableCell className="font-medium text-sm">
-                        {formatCellValue(invoice.amount)}
+                        $
+                        {invoice.amount.value.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <PaymentMethodIcon
-                            type={invoice.paymentMethod}
+                            type={getPaymentMethodType(
+                              invoice.paymentMethodData
+                            )}
                             className="h-5 w-10 flex-shrink-0"
                           />
                           <span className="truncate">
-                            {formatCellValue(invoice.paymentMethod)}
+                            {formatPaymentMethodDisplay(
+                              invoice.paymentMethodData
+                            )}
                           </span>
                           {invoice.paymentMethodInvalid && (
                             <Badge variant="destructive">invalid</Badge>
@@ -262,16 +271,14 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={getStatusBadgeVariant(
-                            String(invoice.status)
-                          )}
+                          variant={getStatusBadgeVariant(invoice.status)}
                           className="text-xs"
                         >
-                          {formatCellValue(invoice.status)}
+                          {invoice.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {formatCellValue(invoice.date)}
+                        {invoice.dueDate}
                       </TableCell>
                     </TableRow>
                   ))
@@ -289,9 +296,6 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
           onOpenChange={setIsDetailOpen}
           onUpdate={() => {
             console.log("[v0] Invoice updated, refreshing list")
-            if (variant === "billing") {
-              fetchInvoices()
-            }
           }}
         />
       )}

@@ -27,12 +27,14 @@ import {
 import { Download, Search, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { listSettlements, downloadDocument } from "@/lib/passer-functions"
+import { downloadDocument } from "@/lib/passer-functions"
 import Link from "next/link"
+import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import { listSettlementOptions } from "@/lib/query-options/settlement"
+import { Settlement } from "@/lib/types/settlement"
+import { parseCurrency } from "@/lib/utils"
 
 export function SettlementTable() {
-  const [settlements, setSettlements] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [isDownloading, setIsDownloading] = useState<string | null>(null)
   const { toast } = useToast()
@@ -41,34 +43,20 @@ export function SettlementTable() {
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
-    setIsLoading(true)
   }, [])
 
-  useEffect(() => {
-    if (!branch) return
-    listSettlements(branch).then((settlements) => {
-      setSettlements(settlements)
-      setIsLoading(false)
-    })
-  }, [branch])
+  const { data: settlements, isPending }: UseQueryResult<Settlement[]> =
+    useQuery(listSettlementOptions(branch))
 
-  const filteredSettlements = settlements.filter((settlement) => {
+  const filteredSettlements = settlements?.filter((settlement) => {
     const matchesSearch =
-      settlement.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      settlement.period.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
+      settlement.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      settlement.date.toLowerCase().includes(searchQuery.toLowerCase())
+
+    return matchesSearch && settlement.amount.value !== 0
   })
 
-  const formatAmount = (amount: string | number) => {
-    const numAmount =
-      typeof amount === "string"
-        ? parseFloat(amount.replace(/[^0-9.-]+/g, ""))
-        : amount
-    return new Intl.NumberFormat("en-AU", {
-      style: "currency",
-      currency: "AUD",
-    }).format(numAmount)
-  }
+  console.log(filteredSettlements)
 
   const handleDownloadDocument = async (settlementId: string, docType) => {
     setIsDownloading(settlementId)
@@ -145,7 +133,7 @@ export function SettlementTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isPending ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   <div className="flex items-center justify-center gap-2">
@@ -154,19 +142,21 @@ export function SettlementTable() {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : filteredSettlements.length === 0 ? (
+            ) : filteredSettlements?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   No settlements found.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredSettlements.map((settlement) => (
-                <TableRow key={settlement.id}>
-                  <TableCell className="font-medium">{settlement.id}</TableCell>
+              filteredSettlements?.map((settlement) => (
+                <TableRow key={settlement.number}>
+                  <TableCell className="font-medium">
+                    {settlement.number}
+                  </TableCell>
                   <TableCell>{settlement.date}</TableCell>
                   <TableCell className="font-medium">
-                    {formatAmount(settlement.amount)}
+                    {parseCurrency(settlement.amount.value)}
                   </TableCell>
                   <TableCell>
                     <Badge variant="default">{settlement.status}</Badge>
@@ -178,10 +168,10 @@ export function SettlementTable() {
                           variant="ghost"
                           size="sm"
                           className="gap-2"
-                          disabled={isDownloading === settlement.id}
+                          disabled={isDownloading === settlement.number}
                         >
                           <Download className="h-4 w-4" />
-                          {isDownloading === settlement.id
+                          {isDownloading === settlement.number
                             ? "Downloading..."
                             : "Download Report"}
                         </Button>
@@ -189,7 +179,10 @@ export function SettlementTable() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() =>
-                            handleDownloadDocument(settlement.id, "tax_invoice")
+                            handleDownloadDocument(
+                              settlement.number,
+                              "tax_invoice"
+                            )
                           }
                         >
                           Tax Invoice
@@ -197,7 +190,7 @@ export function SettlementTable() {
                         <DropdownMenuItem
                           onClick={() =>
                             handleDownloadDocument(
-                              settlement.id,
+                              settlement.number,
                               "detail_report"
                             )
                           }
@@ -207,7 +200,7 @@ export function SettlementTable() {
                         <DropdownMenuItem
                           onClick={() =>
                             handleDownloadDocument(
-                              settlement.id,
+                              settlement.number,
                               "summary_report"
                             )
                           }

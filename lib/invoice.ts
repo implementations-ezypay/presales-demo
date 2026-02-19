@@ -5,6 +5,7 @@ import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
 import { getBranchCurrency } from "./branches"
 import { randomUUID } from "node:crypto"
+import { Transaction } from "./types/invoice"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/invoices`
 const checkoutEndpoint = `${process.env.API_ENDPOINT}/v2/billing/checkout`
@@ -120,20 +121,16 @@ export async function listInvoice(branch): Promise<any> {
 
     const invoiceData = await invoiceResponse.json()
 
-    const normalisedInvoice = normalisedEzypayInvoice(invoiceData)
+    // const normalisedInvoice = normalisedEzypayInvoice(invoiceData)
 
-    return normalisedInvoice
+    return invoiceData
   } catch (err) {
     console.error("List invoice error:", err)
     return []
   }
 }
 
-export async function listInvoiceByCustomer(
-  customerId,
-  customerName,
-  branch
-): Promise<any> {
+export async function listInvoiceByCustomer(customerId, branch): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {
@@ -171,9 +168,9 @@ export async function listInvoiceByCustomer(
       throw new Error(`List Customer invoice failed: ${invoiceResponse.status}`)
     }
 
-    const normalisedInvoice = normalisedEzypayInvoice(invoiceData, customerName)
+    //const normalisedInvoice = normalisedEzypayInvoice(invoiceData, customerName)
 
-    return normalisedInvoice
+    return invoiceData
   } catch (err) {
     console.error("List invoice error:", err)
     throw err
@@ -181,10 +178,9 @@ export async function listInvoiceByCustomer(
 }
 
 export async function listTransactionByInvoice(
-  invoiceId,
-  paymentMethod,
-  branch
-): Promise<any> {
+  invoiceId: string,
+  branch: string
+): Promise<{ data: Transaction[] }> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -222,18 +218,7 @@ export async function listTransactionByInvoice(
       throw new Error(`List transaction failed: ${transactionResponse.status}`)
     }
 
-    const transactions = transactionData.data.map((transaction) => ({
-      id: transaction.id,
-      date: transaction.createdOn?.split("T")[0],
-      amount: `$${transaction.amount.value}`,
-      status: transaction.status.toLowerCase(),
-      method:
-        transaction.source == "external_payment"
-          ? `External (${transaction.paymentMethodType})`
-          : paymentMethod,
-    }))
-
-    return transactions
+    return transactionData
   } catch (err) {
     console.error("List transaction error:", err)
     throw err

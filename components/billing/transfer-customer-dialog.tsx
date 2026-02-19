@@ -23,49 +23,50 @@ import {
 import { Label } from "@/components/ui/label"
 import { BRANCHES } from "@/lib/branches"
 import Link from "next/link"
-import {
-  createCustomer,
-  getCustomer,
-  getCustomerPaymentMethods,
-  linkPaymentMethod,
-} from "@/lib/passer-functions"
+import { createCustomer, linkPaymentMethod } from "@/lib/passer-functions"
+import { getCustomerIdFromPath } from "@/lib/utils"
+import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import { listSingleCustomerOptions } from "@/lib/query-options/customer"
+import { Customer } from "@/lib/types/customer"
+import { PaymentMethod } from "@/lib/types/payment-method"
+import { getCustomerPaymentMethodsOptions } from "@/lib/query-options/payment-method"
 
-interface TransferCustomerDialogProps {
-  customer: {}
-  customerName: string
-}
-
-export function TransferCustomerDialog({
-  customer,
-  customerName,
-}: TransferCustomerDialogProps) {
+export function TransferCustomerDialog() {
   const [open, setOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("")
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [branch, setBranch] = useState("")
   const [country, setCountry] = useState("")
+  const customerId = getCustomerIdFromPath()
 
   const availableBranches = BRANCHES.filter(
     (b) => b.id !== branch && b.country === country
   )
+
+  const { data: currentCustomerData, isPending }: UseQueryResult<Customer> =
+    useQuery(listSingleCustomerOptions(customerId, branch))
+  const {
+    data: currentPaymentMethod,
+  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
+    getCustomerPaymentMethodsOptions(customerId, branch)
+  )
+
   const handleTransfer = async () => {
     if (!selectedBranch) return
 
-    setIsLoading(true)
     try {
-      const currentCustomerData = await getCustomer(customer.id, branch)
       const newCustomer = {
-        firstName: currentCustomerData.firstName,
-        lastName: currentCustomerData.lastName,
-        email: customer.email,
-        address: customer.address,
-        mobilePhone: customer.phone,
-        dateOfBirth: customer.dateOfBirth,
-        plan: customer.plan,
-        status: customer.status,
-        startDate: Date(customer.joinDate),
-        existingCustomerNumber: customer.number,
+        firstName: currentCustomerData?.firstName,
+        lastName: currentCustomerData?.lastName,
+        email: currentCustomerData?.email,
+        address: currentCustomerData?.address,
+        mobilePhone: currentCustomerData?.mobilePhone,
+        dateOfBirth: currentCustomerData?.dateOfBirth,
+        plan: currentCustomerData?.metadata?.plan,
+        status: currentCustomerData?.metadata?.status,
+        startDate: currentCustomerData?.metadata?.startDate,
+        existingCustomerNumber: currentCustomerData?.number,
         originalBranch: branch,
       }
       const newCustomerCreate = await createCustomer(
@@ -73,14 +74,9 @@ export function TransferCustomerDialog({
         selectedBranch
       )
 
-      const { data: currentPaymentMethods } = await getCustomerPaymentMethods(
-        customer.id,
-        branch
-      )
-
-      currentPaymentMethods.forEach(async (paymentMethod) => {
+      currentPaymentMethod?.data.forEach(async (paymentMethod) => {
         const { paymentMethodToken } = paymentMethod
-        const result = await linkPaymentMethod(
+        await linkPaymentMethod(
           newCustomerCreate.id,
           paymentMethodToken,
           selectedBranch
@@ -93,8 +89,6 @@ export function TransferCustomerDialog({
       setTransferPaymentMethods(true)
     } catch (error) {
       console.error("Transfer failed:", error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -118,8 +112,10 @@ export function TransferCustomerDialog({
         <DialogHeader>
           <DialogTitle>Transfer Customer</DialogTitle>
           <DialogDescription>
-            Transfer {customerName} to a different branch. Select the branch and
-            choose whether to transfer existing payment methods.
+            Transfer{" "}
+            {`${currentCustomerData?.firstName} ${currentCustomerData?.lastName}`}{" "}
+            to a different branch. Select the branch and choose whether to
+            transfer existing payment methods.
           </DialogDescription>
         </DialogHeader>
 
@@ -175,13 +171,13 @@ export function TransferCustomerDialog({
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
-            disabled={isLoading}
+            disabled={isPending}
           >
             Cancel
           </Button>
           <Button
             onClick={handleTransfer}
-            disabled={!selectedBranch || isLoading}
+            disabled={!selectedBranch || isPending}
           >
             {isLoading ? "Transferring..." : "Transfer"}
           </Button>
