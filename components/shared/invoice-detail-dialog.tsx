@@ -36,12 +36,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { RefundDialog } from "../billing/refund-dialog"
-import {
-  retryInvoice,
-  writeOffInvoice,
-  recordExternalInvoice,
-  refundInvoice,
-} from "@/lib/passer-functions"
 import { Spinner } from "../ui/spinner"
 import { PaymentMethodsList } from "./payment-methods-list"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
@@ -52,25 +46,34 @@ import {
   parseCurrency,
 } from "@/lib/utils"
 import { Invoice, Transaction } from "@/lib/types/invoice"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
-import { listTransaction } from "@/lib/query-options/invoice"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
+import {
+  listInvoiceOptions,
+  listSingleInvoiceOptions,
+  listTransaction,
+  recordExternalInvoiceOptions,
+  refundInvoiceOptions,
+  retryInvoiceOptions,
+  writeOffInvoiceOptions,
+} from "@/lib/query-options/invoice"
 
 interface InvoiceDetailDialogProps {
   invoiceProp: Invoice | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUpdate?: () => void
 }
 
 export function InvoiceDetailDialog({
   invoiceProp,
   open,
   onOpenChange,
-  onUpdate,
 }: InvoiceDetailDialogProps) {
   const [invoice, setInvoice] = useState<Invoice | null>(invoiceProp)
-  const [isRetrying, setIsRetrying] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
   const [showExternalPayment, setShowExternalPayment] = useState(false)
   const [showRefundDialog, setShowRefundDialog] = useState(false)
   const [showRetryPaymentSelection, setShowRetryPaymentSelection] =
@@ -81,6 +84,59 @@ export function InvoiceDetailDialog({
   const [externalPaymentMethod, setExternalPaymentMethod] = useState<string>("")
   const [refundError, setRefundError] = useState<string | null>(null)
   const [branch, setBranch] = useState("")
+  const queryClient = useQueryClient()
+
+  const retryInvoiceMutation = useMutation({
+    ...retryInvoiceOptions(branch),
+    onSuccess: async (data) => {
+      onOpenChange(false)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+    },
+  })
+
+  const writeOffInvoiceMutation = useMutation({
+    ...writeOffInvoiceOptions(branch),
+    onSuccess: (data) => {
+      onOpenChange(false)
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+    },
+  })
+
+  const recordExternalInvoiceMutation = useMutation({
+    ...recordExternalInvoiceOptions(branch),
+    onSuccess: (data) => {
+      onOpenChange(false)
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+    },
+  })
+
+  const refundInvoiceMutation = useMutation({
+    ...refundInvoiceOptions(branch),
+    onSuccess: async (data) => {
+      onOpenChange(false)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+    },
+  })
+
+  const isProcessing =
+    retryInvoiceMutation.isPending &&
+    writeOffInvoiceMutation.isPending &&
+    recordExternalInvoiceMutation.isPending &&
+    refundInvoiceMutation.isPending
 
   useEffect(() => {
     setInvoice(invoiceProp)
@@ -101,46 +157,16 @@ export function InvoiceDetailDialog({
   if (!invoice) return null
 
   const handleRefund = async (amount: number | null) => {
-    setIsProcessing(true)
-    setIsRetrying(true)
-    setRefundError(null)
+    const refundAmount = amount === null ? null : amount
 
-    try {
-      const refundAmount = amount === null ? null : amount
-
-      const result = await refundInvoice(invoice.id, refundAmount, branch)
-
-      if (result.success) {
-        toast.success("Refund initiated successfully")
-        onUpdate?.()
-        onOpenChange(false)
-        window.location.reload()
-      } else {
-        setRefundError(result.error?.message || "Failed to refund payment")
-      }
-    } catch (error) {
-      setRefundError("An unexpected error occurred")
-    } finally {
-      setIsProcessing(false)
-      setIsRetrying(false)
-    }
+    refundInvoiceMutation.mutate({
+      invoiceId: invoice.id,
+      amount: refundAmount,
+    })
   }
 
   const handleWriteOff = async () => {
-    setIsProcessing(true)
-    setIsRetrying(true)
-    try {
-      const result = await writeOffInvoice(invoice.id, branch)
-      toast.success("Write off initiated successfully")
-      onUpdate?.()
-      onOpenChange(false)
-      window.location.reload()
-    } catch (error) {
-      toast.error("Failed to write off payment")
-    } finally {
-      setIsProcessing(false)
-      setIsRetrying(false)
-    }
+    writeOffInvoiceMutation.mutate({ invoiceId: invoice.id })
   }
 
   const handleRetry = async () => {
@@ -154,23 +180,10 @@ export function InvoiceDetailDialog({
       return
     }
 
-    setIsProcessing(true)
-    setIsRetrying(true)
-    try {
-      const result = await retryInvoice(
-        invoice.id,
-        selectedPaymentMethodId,
-        branch
-      )
-      toast.success("Payment retry initiated successfully")
-      onUpdate?.()
-      onOpenChange(false)
-    } catch (error) {
-      toast.error("Failed to retry payment")
-    } finally {
-      setIsProcessing(false)
-      setIsRetrying(false)
-    }
+    retryInvoiceMutation.mutate({
+      invoiceId: invoice.id,
+      paymentMethodToken: selectedPaymentMethodId,
+    })
   }
 
   const handlePayNow = async () => {
@@ -205,24 +218,7 @@ export function InvoiceDetailDialog({
       return
     }
 
-    setIsProcessing(true)
-    setIsRetrying(true)
-    try {
-      const result = await recordExternalInvoice(
-        invoice.id,
-        externalPaymentMethod,
-        branch
-      )
-      toast.success("External payment recorded successfully")
-      onUpdate?.()
-      onOpenChange(false)
-      window.location.reload()
-    } catch (error) {
-      toast.error("Failed to record external payment")
-    } finally {
-      setIsProcessing(false)
-      setIsRetrying(false)
-    }
+    recordExternalInvoiceMutation.mutate({ invoiceId: invoice.id })
   }
 
   const handleEmail = async () => {
@@ -334,7 +330,6 @@ export function InvoiceDetailDialog({
                         Refund Type
                       </p>
                       <p className="text-base font-semibold capitalize">
-                        $
                         {invoice.status.match(/partial/i)
                           ? "Partial "
                           : "Full "}
@@ -604,7 +599,7 @@ export function InvoiceDetailDialog({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2">
-              {invoice.status.toLowerCase() === "paid" && (
+              {invoice.status.toLowerCase().match(/paid|partial/i) && (
                 <Button
                   variant="destructive"
                   onClick={() => setShowRefundDialog(true)}
@@ -674,7 +669,7 @@ export function InvoiceDetailDialog({
       <RefundDialog
         open={showRefundDialog}
         onOpenChange={setShowRefundDialog}
-        invoiceAmount={invoice.amount.value}
+        invoiceAmount={invoice.amount.value - invoice.totalRefunded.value}
         onConfirm={handleRefund}
         isProcessing={isProcessing}
         error={refundError}

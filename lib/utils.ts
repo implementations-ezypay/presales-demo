@@ -1,6 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { getCustomer, listInvoiceByCustomer } from "./passer-functions"
 import { PaymentMethod } from "./types/payment-method"
 
 export function cn(...inputs: ClassValue[]) {
@@ -33,75 +32,75 @@ export function getCustomerIdFromPath(path?: string): string | null {
   return segments[segments.length - 1] ?? null
 }
 
-export function normalisedEzypayCustomer(customer) {
-  let memberDataState = {}
+// export function normalisedEzypayCustomer(customer) {
+//   let memberDataState = {}
 
-  try {
-    if (!customer.id) {
-      throw new Error("Customer not found during normalising.")
-    }
+//   try {
+//     if (!customer.id) {
+//       throw new Error("Customer not found during normalising.")
+//     }
 
-    const customerName = `${customer.firstName} ${customer.lastName}`
+//     const customerName = `${customer.firstName} ${customer.lastName}`
 
-    memberDataState = {
-      id: customer.id,
-      name: customerName,
-      email: customer.email,
-      phone: customer.mobilePhone,
-      number: customer.number,
-      address: Object.values(customer.address).join(" "),
-      dateOfBirth: customer.dateofBirth,
-      emergencyContact: customer.homePhone,
-      status: customer.metadata?.status ?? "trial",
-      plan: customer.metadata?.plan ?? "Trial",
-      joinDate:
-        customer.metadata?.joinDate ?? new Date().toISOString().split("T")[0],
-      expiryDate:
-        customer.metadata?.expiryDate ??
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
-      invoices: [],
-      attendanceLogs: [
-        { id: "1", date: "2024-10-14", time: "06:30 AM", class: "Yoga" },
-        { id: "2", date: "2024-10-13", time: "05:00 PM", class: "CrossFit" },
-        { id: "3", date: "2024-10-12", time: "07:00 AM", class: "Spinning" },
-        { id: "4", date: "2024-10-11", time: "06:30 AM", class: "Yoga" },
-      ],
-      paymentMethods: [],
-      originalBranch: customer.metadata?.originalBranch,
-    }
-  } catch (error) {
-    console.error(error)
-  }
+//     memberDataState = {
+//       id: customer.id,
+//       name: customerName,
+//       email: customer.email,
+//       phone: customer.mobilePhone,
+//       number: customer.number,
+//       address: Object.values(customer.address).join(" "),
+//       dateOfBirth: customer.dateofBirth,
+//       emergencyContact: customer.homePhone,
+//       status: customer.metadata?.status ?? "trial",
+//       plan: customer.metadata?.plan ?? "Trial",
+//       joinDate:
+//         customer.metadata?.joinDate ?? new Date().toISOString().split("T")[0],
+//       expiryDate:
+//         customer.metadata?.expiryDate ??
+//         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+//           .toISOString()
+//           .split("T")[0],
+//       invoices: [],
+//       attendanceLogs: [
+//         { id: "1", date: "2024-10-14", time: "06:30 AM", class: "Yoga" },
+//         { id: "2", date: "2024-10-13", time: "05:00 PM", class: "CrossFit" },
+//         { id: "3", date: "2024-10-12", time: "07:00 AM", class: "Spinning" },
+//         { id: "4", date: "2024-10-11", time: "06:30 AM", class: "Yoga" },
+//       ],
+//       paymentMethods: [],
+//       originalBranch: customer.metadata?.originalBranch,
+//     }
+//   } catch (error) {
+//     console.error(error)
+//   }
 
-  return memberDataState
-}
+//   return memberDataState
+// }
 
-export async function normalisedEzypayInvoice(customerId, branch) {
-  let memberDataState = {}
+// export async function normalisedEzypayInvoice(customerId, branch) {
+//   let memberDataState = {}
 
-  try {
-    const customer = await getCustomer(customerId, branch)
+//   try {
+//     const customer = await getCustomer(customerId, branch)
 
-    if (!customer.id) {
-      throw new Error("Customer not found")
-    }
+//     if (!customer.id) {
+//       throw new Error("Customer not found")
+//     }
 
-    memberDataState = normalisedEzypayCustomer(customer)
+//     memberDataState = normalisedEzypayCustomer(customer)
 
-    const invoices = await listInvoiceByCustomer(
-      memberDataState.id,
-      memberDataState.name,
-      branch
-    )
-    memberDataState.invoices = invoices
-  } catch (error) {
-    console.error(error)
-  }
+//     const invoices = await listInvoiceByCustomer(
+//       memberDataState.id,
+//       memberDataState.name,
+//       branch
+//     )
+//     memberDataState.invoices = invoices
+//   } catch (error) {
+//     console.error(error)
+//   }
 
-  return memberDataState
-}
+//   return memberDataState
+// }
 
 export const getStatusBadgeVariant = (status: string) => {
   if (status.toLowerCase() === "paid") return "default"
@@ -120,8 +119,10 @@ export const parseCurrency = (amount: number) => {
 }
 
 export const formatPaymentMethodDisplay = (
-  paymentMethodData: PaymentMethod
+  paymentMethodData: PaymentMethod | null
 ): string | undefined => {
+  if (!paymentMethodData) return "Tap To Pay"
+
   switch (paymentMethodData.type) {
     case "CARD":
       return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
@@ -140,20 +141,21 @@ export const formatPaymentMethodDisplay = (
 }
 
 export const getPaymentMethodType = (
-  paymentMethodData: PaymentMethod,
+  paymentMethodData: PaymentMethod | null,
   variant?: string
 ) => {
-  switch (paymentMethodData.type) {
+  if (!paymentMethodData) return "taptopay"
+  switch (paymentMethodData?.type) {
     case "CARD":
       if (!variant)
-        return paymentMethodData.card?.origin ?? paymentMethodData.card?.type
-      else return paymentMethodData.card?.type
+        return paymentMethodData?.card?.origin ?? paymentMethodData?.card?.type
+      else return paymentMethodData?.card?.type
     case "BANK":
       return "Bank"
     case "QRPAYMENT":
-      return paymentMethodData.qrPayment?.qrType
+      return paymentMethodData?.qrPayment?.qrType
     case "WALLET":
-      return paymentMethodData.wallet?.walletType
+      return paymentMethodData?.wallet?.walletType
     case "PAYTO":
       return "PayTo"
   }

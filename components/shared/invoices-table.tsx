@@ -31,7 +31,12 @@ import { InvoiceDetailDialog } from "./invoice-detail-dialog"
 import { CreateInvoiceDialog } from "../billing/create-invoice-dialog"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 import { Spinner } from "../ui/spinner"
-import { getCustomerIdFromPath, getStatusBadgeVariant } from "@/lib/utils"
+import {
+  formatPaymentMethodDisplay,
+  getCustomerIdFromPath,
+  getPaymentMethodType,
+  getStatusBadgeVariant,
+} from "@/lib/utils"
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import {
   listInvoiceOptions,
@@ -39,8 +44,10 @@ import {
 } from "@/lib/query-options/invoice"
 import { Invoice } from "@/lib/types/invoice"
 import { PaymentMethod } from "@/lib/types/payment-method"
+import { Customer } from "@/lib/types/customer"
+import { listCustomerOptions } from "@/lib/query-options/customer"
 
-export function InvoicesTable({ variant = "billing", customerData = null }) {
+export function InvoicesTable({ variant = "billing" }) {
   const customerId = getCustomerIdFromPath()
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -50,15 +57,18 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
   const [branch, setBranch] = useState("")
 
   let invoices: Invoice[] | undefined = undefined
+  let customerData: Customer | undefined = undefined
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
   }, [])
 
-  let customerInvoiceData, isPending, isSuccess
+  let customerInvoiceData: { data: Invoice[] } | undefined,
+    isPending: boolean,
+    isSuccess: boolean
 
-  if (customerId) {
+  if (variant === "billing") {
     const {
       data,
       isPending: isQueryPending,
@@ -66,6 +76,7 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
     }: UseQueryResult<{ data: Invoice[] }> = useQuery(
       listInvoiceOptions(branch)
     )
+    invoices = customerInvoiceData?.data
     customerInvoiceData = data
     isPending = isQueryPending
     isSuccess = isQuerySuccess
@@ -80,6 +91,11 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
     customerInvoiceData = data
     isPending = isQueryPending
     isSuccess = isQuerySuccess
+
+    const { data: fullCustomerData }: UseQueryResult<{ data: Customer[] }> =
+      useQuery(listCustomerOptions(branch))
+
+    customerData = fullCustomerData?.data.find((c) => c.id === customerId)
   }
 
   if (isSuccess) invoices = customerInvoiceData?.data
@@ -109,45 +125,38 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
     setIsDetailOpen(true)
   }
 
-  const formatPaymentMethodDisplay = (paymentMethodData: PaymentMethod) => {
-    switch (paymentMethodData.type) {
-      case "CARD":
-        return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
-      case "BANK":
-        return `**** ${paymentMethodData.bank?.last4}`
-      case "QRPAYMENT":
-        return paymentMethodData.qrPayment?.type
-      case "WALLET":
-        return paymentMethodData.wallet?.accountId
-      case "PAYTO":
-        return (
-          paymentMethodData.payTo?.aliasId ??
-          paymentMethodData.payTo?.bBanAccountNo
-        )
-    }
-  }
+  // const formatPaymentMethodDisplay = (paymentMethodData: PaymentMethod) => {
+  //   switch (paymentMethodData.type) {
+  //     case "CARD":
+  //       return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
+  //     case "BANK":
+  //       return `**** ${paymentMethodData.bank?.last4}`
+  //     case "QRPAYMENT":
+  //       return paymentMethodData.qrPayment?.type
+  //     case "WALLET":
+  //       return paymentMethodData.wallet?.accountId
+  //     case "PAYTO":
+  //       return (
+  //         paymentMethodData.payTo?.aliasId ??
+  //         paymentMethodData.payTo?.bBanAccountNo
+  //       )
+  //   }
+  // }
 
-  const getPaymentMethodType = (paymentMethodData: PaymentMethod) => {
-    switch (paymentMethodData.type) {
-      case "CARD":
-        return paymentMethodData.card?.origin ?? paymentMethodData.card?.type
-      case "BANK":
-        return "Bank"
-      case "QRPAYMENT":
-        return paymentMethodData.qrPayment?.type
-      case "WALLET":
-        return paymentMethodData.wallet?.walletType
-      case "PAYTO":
-        return "PayTo"
-    }
-  }
-
-  const handleInvoiceCreated = () => {
-    console.log("[v0] Invoice created successfully, refreshing list")
-    if (variant === "billing") {
-      fetchInvoices()
-    }
-  }
+  // const getPaymentMethodType = (paymentMethodData: PaymentMethod) => {
+  //   switch (paymentMethodData.type) {
+  //     case "CARD":
+  //       return paymentMethodData.card?.origin ?? paymentMethodData.card?.type
+  //     case "BANK":
+  //       return "Bank"
+  //     case "QRPAYMENT":
+  //       return paymentMethodData.qrPayment?.qrType
+  //     case "WALLET":
+  //       return paymentMethodData.wallet?.walletType
+  //     case "PAYTO":
+  //       return "PayTo"
+  //   }
+  // }
 
   return (
     <>
@@ -294,18 +303,13 @@ export function InvoicesTable({ variant = "billing", customerData = null }) {
           invoiceProp={selectedInvoice}
           open={isDetailOpen}
           onOpenChange={setIsDetailOpen}
-          onUpdate={() => {
-            console.log("[v0] Invoice updated, refreshing list")
-          }}
         />
       )}
 
       <CreateInvoiceDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
-        onSuccess={handleInvoiceCreated}
         customerId={customerData?.id ? customerData.id : null}
-        customerName={customerData?.name ? customerData.name : null}
       />
     </>
   )

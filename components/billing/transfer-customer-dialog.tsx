@@ -23,19 +23,23 @@ import {
 import { Label } from "@/components/ui/label"
 import { BRANCHES } from "@/lib/branches"
 import Link from "next/link"
-import { createCustomer, linkPaymentMethod } from "@/lib/passer-functions"
 import { getCustomerIdFromPath } from "@/lib/utils"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
-import { listSingleCustomerOptions } from "@/lib/query-options/customer"
+import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
+import {
+  createCustomerOptions,
+  listSingleCustomerOptions,
+} from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
 import { PaymentMethod } from "@/lib/types/payment-method"
-import { getCustomerPaymentMethodsOptions } from "@/lib/query-options/payment-method"
+import {
+  getCustomerPaymentMethodsOptions,
+  linkPaymentMethodOptions,
+} from "@/lib/query-options/payment-method"
 
 export function TransferCustomerDialog() {
   const [open, setOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("")
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
   const [branch, setBranch] = useState("")
   const [country, setCountry] = useState("")
   const customerId = getCustomerIdFromPath()
@@ -52,44 +56,35 @@ export function TransferCustomerDialog() {
     getCustomerPaymentMethodsOptions(customerId, branch)
   )
 
-  const handleTransfer = async () => {
-    if (!selectedBranch) return
+  const linkPaymentMethodMutation = useMutation({
+    ...linkPaymentMethodOptions(selectedBranch),
+  })
 
-    try {
-      const newCustomer = {
-        firstName: currentCustomerData?.firstName,
-        lastName: currentCustomerData?.lastName,
-        email: currentCustomerData?.email,
-        address: currentCustomerData?.address,
-        mobilePhone: currentCustomerData?.mobilePhone,
-        dateOfBirth: currentCustomerData?.dateOfBirth,
-        plan: currentCustomerData?.metadata?.plan,
-        status: currentCustomerData?.metadata?.status,
-        startDate: currentCustomerData?.metadata?.startDate,
-        existingCustomerNumber: currentCustomerData?.number,
-        originalBranch: branch,
-      }
-      const newCustomerCreate = await createCustomer(
-        newCustomer,
-        selectedBranch
-      )
-
+  const createCustomerMutation = useMutation({
+    ...createCustomerOptions(selectedBranch),
+    onSuccess: (data) => {
+      const { id: customerId } = data
       currentPaymentMethod?.data.forEach(async (paymentMethod) => {
         const { paymentMethodToken } = paymentMethod
-        await linkPaymentMethod(
-          newCustomerCreate.id,
-          paymentMethodToken,
-          selectedBranch
-        )
+        linkPaymentMethodMutation.mutate({ customerId, paymentMethodToken })
       })
 
       // Close dialog on success
       setOpen(false)
       setSelectedBranch("")
       setTransferPaymentMethods(true)
-    } catch (error) {
-      console.error("Transfer failed:", error)
+    },
+  })
+
+  const handleTransfer = async () => {
+    if (!selectedBranch) return
+
+    const customerData = {
+      ...currentCustomerData,
+      metadata: { ...currentCustomerData?.metadata, originalBranch: branch },
     }
+
+    createCustomerMutation.mutate({ customerData })
   }
 
   useEffect(() => {
@@ -177,9 +172,9 @@ export function TransferCustomerDialog() {
           </Button>
           <Button
             onClick={handleTransfer}
-            disabled={!selectedBranch || isPending}
+            disabled={!selectedBranch || createCustomerMutation.isPending}
           >
-            {isLoading ? "Transferring..." : "Transfer"}
+            {createCustomerMutation.isPending ? "Transferring..." : "Transfer"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -29,15 +29,16 @@ import { ArrowLeft, Mail } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
-import {
-  getEzypayToken,
-  createCustomer,
-  linkPaymentMethod,
-} from "@/lib/passer-functions"
 import { logApiCall } from "@/lib/api-logger"
 import { getBranchCountry } from "@/lib/branches"
 import { plans } from "@/lib/plan"
 import type { CreateCustomer } from "@/lib/shared-type"
+import { useMutation } from "@tanstack/react-query"
+import { createCustomerOptions } from "@/lib/query-options/customer"
+import {
+  getTokenOptions,
+  linkPaymentMethodOptions,
+} from "@/lib/query-options/payment-method"
 
 const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT
 const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT
@@ -59,15 +60,57 @@ export default function NewMemberPage() {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null)
   const [isLoadingIframe, setIsLoadingIframe] = useState(false)
   const [isCustomerCreated, setIsCustomerCreated] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailPreviewLink, setEmailPreviewLink] = useState("")
   const [formData, setFormData] = useState<CreateCustomer>(defaultformData)
   const [branch, setBranch] = useState("")
   const [country, setCountry] = useState("")
+  let customerId = ""
 
   // Track selected values from Select components separately for easier UI updates
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const iframeOriginRef = useRef<string | null>(null)
+
+  const createCustomerMutation = useMutation({
+    ...createCustomerOptions(branch),
+    onSuccess: (data) => {
+      customerId = data.id
+      setIsCustomerCreated(true)
+      setFormData(defaultformData)
+      loadIframeUrl(customerId)
+    },
+  })
+
+  const getTokenMutation = useMutation({
+    ...getTokenOptions(branch),
+    onSuccess: (data, input) => {
+      const token = data.access_token
+      const { customerId } = input
+      const pcpUrl =
+        country === "PH"
+          ? `${hppEndpoint}/paymentmethod/embed?token=${token}&countryCode=${country}`
+          : `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
+              customerId ? "&customerId=" + customerId : ""
+            }`
+      setIframeUrl(pcpUrl)
+      logApiCall(
+        "GET",
+        pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
+        "Payment capture page UI",
+        200
+      )
+      try {
+        // Record origin from the iframe URL so we can validate messages
+        const url = new URL(pcpUrl)
+        iframeOriginRef.current = url.origin
+      } catch (e) {
+        iframeOriginRef.current = null
+      }
+    },
+  })
+
+  const linkPaymentMethodMutation = useMutation({
+    ...linkPaymentMethodOptions(branch),
+  })
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
@@ -87,17 +130,7 @@ export default function NewMemberPage() {
 
       if (country === "PH" && e.data.paymentMethodToken) {
         const { customerId, paymentMethodToken } = e.data
-        try {
-          const res = await linkPaymentMethod(
-            customerId,
-            paymentMethodToken,
-            branch
-          )
-        } catch (error) {
-          console.error(error)
-        } finally {
-          setIsSubmitting(false)
-        }
+        linkPaymentMethodMutation.mutate({ paymentMethodToken, customerId })
       }
     }
 
@@ -109,36 +142,7 @@ export default function NewMemberPage() {
     setIsLoadingIframe(true)
     try {
       // Request access token from our server-side token route
-      const tokenRes = await getEzypayToken((branch as "main") || "branch2")
-
-      if (tokenRes.error) {
-        throw new Error(`Token endpoint failed`)
-      }
-
-      const token = await tokenRes.access_token
-      // Use a temporary customer ID for new members
-
-      const pcpUrl =
-        country === "PH"
-          ? `${hppEndpoint}/paymentmethod/embed?token=${token}&countryCode=${country}`
-          : `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
-              customerId ? "&customerId=" + customerId : ""
-            }`
-      setIframeUrl(pcpUrl)
-      await logApiCall(
-        "GET",
-        pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
-        "Payment capture page UI",
-        200
-      )
-
-      try {
-        // Record origin from the iframe URL so we can validate messages
-        const url = new URL(pcpUrl)
-        iframeOriginRef.current = url.origin
-      } catch (e) {
-        iframeOriginRef.current = null
-      }
+      getTokenMutation.mutate({ customerId })
     } catch (error) {
       console.error("[v0] Error loading iframe URL:", error)
       toast.error("Failed to load payment form")
@@ -173,15 +177,12 @@ export default function NewMemberPage() {
       toast.error("Payment form not loaded")
       return
     }
-    setIsSubmitting(false)
-    true
     try {
       const iframeWindow = iframeRef.current.contentWindow
 
       if (!iframeWindow) {
         console.error("[postMessage] iframe window not accessible")
         toast.error("Payment form not ready")
-        setIsSubmitting(false)
         return
       }
 
@@ -199,36 +200,25 @@ export default function NewMemberPage() {
     } catch (error) {
       console.error("[submitHpp] Error sending postMessage:", error)
       toast.error("Failed to submit payment form")
-      setIsSubmitting(false)
     }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setIsSubmitting(true)
-    let customerId = ""
 
-    try {
-      const response = await createCustomer(formData, branch)
-      toast.success("Member created successfully")
-      if (!response?.id) {
-        console.error("Failed to create customer")
-        throw new Error("Failed to create customer")
-      }
-      customerId = response.id
-    } catch (error) {
-      toast.error("Failed to create member")
-      console.error("Error creating member:", error)
-      setIsSubmitting(false)
+    const customerData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      address: { address1: formData.address },
+      mobilePhone: formData.emergencyContact,
+      dateOfBirth: formData.dateOfBirth,
     }
+    createCustomerMutation.mutate({ customerData })
 
     setEmailPreviewLink(
       `${window.location.origin}/email-preview?id=${customerId}&name=${formData.firstName} ${formData.lastName}`
     )
-    await loadIframeUrl(customerId)
-    setIsSubmitting(false)
-    setIsCustomerCreated(true)
-    setFormData(defaultformData)
   }
 
   const handleEmailCustomer = () => {
@@ -459,10 +449,10 @@ export default function NewMemberPage() {
                     <TooltipTrigger asChild>
                       <Button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={createCustomerMutation.isPending}
                         className="w-full sm:w-auto"
                       >
-                        {isSubmitting ? (
+                        {createCustomerMutation.isPending ? (
                           <>
                             <Spinner className="mr-2 h-4 w-4" />
                             Creating...

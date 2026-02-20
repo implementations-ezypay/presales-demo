@@ -6,7 +6,6 @@ import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
 import { MembershipStatus } from "@/lib/types/membership"
-import { Branch } from "@/lib/types/banch"
 import MemberList from "@/components/members/Member-list"
 import MemberFilter from "@/components/members/Member-filter"
 import MemberTitle from "@/components/members/Member-title"
@@ -16,15 +15,14 @@ export default function MembersPage() {
     "all" as MembershipStatus
   )
   const [searchQuery, setSearchQuery] = useState<string>("")
-  const [branch, setBranch] = useState<Branch | null>(null)
+  const [branch, setBranch] = useState<string | null>(null)
 
   const { data: fullCustomerData }: UseQueryResult<{ data: Customer[] }> =
     useQuery(listCustomerOptions(branch))
 
   // Get Branch from local storage
   useEffect(() => {
-    const selectedBranch = (localStorage.getItem("selectedBranch") ||
-      "main") as unknown as Branch
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
   }, [])
 

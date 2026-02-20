@@ -1,7 +1,7 @@
 "use server"
-import { getEzypayToken } from "./passer-functions"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
+import { getEzypayToken } from "./ezypay-token"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/settlements`
 const fileEndpoint = `${process.env.API_ENDPOINT}/v2/files`
@@ -16,21 +16,6 @@ export type Settlement = {
 export type SettlementList = Settlement[]
 
 export type documentType = "tax_invoice" | "detail_report" | "summary_report"
-
-function normalisedEzypaySettlement(settlements) {
-  const normalisedSettlements: SettlementList = settlements.map(
-    (settlement) => ({
-      id: settlement.number,
-      date: settlement.date,
-      amount: "$" + settlement.amount.value,
-      status: settlement.status,
-    })
-  )
-
-  return normalisedSettlements.filter(
-    (settlement) => settlement.amount != "$0" && settlement.amount != "$0.00"
-  )
-}
 
 export async function downloadDocument(
   settlementId,

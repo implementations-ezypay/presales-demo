@@ -148,11 +148,11 @@ export function ApiLoggerViewer() {
                       <div className="px-3 pb-3">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           {log.requestBody && (
-                            <div>
+                            <div className="max-h-96">
                               <p className="text-xs font-semibold mb-2 text-blue-600 dark:text-blue-400">
                                 Request Body:
                               </p>
-                              <ScrollArea className="h-[400px] w-full rounded border bg-muted/30">
+                              <ScrollArea className="h-full w-full rounded border bg-muted/30">
                                 <pre className="text-xs font-mono p-3 whitespace-pre-wrap break-words">
                                   {JSON.stringify(log.requestBody, null, 2)}
                                 </pre>
@@ -160,12 +160,14 @@ export function ApiLoggerViewer() {
                             </div>
                           )}
                           <div
-                            className={log.requestBody ? "" : "lg:col-span-2"}
+                            className={`max-h-96 ${
+                              log.requestBody ? "" : "lg:col-span-2 "
+                            }`}
                           >
                             <p className="text-xs font-semibold mb-2 text-green-600 dark:text-green-400">
                               Response:
                             </p>
-                            <ScrollArea className="h-[400px] w-full rounded border bg-muted/30">
+                            <ScrollArea className="h-full w-full rounded border bg-muted/30">
                               <pre className="text-xs font-mono p-3 whitespace-pre-wrap break-words">
                                 {JSON.stringify(log.response, null, 2)}
                               </pre>

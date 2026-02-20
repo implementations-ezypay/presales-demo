@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { TapToPayAnimation } from "./tap-to-pay-animation"
-import { createCheckout, createInvoice } from "@/lib/passer-functions"
 import { Spinner } from "@/components/ui/spinner"
 import { PaymentMethodsList } from "../shared/payment-methods-list"
 import Link from "next/link"
@@ -37,27 +34,42 @@ import {
 } from "@/components/ui/tooltip"
 import { logApiCall } from "@/lib/api-logger"
 import { PromptPayQrCode } from "./promptpay-qrcode"
-import { getBranchCountry, getBranchCurrency } from "@/lib/branches"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import { getBranchCurrency } from "@/lib/branches"
+import {
+  useMutation,
+  UseMutationResult,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
+import {
+  createCheckoutOptions,
+  createInvoiceOptions,
+  listInvoiceOptions,
+  listSingleInvoiceOptions,
+} from "@/lib/query-options/invoice"
+import {
+  CheckoutInvoiceCreation,
+  CheckoutResponse,
+  Invoice,
+  InvoiceCreation,
+} from "@/lib/types/invoice"
+import { v4 } from "uuid"
+import { Currency } from "lucide-react"
 
 interface CreateInvoiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: () => void
-  customerId?: string
-  customerName?: string
+  customerId?: string | null
 }
 
 export function CreateInvoiceDialog({
   open,
   onOpenChange,
-  onSuccess,
   customerId,
-  customerName,
 }: CreateInvoiceDialogProps) {
-  const [loading, setLoading] = useState(false)
   const [showTapAnimation, setShowTapAnimation] = useState(false)
   const [qrString, setQrString] = useState("")
   const { toast } = useToast()
@@ -71,6 +83,8 @@ export function CreateInvoiceDialog({
     accountingCode: "",
   })
   const [branch, setBranch] = useState("")
+  const queryClient = useQueryClient()
+  let customerName: string = ""
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
@@ -80,9 +94,85 @@ export function CreateInvoiceDialog({
   const {
     data: fullCustomerData,
     isPending,
+    isSuccess,
   }: UseQueryResult<{ data: Customer[] }> = useQuery(
     listCustomerOptions(branch)
   )
+
+  if (isSuccess && customerId) {
+    const customer = fullCustomerData.data.find((c) => c.id === customerId)
+    customerName = `${customer?.firstName} ${customer?.lastName}`
+    if (customerId !== formData.memberId) {
+      setFormData((prev) => ({ ...prev, memberId: customer?.id }))
+    }
+  }
+
+  const createInvoiceMutation: UseMutationResult<
+    Invoice,
+    Error,
+    { invoiceData: InvoiceCreation }
+  > = useMutation({
+    ...createInvoiceOptions(branch),
+    onSuccess: async (data) => {
+      setFormData({
+        memberId: customerId || "",
+        amount: "",
+        description: "",
+        paymentMethod: "ondemand",
+        terminalId: "",
+        paymentMethodId: "",
+        accountingCode: "",
+      })
+
+      if (data.paymentMethodData.type === "QRPAYMENT") {
+        setQrString(data.qrData?.qrString)
+        await new Promise((resolve) => setTimeout(resolve, 5000))
+        setQrString("")
+      }
+      onOpenChange(false)
+
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+    },
+  })
+
+  const createCheckoutMutation: UseMutationResult<CheckoutResponse> =
+    useMutation({
+      ...createCheckoutOptions(branch),
+      onSuccess: (data) => {
+        console.log(data)
+        const { checkoutUrl } = data
+        try {
+          if (typeof checkoutUrl !== "string")
+            throw new Error("checkoutUrl is not a string")
+          // This will throw if the URL is invalid
+
+          new URL(checkoutUrl)
+
+          toast({
+            title: "Invoice Created",
+            description: "Opening checkout page...",
+          })
+
+          // Open in a new tab/window; use noopener and noreferrer for security
+          if (typeof window !== "undefined") {
+            window.open(checkoutUrl, "_blank", "noopener,noreferrer")
+          }
+
+          onOpenChange(false)
+        } catch (err) {
+          console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
+          toast({
+            title: "Checkout Error",
+            description: "Failed to open checkout URL.",
+            variant: "destructive",
+          })
+        }
+      },
+    })
 
   const terminalDevices = [
     {
@@ -120,24 +210,10 @@ export function CreateInvoiceDialog({
       return
     }
 
-    setLoading(true)
-
     try {
-      let selectedMemberName = customerName
-      if (!selectedMemberName) {
-        const selectedCustomer = fullCustomerData?.data.find(
-          (c) => c.id === formData.memberId
-        )
-        selectedMemberName = selectedCustomer
-          ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
-          : "Unknown"
-      }
-
       const selectedTerminal = terminalDevices.find(
         (t) => t.id === formData.terminalId
       )
-
-      let invoiceStatus: "pending" | "paid" = "pending"
 
       if (formData.paymentMethod === "tap-to-pay") {
         console.log(
@@ -153,9 +229,6 @@ export function CreateInvoiceDialog({
 
         // Hide animation
         setShowTapAnimation(false)
-
-        // Set status to paid for tap-to-pay
-        invoiceStatus = "paid"
 
         console.log("[v0] Tap-to-pay completed successfully")
         const url =
@@ -174,13 +247,13 @@ export function CreateInvoiceDialog({
         }
         const todayDate = new Date(Date.now()).toISOString().split("T")[0]
         const responseBody = {
-          id: "c911a6ca-8318-45b7-a165-a955c053448a",
+          id: v4(),
           creditNoteId: null,
           documentNumber: "IN0000000000000998",
           date: todayDate,
           dueDate: todayDate,
           scheduledPaymentDate: null,
-          status: "PENDING_TERMINAL_PAYMENT",
+          status: "PAID",
           memo: null,
           items: [
             {
@@ -268,29 +341,50 @@ export function CreateInvoiceDialog({
           invoiceCategory: "ONE_OFF",
           invoiceSubCategory: "TERMINAL",
         }
-        logApiCall("POST", url, requestBody, 200, responseBody)
+        if (!customerId) {
+          queryClient.setQueryData(
+            listInvoiceOptions(branch).queryKey,
+            (data: { data: Invoice[] }) => {
+              console.log("In update cache. Data: ", data)
+              const invoices = data.data
+              invoices.unshift(responseBody)
+              return { ...data, data: invoices, refresh: true }
+            }
+          )
+        } else {
+          queryClient.setQueryData(
+            listSingleInvoiceOptions(customerId, branch).queryKey,
+            (data: { data: Invoice[] }) => {
+              console.log("In update cache. Data: ", data)
+              const invoices = data.data
+              invoices.unshift(responseBody)
+              return { ...data, data: invoices, refresh: true }
+            }
+          )
+        }
+        onOpenChange(false)
+        logApiCall("POST", url, responseBody, 200, requestBody)
       }
 
       if (formData.paymentMethod === "ondemand") {
-        const invoice = await createInvoice(
-          {
-            memberId: formData.memberId,
-            amount: formData.amount,
-            description: formData.description,
-            paymentMethodId: formData.paymentMethodId,
-            ...(formData.accountingCode && {
-              accountingCode: formData.accountingCode,
-            }),
-          },
-          branch
-        )
-        if (invoice.paymentMethodData.type === "QRPAYMENT") {
-          setQrString(invoice.qrData?.qrString)
-
-          await new Promise((resolve) => setTimeout(resolve, 5000))
-
-          setQrString("")
+        const invoiceData: InvoiceCreation = {
+          customerId: formData.memberId,
+          items: [
+            {
+              description: formData.description || "Monthly Membership fee",
+              amount: {
+                currency: getBranchCurrency(branch),
+                value: parseFloat(formData.amount),
+              },
+              ...(formData.accountingCode && {
+                accountingCode: formData.accountingCode,
+              }),
+            },
+          ],
+          paymentMethodToken: formData.paymentMethodId,
         }
+
+        createInvoiceMutation.mutate({ invoiceData })
 
         toast({
           title: "Invoice Created",
@@ -299,54 +393,17 @@ export function CreateInvoiceDialog({
       }
 
       if (formData.paymentMethod === "checkout") {
-        const response = await createCheckout(
-          {
-            memberId: formData.memberId,
-            amount: formData.amount,
-            description: formData.description,
+        const invoiceData: CheckoutInvoiceCreation = {
+          customerId: formData.memberId,
+          amount: {
+            currency: getBranchCurrency(branch),
+            value: parseFloat(formData.amount),
           },
-          branch
-        )
-        const checkoutUrl = response?.data
-
-        // Validate checkoutUrl is a proper URL and open it in a new tab
-        try {
-          if (typeof checkoutUrl !== "string")
-            throw new Error("checkoutUrl is not a string")
-          // This will throw if the URL is invalid
-
-          new URL(checkoutUrl)
-
-          toast({
-            title: "Invoice Created",
-            description: "Opening checkout page...",
-          })
-
-          // Open in a new tab/window; use noopener and noreferrer for security
-          if (typeof window !== "undefined") {
-            window.open(checkoutUrl, "_blank", "noopener,noreferrer")
-          }
-        } catch (err) {
-          console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
-          toast({
-            title: "Checkout Error",
-            description: "Failed to open checkout URL.",
-            variant: "destructive",
-          })
+          description: formData.description || "Monthly Memberhsip Fee",
         }
-      }
 
-      setFormData({
-        memberId: customerId || "",
-        amount: "",
-        description: "",
-        paymentMethod: "ondemand",
-        terminalId: "",
-        paymentMethodId: "",
-        accountingCode: "",
-      })
-      onOpenChange(false)
-      onSuccess?.()
+        createCheckoutMutation.mutate({ invoiceData })
+      }
     } catch (error) {
       console.error("[v0] Error creating invoice:", error)
       toast({
@@ -355,8 +412,6 @@ export function CreateInvoiceDialog({
         variant: "destructive",
       })
       setShowTapAnimation(false)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -607,7 +662,7 @@ export function CreateInvoiceDialog({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={loading}
+                disabled={createInvoiceMutation.isPending}
                 className="w-full sm:w-auto"
               >
                 Cancel
@@ -617,10 +672,12 @@ export function CreateInvoiceDialog({
                   <TooltipTrigger asChild>
                     <Button
                       type="submit"
-                      disabled={loading || isPending}
+                      disabled={createInvoiceMutation.isPending || isPending}
                       className="w-full sm:w-auto"
                     >
-                      {loading ? "Creating..." : "Create"}
+                      {createInvoiceMutation.isPending
+                        ? "Creating..."
+                        : "Create"}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

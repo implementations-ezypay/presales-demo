@@ -25,11 +25,11 @@ export type Invoice = {
 type InvoiceItem = {
   description: string
   amount: Amount
-  type: string
-  accountingCode: string
+  type?: string
+  accountingCode?: string
 }
 
-type Amount = {
+export type Amount = {
   currency: string
   value: number
 }
@@ -42,4 +42,25 @@ export type Transaction = {
   source: string
   paymentMethodType: string
   failedPaymentReason: { code: string; description: string }
+}
+
+export type InvoiceCreation = {
+  customerId: string
+  items: InvoiceItem[]
+  paymentMethodToken: string
+  externalInvoiceId?: string
+  processingModel?: string
+}
+
+export type CheckoutInvoiceCreation = {
+  customerId: string
+  description: string
+  amount: Amount
+  paymentMethodToken?: string
+  accountingCode?: string
+}
+
+export type CheckoutResponse = {
+  checkoutUrl: string
+  id: string
 }

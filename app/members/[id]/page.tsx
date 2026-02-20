@@ -25,8 +25,12 @@ import { Spinner } from "@/components/ui/spinner"
 import { getCustomerIdFromPath } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getBranchCountry, getBranchName } from "@/lib/branches"
-import { createPromptPay } from "@/lib/passer-functions"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
 import { listSingleCustomerOptions } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
 import { UpcomingInvoicesTable } from "@/components/shared/upcoming-invoices-table"
@@ -35,6 +39,10 @@ import PersonalInformation from "@/components/members/[id]/personal-information"
 import MembershipStatus from "@/components/members/[id]/membership-status"
 import { InvoicesTable } from "@/components/shared/invoices-table"
 import { TransferCustomerDialog } from "@/components/billing/transfer-customer-dialog"
+import {
+  createPromptPayOptions,
+  getCustomerPaymentMethodsOptions,
+} from "@/lib/query-options/payment-method"
 
 export default function MemberProfilePage() {
   const searchParams = useSearchParams()
@@ -44,6 +52,7 @@ export default function MemberProfilePage() {
     useState(0)
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false)
   const [branch, setBranch] = useState("")
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const addPayment = searchParams.get("addPayment")
@@ -61,6 +70,18 @@ export default function MemberProfilePage() {
   const { data: singleMemberData, isPending }: UseQueryResult<Customer> =
     useQuery(listSingleCustomerOptions(customerId, branch))
 
+  const createPromptPayMutation = useMutation({
+    ...createPromptPayOptions(branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+    },
+    onError: (error) => {
+      console.log(error)
+    },
+  })
+
   const handleAddPaymentOpenChange = (open: boolean) => {
     setAddPaymentDialogOpen(open)
     if (!open) {
@@ -68,20 +89,9 @@ export default function MemberProfilePage() {
     }
   }
 
-  const handleAddPaymentSuccess = () => {
-    const idFromPath = getCustomerIdFromPath() || memberDataState?.id
-    if (idFromPath) setMemberDataState((prev) => ({ ...prev }))
-  }
-
   const addPromptPay = async (e) => {
     e.preventDefault()
-    const res = await createPromptPay(customerId, branch)
-    if (!res.success) {
-      window.alert(
-        `Failed to create PromptPay Token: ${res.error?.message || "An unexpected error occured"}`
-      )
-    }
-    setPaymentMethodsRefreshTrigger((prev) => prev + 1)
+    createPromptPayMutation.mutate({ customerId })
   }
 
   return (
@@ -166,7 +176,6 @@ export default function MemberProfilePage() {
                   <Tooltip>
                     <AddPaymentMethodDialog
                       customerId={singleMemberData?.id}
-                      onSuccess={handleAddPaymentSuccess}
                       open={addPaymentDialogOpen}
                       onOpenChange={handleAddPaymentOpenChange}
                       customerEmail={singleMemberData?.email}
@@ -199,9 +208,12 @@ export default function MemberProfilePage() {
                           className="w-full bg-transparent"
                           variant="outline"
                           size="sm"
+                          disabled={createPromptPayMutation.isPending}
                           onClick={addPromptPay}
                         >
-                          Add PromptPay
+                          {createPromptPayMutation.isPending
+                            ? "Adding..."
+                            : "Add PromptPay"}
                         </Button>
                       </TooltipTrigger>
 

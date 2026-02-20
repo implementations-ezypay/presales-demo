@@ -1,16 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, MouseEvent } from "react"
 import { Trash2, Star, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import {
-  deletePaymentMethod,
-  replacePaymentMethod,
-  activatePayTo,
-} from "@/lib/passer-functions"
+
 import {
   cn,
   formatPaymentMethodDisplay,
@@ -22,7 +18,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -38,8 +33,18 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 import { PaymentMethod } from "@/lib/types/payment-method"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
-import { getCustomerPaymentMethodsOptions } from "@/lib/query-options/payment-method"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
+import {
+  deletePaymentMethodOptions,
+  getCustomerPaymentMethodsOptions,
+  replacePaymentMethodOptions,
+  updatePayToStatusOptions,
+} from "@/lib/query-options/payment-method"
 
 interface PaymentMethodsListProps {
   customerId: string | null
@@ -56,7 +61,6 @@ export function PaymentMethodsList({
   selectedMethodId,
   onMethodSelect,
   showInvalid = false,
-  refreshTrigger,
 }: PaymentMethodsListProps) {
   const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -67,20 +71,13 @@ export function PaymentMethodsList({
   const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
     null
   )
-  const [defaultPaymentMethod, setDefaultPaymentMethod] =
-    useState<PaymentMethod | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [branch, setBranch] = useState("")
   const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
   const [methodToActivate, setMethodToActivate] =
     useState<PaymentMethod | null>(null)
-
-  // useEffect(() => {
-  //   if (customerId && branch) {
-  //     fetchPaymentMethods()
-  //   }
-  // }, [customerId, refreshTrigger, branch])
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const selectedBranch = localStorage.getItem("selectedBranch") || "main"
@@ -91,9 +88,39 @@ export function PaymentMethodsList({
     data,
     isPending,
     isError,
-  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
-    getCustomerPaymentMethodsOptions(customerId, branch)
-  )
+  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery({
+    ...getCustomerPaymentMethodsOptions(customerId, branch),
+  })
+
+  const replacePaymentMethodMutation = useMutation({
+    ...replacePaymentMethodOptions(customerId, branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+      setReplaceDialogOpen(false)
+    },
+  })
+
+  const deletePaymentMethodMutation = useMutation({
+    ...deletePaymentMethodOptions(customerId, branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+      setDeleteDialogOpen(false)
+    },
+  })
+
+  const updatePayToStatusMutation = useMutation({
+    ...updatePayToStatusOptions(branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+      setActivatePayToDialogOpen(false)
+    },
+  })
 
   if (isPending) {
     return (
@@ -126,72 +153,36 @@ export function PaymentMethodsList({
     if (!a.valid && b.valid) return 1
     return 0
   })
-  // const foundDefault = customerPaymentMethods.find((pm) => pm.primary) || null
-  // setDefaultPaymentMethod(foundDefault)
-  // if (onMethodSelect && foundDefault?.id) onMethodSelect(foundDefault.id)
 
-  const handleDeleteClick = (method: PaymentMethod, e: React.MouseEvent) => {
+  const handleDeleteClick = (method: PaymentMethod, e: MouseEvent) => {
     e.stopPropagation()
     setMethodToDelete(method)
     setDeleteDialogOpen(true)
-    setActionError(null)
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (e: MouseEvent) => {
+    e.preventDefault()
     if (!methodToDelete) return
 
-    setIsProcessing(true)
-    setActionError(null)
-
-    const deleteResult = await deletePaymentMethod(
-      customerId,
-      methodToDelete?.paymentMethodToken,
-      branch
-    )
-
-    setIsProcessing(false)
-
-    if (deleteResult.error) {
-      setActionError(deleteResult.error.message)
-      return
-    }
-
-    setMethodToDelete(null)
-
-    await fetchPaymentMethods()
+    deletePaymentMethodMutation.mutate({
+      paymentMethodToken: methodToDelete.paymentMethodToken,
+    })
   }
 
   const handleReplaceClick = (method: PaymentMethod, e: React.MouseEvent) => {
     e.stopPropagation()
     setMethodToReplace(method)
     setReplaceDialogOpen(true)
-    setActionError(null)
   }
 
-  const handleReplaceConfirm = async () => {
+  const handleReplaceConfirm = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     if (!methodToReplace) return
 
-    setIsProcessing(true)
-    setActionError(null)
-
-    const replaceResult = await replacePaymentMethod(
-      customerId,
-      defaultPaymentMethod?.paymentMethodToken,
-      methodToReplace?.paymentMethodToken,
-      branch
-    )
-
-    setIsProcessing(false)
-
-    if (replaceResult.error) {
-      setActionError(replaceResult.error.message)
-      return
-    }
-
-    setDefaultPaymentMethod(methodToReplace)
-    setMethodToReplace(null)
-
-    await fetchPaymentMethods()
+    replacePaymentMethodMutation.mutate({
+      paymentMethodToken: customerPaymentMethods[0]?.paymentMethodToken,
+      newPaymentMethodToken: methodToReplace.paymentMethodToken,
+    })
   }
 
   const handleActivatePayToClick = (
@@ -204,32 +195,17 @@ export function PaymentMethodsList({
     setActionError(null)
   }
 
-  const handlePayToAgreement = async (action = "decline") => {
-    if (!methodToActivate) return
+  const handlePayToAgreement = async (
+    e: MouseEvent,
+    action: "authorise" | "decline" = "decline"
+  ) => {
+    e.preventDefault()
+    if (!methodToActivate || !branch) return
 
-    setIsProcessing(true)
-    setActionError(null)
-
-    try {
-      const result = await activatePayTo(
-        methodToActivate.paymentMethodToken,
-        branch,
-        action
-      )
-
-      if (!result.success) {
-        setActionError(result.error?.message || "Failed to activate PayTo")
-        setIsProcessing(false)
-        return
-      }
-    } catch (err: any) {
-      console.error("PayTo activation error:", err)
-      setActionError(err.message || "Failed to activate PayTo")
-    } finally {
-      setIsProcessing(false)
-      fetchPaymentMethods()
-      setActivatePayToDialogOpen(false)
-    }
+    updatePayToStatusMutation.mutate({
+      paymentMethodToken: methodToActivate.paymentMethodToken,
+      action,
+    })
   }
 
   if (variant === "selection") {
@@ -421,7 +397,8 @@ export function PaymentMethodsList({
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Account</span>
                     <span className="font-mono">
-                      {methodToActivate.account || "N/A"}
+                      {methodToActivate?.payTo?.aliasId ||
+                        methodToActivate?.payTo?.bBanAccountNo}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -433,12 +410,12 @@ export function PaymentMethodsList({
                     <Badge
                       className="text-xs"
                       variant={
-                        methodToActivate.payTo.mandateStatus === "ACTV"
+                        methodToActivate?.payTo?.mandateStatus === "ACTV"
                           ? null
                           : "destructive"
                       }
                     >
-                      {methodToActivate.payTo.mandateReason.replaceAll(
+                      {methodToActivate?.payTo?.mandateReason.replaceAll(
                         /[^a-zA-Z0-9]/g,
                         ""
                       )}
@@ -465,10 +442,12 @@ export function PaymentMethodsList({
               Cancel
             </Button>
             <Button
-              onClick={() => handlePayToAgreement("authorise")}
-              disabled={isProcessing || methodToActivate?.valid}
+              onClick={(e) => handlePayToAgreement(e, "authorise")}
+              disabled={
+                updatePayToStatusMutation.isPending || methodToActivate?.valid
+              }
             >
-              {isProcessing ? (
+              {updatePayToStatusMutation.isPending ? (
                 <>
                   <Spinner className="h-4 w-4 mr-2" />
                   Authorising...
@@ -478,11 +457,13 @@ export function PaymentMethodsList({
               )}
             </Button>
             <Button
-              onClick={() => handlePayToAgreement()}
-              disabled={isProcessing || !methodToActivate?.valid}
+              onClick={(e) => handlePayToAgreement(e)}
+              disabled={
+                updatePayToStatusMutation.isPending || !methodToActivate?.valid
+              }
               variant={"destructive"}
             >
-              {isProcessing ? (
+              {updatePayToStatusMutation.isPending ? (
                 <>
                   <Spinner className="h-4 w-4 mr-2" />
                   Declining...
@@ -499,23 +480,19 @@ export function PaymentMethodsList({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Make Default Payment Method</AlertDialogTitle>
-            <AlertDialogDescription>
-              All future payments will be defaulted to this payment method.
-              {methodToReplace && (
-                <p className="mt-2 p-2 bg-muted rounded">
-                  <span className="text-sm font-medium text-foreground">
-                    {methodToReplace.type}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {" "}
-                    {methodToReplace.last4
-                      ? `****${methodToReplace.last4}`
-                      : ""}{" "}
-                    {methodToReplace.expiry || methodToReplace.account || ""}
-                  </span>
-                </p>
-              )}
-            </AlertDialogDescription>
+            All future payments will be defaulted to this payment method.
+            {methodToReplace && (
+              <div className="flex mt-2 py-3 bg-muted rounded">
+                <PaymentMethodIcon
+                  type={getPaymentMethodType(methodToReplace)}
+                ></PaymentMethodIcon>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {formatPaymentMethodDisplay(methodToReplace)}
+                  </p>
+                </div>
+              </div>
+            )}
           </AlertDialogHeader>
           {actionError && (
             <Alert variant="destructive">
@@ -529,9 +506,11 @@ export function PaymentMethodsList({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReplaceConfirm}
-              disabled={isProcessing}
+              disabled={replacePaymentMethodMutation.isPending}
             >
-              {isProcessing ? "Processing..." : "Confirm"}
+              {replacePaymentMethodMutation.isPending
+                ? "Processing..."
+                : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -541,24 +520,20 @@ export function PaymentMethodsList({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Payment Method</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this payment method? This action
-              cannot be undone.
-              {methodToDelete && (
-                <div className="mt-2 p-2 bg-muted rounded">
-                  <span className="text-sm font-medium text-foreground">
-                    {methodToDelete.qrPayment?.qrType ?? methodToDelete.type}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {" "}
-                    {methodToDelete.last4
-                      ? `****${methodToDelete.last4}`
-                      : ""}{" "}
-                    {methodToDelete.expiry || methodToDelete.account || ""}
-                  </span>
+            Are you sure you want to delete this payment method? This action
+            cannot be undone.
+            {methodToDelete && (
+              <div className="flex mt-2 py-3 bg-muted rounded">
+                <PaymentMethodIcon
+                  type={getPaymentMethodType(methodToDelete)}
+                ></PaymentMethodIcon>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {formatPaymentMethodDisplay(methodToDelete)}
+                  </p>
                 </div>
-              )}
-            </AlertDialogDescription>
+              </div>
+            )}
           </AlertDialogHeader>
           {actionError && (
             <Alert variant="destructive">
@@ -567,15 +542,15 @@ export function PaymentMethodsList({
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>
+            <AlertDialogCancel disabled={deletePaymentMethodMutation.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isProcessing}
+              disabled={deletePaymentMethodMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isProcessing ? "Processing..." : "Delete"}
+              {deletePaymentMethodMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

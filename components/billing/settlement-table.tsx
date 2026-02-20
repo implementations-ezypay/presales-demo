@@ -27,10 +27,12 @@ import {
 import { Download, Search, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { downloadDocument } from "@/lib/passer-functions"
 import Link from "next/link"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
-import { listSettlementOptions } from "@/lib/query-options/settlement"
+import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
+import {
+  downloadSettlementReportOptions,
+  listSettlementOptions,
+} from "@/lib/query-options/settlement"
 import { Settlement } from "@/lib/types/settlement"
 import { parseCurrency } from "@/lib/utils"
 
@@ -56,35 +58,18 @@ export function SettlementTable() {
     return matchesSearch && settlement.amount.value !== 0
   })
 
+  const downloadDocumentMutation = useMutation({
+    ...downloadSettlementReportOptions(branch),
+    onSuccess: (data) => {
+      const downloadUrl = data
+      window.open(downloadUrl, "_blank")
+    },
+  })
+
   console.log(filteredSettlements)
 
   const handleDownloadDocument = async (settlementId: string, docType) => {
-    setIsDownloading(settlementId)
-    try {
-      const downloadUrl = await downloadDocument(settlementId, docType, branch)
-
-      window.open(downloadUrl, "_blank")
-
-      const typeLabels = {
-        tax_invoice: "Tax Invoice",
-        detail_report: "Detail Report",
-        summary_report: "Summary Report",
-      }
-
-      toast({
-        title: "Report Downloaded",
-        description: `${typeLabels[docType]} for settlement ${settlementId} is ready.`,
-      })
-    } catch (error) {
-      toast({
-        title: "Download Failed",
-        description:
-          "Failed to download the settlement document. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsDownloading(null)
-    }
+    downloadDocumentMutation.mutate({ settlementId, docType })
   }
 
   return (
@@ -168,10 +153,10 @@ export function SettlementTable() {
                           variant="ghost"
                           size="sm"
                           className="gap-2"
-                          disabled={isDownloading === settlement.number}
+                          disabled={downloadDocumentMutation.isPending}
                         >
                           <Download className="h-4 w-4" />
-                          {isDownloading === settlement.number
+                          {downloadDocumentMutation.isPending
                             ? "Downloading..."
                             : "Download Report"}
                         </Button>
@@ -181,7 +166,7 @@ export function SettlementTable() {
                           onClick={() =>
                             handleDownloadDocument(
                               settlement.number,
-                              "tax_invoice"
+                              "detail_report"
                             )
                           }
                         >

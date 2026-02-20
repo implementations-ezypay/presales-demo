@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { CreditCard, Building2 } from "lucide-react"
+import { CreditCard, Building2, Phone } from "lucide-react"
 import { useTheme } from "next-themes"
 
 interface PaymentMethodIconProps {

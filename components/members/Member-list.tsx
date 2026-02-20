@@ -25,7 +25,6 @@ import { getBranchName } from "@/lib/branches"
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
-import { Branch } from "@/lib/types/banch"
 
 export default function MemberList({
   filteredMembers,
@@ -33,15 +32,14 @@ export default function MemberList({
   filteredMembers: Customer[] | undefined
 }) {
   const router = useRouter()
-  const [branch, setBranch] = useState<Branch | null>(null)
+  const [branch, setBranch] = useState<string | null>(null)
 
   const { isPending }: UseQueryResult<{ data: Customer[] }> = useQuery(
     listCustomerOptions(branch)
   )
 
   useEffect(() => {
-    const selectedBranch = (localStorage.getItem("selectedBranch") ||
-      "main") as unknown as Branch
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
     setBranch(selectedBranch)
   }, [])
 

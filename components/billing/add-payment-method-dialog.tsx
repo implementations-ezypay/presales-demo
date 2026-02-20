@@ -20,11 +20,14 @@ import Link from "next/link"
 import { logApiCall } from "@/lib/api-logger"
 import { Button } from "@/components/ui/button"
 import { getBranchCountry } from "@/lib/branches"
-import { linkPaymentMethod } from "@/lib/passer-functions"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  getCustomerPaymentMethodsOptions,
+  linkPaymentMethodOptions,
+} from "@/lib/query-options/payment-method"
 
 interface AddPaymentMethodDialogProps {
   customerId: string
-  onSuccess?: () => void
   children?: React.ReactNode
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -34,7 +37,6 @@ interface AddPaymentMethodDialogProps {
 
 export function AddPaymentMethodDialog({
   customerId,
-  onSuccess,
   children,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
@@ -47,6 +49,7 @@ export function AddPaymentMethodDialog({
   const iframeOriginRef = useRef<string | null>(null)
   const [branch, setBranch] = useState("")
   const [country, setCountry] = useState("")
+  const queryClient = useQueryClient()
 
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : internalOpen
@@ -72,6 +75,15 @@ export function AddPaymentMethodDialog({
     setCountry(getBranchCountry(selectedBranch))
   }, [])
 
+  const linkPaymentMethodMutation = useMutation({
+    ...linkPaymentMethodOptions(branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+    },
+  })
+
   useEffect(() => {
     const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
@@ -91,17 +103,7 @@ export function AddPaymentMethodDialog({
       console.log(paymentMethodToken, country, customerId)
 
       if (country === "PH" && paymentMethodToken) {
-        try {
-          const res = await linkPaymentMethod(
-            customerId,
-            paymentMethodToken,
-            branch
-          )
-          await new Promise((resolve) => setTimeout(resolve, 2000))
-          setOpen(false)
-        } catch (error) {
-          console.error(error)
-        }
+        linkPaymentMethodMutation.mutate({ customerId, paymentMethodToken })
       }
     }
 
@@ -157,7 +159,6 @@ export function AddPaymentMethodDialog({
     setOpen(newOpen)
     if (!newOpen) {
       setIframeUrl(null)
-      onSuccess?.()
     }
   }
 

@@ -5,78 +5,12 @@ import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
 import { getBranchCurrency } from "./branches"
 import { randomUUID } from "node:crypto"
-import { Transaction } from "./types/invoice"
+import { InvoiceCreation, Transaction } from "./types/invoice"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/invoices`
 const checkoutEndpoint = `${process.env.API_ENDPOINT}/v2/billing/checkout`
 const transactionEndpoint = `${process.env.API_ENDPOINT}/v2/billing/transactions`
 //const merchantId = process.env.EZYPAY_MERCHANT_ID;
-
-function normalisedEzypayInvoice(invoices, customerName = null) {
-  function extractPaymentMethodData(paymentMethodData) {
-    if (!paymentMethodData) return
-    const type = paymentMethodData.type.toLowerCase()
-
-    switch (type) {
-      case "card":
-        return `${paymentMethodData.card?.origin ?? ""} ${
-          paymentMethodData.card?.type
-        } **** ${paymentMethodData.card?.last4}`
-        break
-      case "bank":
-        return `BANK **** ${paymentMethodData.bank?.last4}`
-        break
-      case "payto":
-        return `PayTo ${paymentMethodData.payTo?.bbanAccountNo ?? paymentMethodData.payTo?.aliasId}`
-      case "qrpayment":
-        return `${paymentMethodData.qrPayment?.qrType}`
-      case "wallet":
-        return `${paymentMethodData.wallet?.walletType}`
-      default:
-        return `type`
-    }
-  }
-
-  function mergeItemsByDescription(items) {
-    const merged = {}
-
-    items.forEach((item) => {
-      const desc = item.description
-      const amount = item.amount.value
-
-      if (merged[desc]) {
-        merged[desc] += amount
-      } else {
-        merged[desc] = amount
-      }
-    })
-
-    return Object.entries(merged).map(([description, amount]) => ({
-      description,
-      amount: `$${amount.toFixed(2)}`,
-    }))
-  }
-  const normalisedInvoice = invoices.data.map((invoice) => ({
-    id: invoice.id,
-    member: customerName,
-    amount: `$${invoice.amount.value}`,
-    number: "IN" + Number.parseInt(invoice.documentNumber.substring(4)),
-    date: invoice.date,
-    dueDate: invoice.scheduledPaymentDate,
-    paymentMethod: extractPaymentMethodData(invoice.paymentMethodData),
-    items: mergeItemsByDescription(invoice.items),
-    status: invoice.status.toLowerCase(),
-    paymentAttempts: [],
-    customerId: invoice.customerId,
-    failedPaymentReason: invoice.failedPaymentReason,
-    paymentProviderResponse: invoice.paymentProviderResponse,
-    payNowUrl: invoice.payNowUrl,
-    accountingCode: invoice.items?.[0]?.accountingCode || null,
-    paymentMethodInvalid: invoice.paymentMethodInvalid,
-  }))
-
-  return normalisedInvoice
-}
 
 export async function listInvoice(branch): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch)
@@ -120,8 +54,6 @@ export async function listInvoice(branch): Promise<any> {
     }
 
     const invoiceData = await invoiceResponse.json()
-
-    // const normalisedInvoice = normalisedEzypayInvoice(invoiceData)
 
     return invoiceData
   } catch (err) {
@@ -167,8 +99,6 @@ export async function listInvoiceByCustomer(customerId, branch): Promise<any> {
       )
       throw new Error(`List Customer invoice failed: ${invoiceResponse.status}`)
     }
-
-    //const normalisedInvoice = normalisedEzypayInvoice(invoiceData, customerName)
 
     return invoiceData
   } catch (err) {
@@ -413,10 +343,7 @@ export async function refundInvoice(invoiceId, amount = null, branch) {
       }
     }
 
-    return {
-      success: true,
-      data: data,
-    }
+    return data
   } catch (err) {
     console.error("Refund Invoice failed error:", err)
     return {
@@ -428,7 +355,10 @@ export async function refundInvoice(invoiceId, amount = null, branch) {
   }
 }
 
-export async function createInvoice(invoiceData, branch) {
+export async function createInvoice(
+  invoiceData: InvoiceCreation,
+  branch: string
+) {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceData) {
@@ -445,28 +375,10 @@ export async function createInvoice(invoiceData, branch) {
       )
     }
 
-    const itemData: any = {
-      description: invoiceData.description || "On demand Invoice",
-      amount: {
-        currency: getBranchCurrency(branch),
-        value: invoiceData.amount,
-      },
-    }
-
-    if (invoiceData.accountingCode) {
-      itemData.accountingCode = invoiceData.accountingCode
-    }
-
-    const requestBody = {
-      customerId: invoiceData.memberId,
-      items: [itemData],
-      processingModel: "cardonfile",
-      paymentMethodToken: null,
+    const requestBody: InvoiceCreation = {
+      ...invoiceData,
       externalInvoiceId: randomUUID(),
-    }
-
-    if (invoiceData.paymentMethodId) {
-      requestBody.paymentMethodToken = invoiceData.paymentMethodId
+      processingModel: "cardonfile",
     }
 
     const response = await fetch(apiEndpoint, {
@@ -510,15 +422,6 @@ export async function createCheckout(invoiceData, branch) {
       )
     }
 
-    const requestBody = {
-      description: invoiceData.description || "Checkout",
-      amount: {
-        currency: "AUD",
-        value: invoiceData.amount,
-      },
-      customerId: invoiceData.memberId,
-    }
-
     const response = await fetch(checkoutEndpoint, {
       method: "POST",
       headers: {
@@ -526,7 +429,7 @@ export async function createCheckout(invoiceData, branch) {
         merchant: merchantId,
         "Content-type": "application/json",
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(invoiceData),
     })
 
     const data = response.ok ? await response.json() : await response.text()
@@ -535,11 +438,11 @@ export async function createCheckout(invoiceData, branch) {
       checkoutEndpoint,
       data,
       response.status,
-      requestBody
+      invoiceData
     )
 
     if (!response.ok) {
-      console.error("Refund Invoice failed:", response.status, data)
+      console.error("Create Checkout failed:", response.status, data)
 
       try {
         const errorData = typeof data === "string" ? JSON.parse(data) : data
@@ -552,19 +455,11 @@ export async function createCheckout(invoiceData, branch) {
           },
         }
       } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Refund invoice failed: ${response.status}`,
-          },
-        }
+        throw new Error(parseError)
       }
     }
 
-    return {
-      success: true,
-      data: data.checkoutUrl,
-    }
+    return data
   } catch (err) {
     console.error("Refund Invoice failed error:", err)
     return {

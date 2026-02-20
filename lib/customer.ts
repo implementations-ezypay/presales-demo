@@ -4,11 +4,13 @@ import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
 import axios from "axios"
 import { Customer } from "./types/customer"
-import { Branch } from "./types/banch"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`
 
-export async function createCustomer(customer, branch: string): Promise<any> {
+export async function createCustomer(
+  customerData,
+  branch: string
+): Promise<any> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     // Get token directly from utility function instead of HTTP request
@@ -21,35 +23,6 @@ export async function createCustomer(customer, branch: string): Promise<any> {
       )
     }
 
-    const body = {
-      firstName: customer.firstName,
-      lastName: customer.lastName,
-      email: customer.email,
-      address: {
-        address1: customer.address ?? null,
-      },
-      mobilePhone: customer.mobilePhone ?? null,
-      dateOfBirth: customer.dateOfBirth ?? null,
-      metadata: {
-        plan: customer.plan ?? "Trial",
-        status: customer.status ?? "trial",
-        startDate:
-          new Date(customer.startDate).toISOString().split("T")[0] ??
-          new Date(Date.now()).toISOString().split("T")[0],
-        dueDate: customer.startDate
-          ? new Date(customer.startDate + 7 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0]
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0],
-        originalBranch: customer.originalBranch,
-      },
-    }
-
-    if (customer.existingCustomerNumber)
-      body.customerNumber = customer.existingCustomerNumber
-
     const response = await fetch(apiEndpoint, {
       method: "POST",
       headers: {
@@ -57,11 +30,11 @@ export async function createCustomer(customer, branch: string): Promise<any> {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(customerData),
     })
 
     const data = response.ok ? await response.json() : await response.text()
-    await logApiCall("POST", apiEndpoint, data, response.status, body)
+    await logApiCall("POST", apiEndpoint, data, response.status, customerData)
 
     if (!response.ok) {
       console.error("Created customer failed:", response.status, data)
