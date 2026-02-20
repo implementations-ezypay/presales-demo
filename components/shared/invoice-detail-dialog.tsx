@@ -133,9 +133,9 @@ export function InvoiceDetailDialog({
   })
 
   const isProcessing =
-    retryInvoiceMutation.isPending &&
-    writeOffInvoiceMutation.isPending &&
-    recordExternalInvoiceMutation.isPending &&
+    retryInvoiceMutation.isPending ||
+    writeOffInvoiceMutation.isPending ||
+    recordExternalInvoiceMutation.isPending ||
     refundInvoiceMutation.isPending
 
   useEffect(() => {

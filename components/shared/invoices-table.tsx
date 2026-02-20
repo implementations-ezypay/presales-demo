@@ -28,7 +28,7 @@ import {
 import { Search, Plus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { InvoiceDetailDialog } from "./invoice-detail-dialog"
-import { CreateInvoiceDialog } from "../billing/create-invoice-dialog"
+import { CreateInvoiceDialog } from "./create-invoice-dialog"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 import { Spinner } from "../ui/spinner"
 import {

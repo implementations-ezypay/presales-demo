@@ -22,9 +22,9 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
-import { TapToPayAnimation } from "./tap-to-pay-animation"
+import { TapToPayAnimation } from "../billing/tap-to-pay-animation"
 import { Spinner } from "@/components/ui/spinner"
-import { PaymentMethodsList } from "../shared/payment-methods-list"
+import { PaymentMethodsList } from "./payment-methods-list"
 import Link from "next/link"
 import {
   Tooltip,
@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { logApiCall } from "@/lib/api-logger"
-import { PromptPayQrCode } from "./promptpay-qrcode"
+import { PromptPayQrCode } from "../billing/promptpay-qrcode"
 import { getBranchCurrency } from "@/lib/branches"
 import {
   useMutation,
