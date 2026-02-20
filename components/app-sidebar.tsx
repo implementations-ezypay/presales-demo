@@ -27,6 +27,7 @@ import {
 import { Card, CardContent } from "./ui/card"
 import { useQuery } from "@tanstack/react-query"
 import { listCustomerOptions } from "@/lib/query-options/customer"
+import { listInvoiceOptions } from "@/lib/query-options/invoice"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -46,7 +47,8 @@ export function AppSidebar() {
     setBranch(selectedBranch)
   }, [])
 
-  const _loadCustomer = useQuery(listCustomerOptions(branch))
+  const _loadCustomers = useQuery(listCustomerOptions(branch))
+  const _loadInvoices = useQuery(listInvoiceOptions(branch))
 
   const pathname = usePathname()
 

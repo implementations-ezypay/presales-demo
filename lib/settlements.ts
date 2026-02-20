@@ -1,4 +1,5 @@
 "use server"
+import axios from "axios"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
 import { getEzypayToken } from "./ezypay-token"
@@ -37,34 +38,21 @@ export async function downloadDocument(
     const body = { documentType: documentType }
 
     const url = `${apiEndpoint}/${settlementId}/file`
-    const response = await fetch(url, {
-      method: "POST",
+    const response = await axios.post(url, body, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
-      body: JSON.stringify(body),
     })
 
-    const settlementDoc = response.ok
-      ? await response.json()
-      : await response.text()
+    const settlementDoc = response.data
     await logApiCall("POST", url, settlementDoc, response.status, body)
-
-    if (!response.ok) {
-      console.error(
-        "Created settlement file failed:",
-        response.status,
-        settlementDoc
-      )
-      throw new Error(`Create settlement file failed: ${response.status}`)
-    }
 
     const fileId = settlementDoc.fileId
 
     const fileUrl = `${fileEndpoint}/${fileId}`
-    const getFile = await fetch(fileUrl, {
+    const fileResponse = await axios.get(fileUrl, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -72,24 +60,30 @@ export async function downloadDocument(
       },
     })
 
-    const fileData = getFile.ok ? await getFile.json() : await getFile.text()
-    await logApiCall("GET", fileUrl, fileData, getFile.status)
-
-    if (!getFile.ok) {
-      console.error(
-        "Download settlement file failed:",
-        getFile.status,
-        fileData
-      )
-      throw new Error(`Download settlement file failed: ${getFile.status}`)
-    }
+    const fileData = fileResponse.data
+    await logApiCall("GET", fileUrl, fileData, fileResponse.status)
 
     const downloadUrl = fileData.url
 
     return downloadUrl
-  } catch (err) {
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Download settlement file error:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Download settlement file failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Download settlement file error:", err)
+      throw err
+    }
     console.error("Download settlement file error:", err)
-    throw err
+    throw new Error(`Download settlement file failed: Unknown error`, {
+      cause: err,
+    })
   }
 }
 
@@ -107,26 +101,29 @@ export async function listSettlements(branch): Promise<any> {
     }
 
     const url = `${apiEndpoint}?limit=100`
-    const response = await fetch(url, {
+    const response = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
     })
 
-    const settlements = response.ok
-      ? await response.json()
-      : await response.text()
+    const settlements = response.data
     await logApiCall("GET", url, settlements, response.status)
 
-    if (!response.ok) {
-      console.error("List settlement failed:", response.status, settlements)
-      throw new Error(`List settlement failed: ${response.status}`)
-    }
-
     return settlements.data
-  } catch (err) {
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("List settlement error:", err.response?.data || err.message)
+      throw new Error(`List settlement failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("List settlement error:", err)
+      throw err
+    }
     console.error("List settlement error:", err)
-    throw err
+    throw new Error(`List settlement failed: Unknown error`, { cause: err })
   }
 }

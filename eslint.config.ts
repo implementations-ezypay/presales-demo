@@ -20,7 +20,17 @@ export default defineConfig([
       },
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          reportUsedIgnorePattern: true,
+        },
+      ],
     },
   },
   tseslint.configs.recommended,

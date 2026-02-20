@@ -55,7 +55,7 @@ import {
 import {
   listInvoiceOptions,
   listSingleInvoiceOptions,
-  listTransaction,
+  listTransactionOptions,
   recordExternalInvoiceOptions,
   refundInvoiceOptions,
   retryInvoiceOptions,
@@ -95,6 +95,7 @@ export function InvoiceDetailDialog({
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
       )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
     },
   })
 
@@ -106,6 +107,7 @@ export function InvoiceDetailDialog({
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
       )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
     },
   })
 
@@ -117,6 +119,7 @@ export function InvoiceDetailDialog({
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
       )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
     },
   })
 
@@ -129,6 +132,7 @@ export function InvoiceDetailDialog({
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
       )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
     },
   })
 
@@ -151,7 +155,7 @@ export function InvoiceDetailDialog({
     data: transactionData,
     isPending,
   }: UseQueryResult<{ data: Transaction[] }> = useQuery(
-    listTransaction(invoice?.id, branch)
+    listTransactionOptions(invoice?.id, branch)
   )
 
   if (!invoice) return null

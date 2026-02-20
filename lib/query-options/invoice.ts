@@ -33,7 +33,7 @@ export const listInvoiceOptions = (branch: string | null) => {
   })
 }
 
-export const listTransaction = (
+export const listTransactionOptions = (
   invoiceId: string | undefined,
   branch: string
 ) => {
