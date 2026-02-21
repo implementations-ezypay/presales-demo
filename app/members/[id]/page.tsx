@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Edit } from "lucide-react"
 import Link from "next/link"
-import { AddPaymentMethodDialog } from "@/components/billing/add-payment-method-dialog"
+import { AddPaymentMethodDialog } from "@/components/members/[id]/add-payment-method-dialog"
 import {
   Tooltip,
   TooltipContent,
@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { PaymentMethodsList } from "@/components/shared/payment-methods-list"
-import { useState, useEffect } from "react"
+import { useState, useEffect, MouseEvent } from "react"
 import { Spinner } from "@/components/ui/spinner"
 import { getCustomerIdFromPath } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -38,7 +38,7 @@ import { AttendanceLog } from "@/components/members/[id]/attendance-log"
 import PersonalInformation from "@/components/members/[id]/personal-information"
 import MembershipStatus from "@/components/members/[id]/membership-status"
 import { InvoicesTable } from "@/components/shared/invoices-table"
-import { TransferCustomerDialog } from "@/components/billing/transfer-customer-dialog"
+import { TransferCustomerDialog } from "@/components/members/[id]/transfer-customer-dialog"
 import {
   createPromptPayOptions,
   getCustomerPaymentMethodsOptions,
@@ -166,31 +166,35 @@ export default function MemberProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <PaymentMethodsList
-                  customerId={customerId}
-                  variant="display"
-                  refreshTrigger={paymentMethodsRefreshTrigger}
-                />
+                {customerId && (
+                  <PaymentMethodsList
+                    customerId={customerId}
+                    variant="display"
+                    refreshTrigger={paymentMethodsRefreshTrigger}
+                  />
+                )}
 
                 <TooltipProvider>
                   <Tooltip>
-                    <AddPaymentMethodDialog
-                      customerId={singleMemberData?.id}
-                      open={addPaymentDialogOpen}
-                      onOpenChange={handleAddPaymentOpenChange}
-                      customerEmail={singleMemberData?.email}
-                      customerName={`${singleMemberData?.firstName} ${singleMemberData?.lastName}`}
-                    >
-                      <TooltipTrigger asChild>
-                        <Button
-                          className="w-full bg-transparent"
-                          variant="outline"
-                          size="sm"
-                        >
-                          Add Payment Method
-                        </Button>
-                      </TooltipTrigger>
-                    </AddPaymentMethodDialog>
+                    {singleMemberData?.id && (
+                      <AddPaymentMethodDialog
+                        customerId={singleMemberData?.id}
+                        open={addPaymentDialogOpen}
+                        onOpenChange={handleAddPaymentOpenChange}
+                        customerEmail={singleMemberData?.email}
+                        customerName={`${singleMemberData?.firstName} ${singleMemberData?.lastName}`}
+                      >
+                        <TooltipTrigger asChild>
+                          <Button
+                            className="w-full bg-transparent"
+                            variant="outline"
+                            size="sm"
+                          >
+                            Add Payment Method
+                          </Button>
+                        </TooltipTrigger>
+                      </AddPaymentMethodDialog>
+                    )}
 
                     <TooltipContent>
                       <p>

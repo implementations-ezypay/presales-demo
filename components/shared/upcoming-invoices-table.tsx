@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import {
   Card,
   CardContent,
@@ -17,7 +16,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { InvoiceDetailDialog } from "./invoice-detail-dialog"
 import { PaymentMethodIcon } from "../ui/payment-method-icon"
 
 const upcomingInvoicesData = [
@@ -72,14 +70,6 @@ const upcomingInvoicesData = [
 ]
 
 export function UpcomingInvoicesTable() {
-  const [selectedInvoice, setSelectedInvoice] = useState(null)
-  const [isDetailOpen, setIsDetailOpen] = useState(false)
-
-  const handleInvoiceClick = (invoice) => {
-    setSelectedInvoice(invoice)
-    setIsDetailOpen(true)
-  }
-
   return (
     <>
       <Card>
@@ -105,11 +95,7 @@ export function UpcomingInvoicesTable() {
             </TableHeader>
             <TableBody>
               {upcomingInvoicesData.map((invoice) => (
-                <TableRow
-                  key={invoice.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleInvoiceClick(invoice)}
-                >
+                <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.id}</TableCell>
                   <TableCell>{invoice.member}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
@@ -134,14 +120,6 @@ export function UpcomingInvoicesTable() {
           </Table>
         </CardContent>
       </Card>
-
-      {isDetailOpen && selectedInvoice && (
-        <InvoiceDetailDialog
-          invoiceProp={selectedInvoice}
-          open={isDetailOpen}
-          onOpenChange={setIsDetailOpen}
-        />
-      )}
     </>
   )
 }

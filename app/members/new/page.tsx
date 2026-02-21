@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/tooltip"
 import { ArrowLeft, Mail } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, MouseEvent } from "react"
 import { toast } from "sonner"
 import { logApiCall } from "@/lib/api-logger"
 import { getBranchCountry } from "@/lib/branches"
@@ -110,7 +110,7 @@ export default function NewMemberPage() {
         // Record origin from the iframe URL so we can validate messages
         const url = new URL(pcpUrl)
         iframeOriginRef.current = url.origin
-      } catch (e) {
+      } catch (_e) {
         iframeOriginRef.current = null
       }
     },
@@ -179,7 +179,7 @@ export default function NewMemberPage() {
     setFormData((prev) => ({ ...prev, status: value }))
   }
 
-  const submitHpp = (e: MouseEvent, type) => {
+  const submitHpp = (e: MouseEvent, type: string) => {
     e.preventDefault()
     if (!iframeRef.current) {
       toast.error("Payment form not loaded")

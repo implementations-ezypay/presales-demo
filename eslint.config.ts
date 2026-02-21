@@ -8,6 +8,17 @@ import prettier from "eslint-config-prettier"
 
 export default defineConfig([
   {
+    ignores: [
+      "dist/**",
+      "build/",
+      "node_modules/**",
+      ".next/**",
+      ".vercel/**",
+      "certificates/**",
+      "next-env.d.ts",
+    ],
+  },
+  {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     plugins: { js },
     extends: ["js/recommended"],

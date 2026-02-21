@@ -147,7 +147,7 @@ export function ApiLoggerViewer() {
                     <AccordionContent>
                       <div className="px-3 pb-3">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {log.requestBody && (
+                          {(log.requestBody as null) && (
                             <div className="max-h-96">
                               <p className="text-xs font-semibold mb-2 text-blue-600 dark:text-blue-400">
                                 Request Body:

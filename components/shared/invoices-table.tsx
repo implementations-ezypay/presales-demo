@@ -50,7 +50,7 @@ export function InvoicesTable({ variant = "billing" }) {
   const customerId = getCustomerIdFromPath()
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedInvoice, setSelectedInvoice] = useState(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [branch, setBranch] = useState("")
@@ -115,7 +115,7 @@ export function InvoicesTable({ variant = "billing" }) {
     return matchesStatus && matchesSearch
   })
 
-  const handleInvoiceClick = (invoice: (typeof invoices)[0]) => {
+  const handleInvoiceClick = (invoice: Invoice) => {
     if (!invoice.id) {
       console.error("Invalid invoice data (missing id):", invoice)
       return

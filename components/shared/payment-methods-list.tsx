@@ -49,7 +49,7 @@ import {
 interface PaymentMethodsListProps {
   customerId: string
   variant?: "display" | "selection"
-  selectedMethodId?: string
+  selectedMethodId?: string | null
   onMethodSelect?: (methodId: string) => void
   showInvalid?: boolean
   refreshTrigger?: number
@@ -62,7 +62,6 @@ export function PaymentMethodsList({
   onMethodSelect,
   showInvalid = false,
 }: PaymentMethodsListProps) {
-  const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
     null
@@ -71,7 +70,6 @@ export function PaymentMethodsList({
   const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
     null
   )
-  const [isProcessing, setIsProcessing] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [branch, setBranch] = useState("")
   const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
@@ -84,13 +82,10 @@ export function PaymentMethodsList({
     setBranch(selectedBranch)
   }, [])
 
-  const {
-    data,
-    isPending,
-    isError,
-  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery({
-    ...getCustomerPaymentMethodsOptions(customerId, branch),
-  })
+  const { data, isPending }: UseQueryResult<{ data: PaymentMethod[] }> =
+    useQuery({
+      ...getCustomerPaymentMethodsOptions(customerId, branch),
+    })
 
   const replacePaymentMethodMutation = useMutation({
     ...replacePaymentMethodOptions(customerId, branch),
@@ -130,14 +125,6 @@ export function PaymentMethodsList({
     )
   }
 
-  if (isError) {
-    return (
-      <div className="text-sm text-destructive py-4">
-        Failed to load payment methods: {error}
-      </div>
-    )
-  }
-
   if (data?.data?.length === 0) {
     return (
       <div className="text-sm text-muted-foreground py-4">
@@ -146,7 +133,7 @@ export function PaymentMethodsList({
     )
   }
 
-  const customerPaymentMethods = data.data.sort((a, b) => {
+  const customerPaymentMethods = data?.data.sort((a, b) => {
     if (a.primary && !b.primary) return -1
     if (!a.primary && b.primary) return 1
     if (a.valid && !b.valid) return -1
@@ -177,10 +164,10 @@ export function PaymentMethodsList({
 
   const handleReplaceConfirm = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    if (!methodToReplace) return
+    if (!methodToReplace || !customerPaymentMethods) return
 
     replacePaymentMethodMutation.mutate({
-      paymentMethodToken: customerPaymentMethods[0]?.paymentMethodToken,
+      paymentMethodToken: customerPaymentMethods[0].paymentMethodToken,
       newPaymentMethodToken: methodToReplace.paymentMethodToken,
     })
   }
@@ -437,7 +424,7 @@ export function PaymentMethodsList({
             <Button
               variant="outline"
               onClick={() => setActivatePayToDialogOpen(false)}
-              disabled={isProcessing}
+              disabled={updatePayToStatusMutation.isPending}
             >
               Cancel
             </Button>
@@ -501,7 +488,9 @@ export function PaymentMethodsList({
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>
+            <AlertDialogCancel
+              disabled={replacePaymentMethodMutation.isPending}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

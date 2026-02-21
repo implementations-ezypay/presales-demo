@@ -59,7 +59,7 @@ function EmailPreviewContent() {
             </p>
 
             <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-8 rounded">
-              {paymentMethodInvalid ? (
+              {paymentMethodInvalid && paymentMethod ? (
                 <>
                   <p className="text-slate-800 leading-relaxed">
                     We noticed your payment method has become invalid. To ensure
@@ -114,7 +114,7 @@ function EmailPreviewContent() {
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-start">
-                  <span className="inline-block w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                  <span className=" w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
                     <span className="text-green-600 font-bold text-sm">✓</span>
                   </span>
                   <span className="text-slate-700">
@@ -122,7 +122,7 @@ function EmailPreviewContent() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="inline-block w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                  <span className=" w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
                     <span className="text-green-600 font-bold text-sm">✓</span>
                   </span>
                   <span className="text-slate-700">
@@ -130,7 +130,7 @@ function EmailPreviewContent() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="inline-block w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                  <span className=" w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
                     <span className="text-green-600 font-bold text-sm">✓</span>
                   </span>
                   <span className="text-slate-700">

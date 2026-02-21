@@ -35,7 +35,7 @@ import {
   MailIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-import { RefundDialog } from "../billing/refund-dialog"
+import { RefundDialog } from "./refund-dialog"
 import { Spinner } from "../ui/spinner"
 import { PaymentMethodsList } from "./payment-methods-list"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
@@ -82,7 +82,6 @@ export function InvoiceDetailDialog({
     string | null
   >(null)
   const [externalPaymentMethod, setExternalPaymentMethod] = useState<string>("")
-  const [refundError, setRefundError] = useState<string | null>(null)
   const [branch, setBranch] = useState("")
   const queryClient = useQueryClient()
 
@@ -227,22 +226,22 @@ export function InvoiceDetailDialog({
   }
 
   const handleEmail = async () => {
-    try {
-      const emailPreviewLink = `${window.location.origin}/email-preview?id=${
-        invoice.customerId ?? null
-      }&name=${invoice.member}&paymentMethod=${
-        invoice.paymentMethod
-      }&paymentMethodInvalid=${invoice.paymentMethodInvalid}&reason=${
-        invoice.failedPaymentReason.code +
-        ": " +
-        invoice.paymentProviderResponse.description
-      }`
-      window.open(emailPreviewLink, "_blank")
-      toast.success("Email draft opened in new tab")
-    } catch (err) {
-      console.error("[v0] Failed to open email URL", err, invoice.payNowUrl)
-      toast.error("Failed to open email URL")
-    }
+    // try {
+    //   const emailPreviewLink = `${window.location.origin}/email-preview?id=${
+    //     invoice.customerId ?? null
+    //   }&name=${invoice.customerFirstName} ${invoice.customerLastName}&paymentMethod=${
+    //     invoice.paymentMethod
+    //   }&paymentMethodInvalid=${invoice.paymentMethodInvalid}&reason=${
+    //     invoice.failedPaymentReason.code +
+    //     ": " +
+    //     invoice.paymentProviderResponse.description
+    //   }`
+    //   window.open(emailPreviewLink, "_blank")
+    //   toast.success("Email draft opened in new tab")
+    // } catch (err) {
+    //   console.error("[v0] Failed to open email URL", err, invoice.payNowUrl)
+    //   toast.error("Failed to open email URL")
+    // }
   }
   return (
     <>
@@ -348,12 +347,6 @@ export function InvoiceDetailDialog({
                       <p className="text-base font-semibold text-orange-600 dark:text-orange-400">
                         {parseCurrency(invoice.totalRefunded.value)}
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Refund Date
-                      </p>
-                      <p className="text-base">{invoice.refundDate}</p>
                     </div>
                     {invoice.status.match(/partial/i) && (
                       <div>
@@ -677,7 +670,6 @@ export function InvoiceDetailDialog({
         invoiceAmount={invoice.amount.value - invoice.totalRefunded.value}
         onConfirm={handleRefund}
         isProcessing={isProcessing}
-        error={refundError}
       />
     </>
   )

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog"
 import { Trash2, Plus, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
-import { AutoBillingSettings } from "@/components/billing/auto-billing-settings"
+import { AutoBillingSettings } from "@/components/settings/auto-billing-settings"
 import { logApiCall } from "@/lib/api-logger"
 
 type DeviceStatus = "active" | "inactive" | "pending"

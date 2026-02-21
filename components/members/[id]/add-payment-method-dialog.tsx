@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, MouseEvent } from "react"
 import {
   Dialog,
   DialogContent,
@@ -136,7 +136,7 @@ export function AddPaymentMethodDialog({
       try {
         const url = new URL(pcpUrl)
         iframeOriginRef.current = url.origin
-      } catch (e) {
+      } catch (_e) {
         iframeOriginRef.current = null
       }
     } catch (error) {
@@ -162,7 +162,7 @@ export function AddPaymentMethodDialog({
     }
   }
 
-  const submitHpp = (e, type) => {
+  const submitHpp = (e: MouseEvent, type: string) => {
     e.preventDefault()
     if (!iframeRef.current) {
       toast.error("Payment form not loaded")

@@ -22,7 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
-import { TapToPayAnimation } from "../billing/tap-to-pay-animation"
+import { TapToPayAnimation } from "./tap-to-pay-animation"
 import { Spinner } from "@/components/ui/spinner"
 import { PaymentMethodsList } from "./payment-methods-list"
 import Link from "next/link"
@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { logApiCall } from "@/lib/api-logger"
-import { PromptPayQrCode } from "../billing/promptpay-qrcode"
+import { PromptPayQrCode } from "./promptpay-qrcode"
 import { getBranchCurrency } from "@/lib/branches"
 import {
   useMutation,
@@ -58,6 +58,8 @@ interface CreateInvoiceDialogProps {
   customerId?: string | null
 }
 
+type CreateInvoicePaymentType = "ondemand" | "tap-to-pay" | "checkout"
+
 export function CreateInvoiceDialog({
   open,
   onOpenChange,
@@ -70,7 +72,7 @@ export function CreateInvoiceDialog({
     memberId: "",
     amount: "",
     description: "",
-    paymentMethod: "ondemand" as "ondemand" | "tap-to-pay" | "checkout",
+    paymentMethod: "ondemand" as CreateInvoicePaymentType,
     terminalId: "",
     paymentMethodId: "",
     accountingCode: "",
@@ -95,8 +97,8 @@ export function CreateInvoiceDialog({
   if (isSuccess && customerId) {
     const customer = fullCustomerData.data.find((c) => c.id === customerId)
     customerName = `${customer?.firstName} ${customer?.lastName}`
-    if (customerId !== formData.memberId) {
-      setFormData((prev) => ({ ...prev, memberId: customer?.id }))
+    if (customerId !== formData.memberId && customer) {
+      setFormData((prev) => ({ ...prev, memberId: customer.id }))
     }
   }
 
@@ -544,7 +546,7 @@ export function CreateInvoiceDialog({
                 <Label className="text-sm">Payment Channel</Label>
                 <RadioGroup
                   value={formData.paymentMethod}
-                  onValueChange={(value: string) =>
+                  onValueChange={(value: CreateInvoicePaymentType) =>
                     setFormData((prev) => ({
                       ...prev,
                       paymentMethod: value,

@@ -10,7 +10,7 @@ interface TapToPayAnimationProps {
 export function TapToPayAnimation({ open }: TapToPayAnimationProps) {
   return (
     <Dialog open={open}>
-      <DialogContent className="sm:max-w-md" hideClose>
+      <DialogContent className="sm:max-w-md">
         <div className="flex flex-col items-center justify-center py-8">
           <h3 className="text-lg font-semibold mb-6">Processing Payment</h3>
 
