@@ -26,20 +26,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Download, Search, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
 import {
   downloadSettlementReportOptions,
   listSettlementOptions,
 } from "@/lib/query-options/settlement"
-import { Settlement } from "@/lib/types/settlement"
+import { documentType, Settlement } from "@/lib/types/settlement"
 import { parseCurrency } from "@/lib/utils"
 
 export function SettlementTable() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [isDownloading, setIsDownloading] = useState<string | null>(null)
-  const { toast } = useToast()
   const [branch, setBranch] = useState("")
 
   useEffect(() => {
@@ -68,7 +65,10 @@ export function SettlementTable() {
 
   console.log(filteredSettlements)
 
-  const handleDownloadDocument = async (settlementId: string, docType) => {
+  const handleDownloadDocument = async (
+    settlementId: string,
+    docType: documentType
+  ) => {
     downloadDocumentMutation.mutate({ settlementId, docType })
   }
 

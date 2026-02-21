@@ -9,3 +9,5 @@ export type Settlement = {
   status: string
   failedSettlementReason: string
 }
+
+export type documentType = "tax_invoice" | "detail_report" | "summary_report"

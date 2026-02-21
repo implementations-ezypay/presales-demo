@@ -9,7 +9,7 @@ export default function Provider({
 }>) {
   const [queryClient] = useState(() => new QueryClient())
 
-  if (typeof window !== "undefined")
+  if (typeof window !== "undefined" && process.env.NODE_ENV !== "production")
     window.__TANSTACK_QUERY_CLIENT__ = queryClient
 
   return (

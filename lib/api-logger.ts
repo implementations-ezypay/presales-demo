@@ -5,9 +5,13 @@ export type ApiLog = {
   timestamp: string
   method: string
   url: string
-  requestBody?: any
-  response: any
+  requestBody?: unknown
+  response: unknown
   status: number
+}
+
+export type ApiDBSchema = Omit<ApiLog, "requestBody"> & {
+  request_body?: unknown
 }
 
 function getSupabaseClient() {
@@ -24,9 +28,9 @@ function getSupabaseClient() {
 export async function logApiCall(
   method: string,
   url: string,
-  response: any,
+  response: unknown,
   status: number,
-  requestBody?: any
+  requestBody?: unknown
 ) {
   const log: ApiLog = {
     id: `${Date.now()}-${Math.random()}`,
@@ -103,7 +107,7 @@ export async function getApiLogs(): Promise<ApiLog[]> {
       return []
     }
 
-    return (data || []).map((log: any) => ({
+    return (data || []).map((log: ApiDBSchema) => ({
       id: log.id,
       timestamp: log.timestamp,
       method: log.method,

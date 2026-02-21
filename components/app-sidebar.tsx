@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Card, CardContent } from "./ui/card"
-import { useQuery } from "@tanstack/react-query"
+import { useQueries } from "@tanstack/react-query"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 import { listInvoiceOptions } from "@/lib/query-options/invoice"
 
@@ -47,8 +47,9 @@ export function AppSidebar() {
     setBranch(selectedBranch)
   }, [])
 
-  const _loadCustomers = useQuery(listCustomerOptions(branch))
-  const _loadInvoices = useQuery(listInvoiceOptions(branch))
+  const _loadCustomers = useQueries({
+    queries: [listCustomerOptions(branch), listInvoiceOptions(branch)],
+  })
 
   const pathname = usePathname()
 

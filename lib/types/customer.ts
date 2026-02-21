@@ -10,8 +10,8 @@ export type Customer = {
   }
   dateOfBirth?: string
   email?: string
-  firstName?: string
-  lastName?: string
+  firstName: string
+  lastName: string
   mobilePhone?: string
   homePhone?: string
   metadata?: {
@@ -21,5 +21,7 @@ export type Customer = {
     startDate?: string
     originalBranch?: string
   }
-  number: string
+  number?: string
 }
+
+export type CreateCustomer = Omit<Customer, "id">

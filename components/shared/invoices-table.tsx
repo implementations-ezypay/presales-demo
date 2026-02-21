@@ -43,7 +43,6 @@ import {
   listSingleInvoiceOptions,
 } from "@/lib/query-options/invoice"
 import { Invoice } from "@/lib/types/invoice"
-import { PaymentMethod } from "@/lib/types/payment-method"
 import { Customer } from "@/lib/types/customer"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 

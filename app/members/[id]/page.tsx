@@ -89,9 +89,9 @@ export default function MemberProfilePage() {
     }
   }
 
-  const addPromptPay = async (e) => {
+  const addPromptPay = async (e: MouseEvent) => {
     e.preventDefault()
-    createPromptPayMutation.mutate({ customerId })
+    if (customerId) createPromptPayMutation.mutate({ customerId })
   }
 
   return (

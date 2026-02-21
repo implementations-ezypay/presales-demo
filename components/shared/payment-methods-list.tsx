@@ -47,7 +47,7 @@ import {
 } from "@/lib/query-options/payment-method"
 
 interface PaymentMethodsListProps {
-  customerId: string | null
+  customerId: string
   variant?: "display" | "selection"
   selectedMethodId?: string
   onMethodSelect?: (methodId: string) => void

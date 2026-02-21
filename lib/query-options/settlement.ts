@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions } from "@tanstack/react-query"
 import { downloadDocument, listSettlements } from "../settlements"
+import { documentType } from "../types/settlement"
 
 export const listSettlementOptions = (branch: string | null) => {
   return queryOptions({
@@ -10,10 +11,15 @@ export const listSettlementOptions = (branch: string | null) => {
   })
 }
 
+type DownloadReportInput = {
+  settlementId: string
+  docType: documentType
+}
+
 export const downloadSettlementReportOptions = (branch: string | null) => {
   return mutationOptions({
     mutationKey: ["downloadSettlementReport", branch],
-    mutationFn: (data) =>
+    mutationFn: (data: DownloadReportInput) =>
       downloadDocument(data.settlementId, data.docType, branch!),
   })
 }

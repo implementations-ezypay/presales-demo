@@ -27,8 +27,8 @@ type ReplacePaymentMethodInput = {
 }
 
 export const replacePaymentMethodOptions = (
-  customerId: string | null,
-  branch: string | null
+  customerId: string,
+  branch: string
 ) => {
   return mutationOptions({
     mutationKey: ["replacePaymentMethod", customerId, branch],
@@ -44,8 +44,8 @@ export const replacePaymentMethodOptions = (
 }
 
 export const deletePaymentMethodOptions = (
-  customerId: string | null,
-  branch: string | null
+  customerId: string,
+  branch: string
 ) => {
   return mutationOptions({
     mutationKey: ["deletePaymentMethod", customerId, branch],
@@ -72,16 +72,21 @@ export const updatePayToStatusOptions = (branch: string) => {
 export const getTokenOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["getToken", branch],
-    mutationFn: (data) => {
+    mutationFn: (_data: { customerId?: string }) => {
       return getEzypayToken(branch)
     },
   })
 }
 
+type LinkPaymentMethodInput = {
+  customerId: string
+  paymentMethodToken: string
+}
+
 export const linkPaymentMethodOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["linkPaymentMethod", branch],
-    mutationFn: (data) => {
+    mutationFn: (data: LinkPaymentMethodInput) => {
       return linkPaymentMethod(data.customerId, data.paymentMethodToken, branch)
     },
   })
@@ -90,7 +95,7 @@ export const linkPaymentMethodOptions = (branch: string) => {
 export const createPromptPayOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["createPromptPay", branch],
-    mutationFn: (data) => {
+    mutationFn: (data: { customerId: string }) => {
       return createPromptPay(data.customerId, branch)
     },
   })

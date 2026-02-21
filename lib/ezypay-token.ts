@@ -3,10 +3,9 @@
 import { getBranchCredentials } from "./branch-config"
 import axios from "axios"
 
-export async function getEzypayToken(branch: string): Promise<{
-  access_token: string
-  error?: string
-}> {
+export async function getEzypayToken(
+  branch: string
+): Promise<{ access_token: string }> {
   try {
     // Get selected branch from client-side storage via header or default to main
     const credentials = await getBranchCredentials(branch)
@@ -42,13 +41,20 @@ export async function getEzypayToken(branch: string): Promise<{
     }
     return data
   } catch (err: unknown) {
-    console.log("is error, going to throw error", axios.isAxiosError(err))
     if (axios.isAxiosError(err)) {
-      throw new Error(err.response?.data || err.message)
+      console.error(
+        "Get Ezypay Token error:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Get Ezypay Token failed: ${err.message}`, {
+        cause: err,
+      })
     }
     if (err instanceof Error) {
-      throw new Error(err.message)
+      console.error("Get Ezypay Token error:", err)
+      throw err
     }
-    throw err
+    console.error("Get Ezypay Token error:", err)
+    throw new Error(`Get Ezypay Token failed: Unknown error`, { cause: err })
   }
 }

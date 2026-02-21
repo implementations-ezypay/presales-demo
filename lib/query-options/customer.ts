@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions } from "@tanstack/react-query"
 import { createCustomer, getCustomer, listCustomer } from "../customer"
+import type { CreateCustomer } from "../types/customer"
 
 export const listCustomerOptions = (branch: string | null) => {
   return queryOptions({
@@ -25,8 +26,8 @@ export const listSingleCustomerOptions = (
 export const createCustomerOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["createCustomer", branch],
-    mutationFn: (data) => {
-      return createCustomer(data.customerData, branch!)
+    mutationFn: (data: { customerData: CreateCustomer }) => {
+      return createCustomer(data.customerData, branch)
     },
   })
 }

@@ -37,7 +37,6 @@ import { PromptPayQrCode } from "../billing/promptpay-qrcode"
 import { getBranchCurrency } from "@/lib/branches"
 import {
   useMutation,
-  UseMutationResult,
   useQuery,
   useQueryClient,
   UseQueryResult,
@@ -50,14 +49,8 @@ import {
   listInvoiceOptions,
   listSingleInvoiceOptions,
 } from "@/lib/query-options/invoice"
-import {
-  CheckoutInvoiceCreation,
-  CheckoutResponse,
-  Invoice,
-  InvoiceCreation,
-} from "@/lib/types/invoice"
+import { CheckoutInvoiceCreation, InvoiceCreation } from "@/lib/types/invoice"
 import { v4 } from "uuid"
-import { Currency } from "lucide-react"
 
 interface CreateInvoiceDialogProps {
   open: boolean
@@ -107,11 +100,7 @@ export function CreateInvoiceDialog({
     }
   }
 
-  const createInvoiceMutation: UseMutationResult<
-    Invoice,
-    Error,
-    { invoiceData: InvoiceCreation }
-  > = useMutation({
+  const createInvoiceMutation = useMutation({
     ...createInvoiceOptions(branch),
     onSuccess: async (data) => {
       setFormData({
@@ -139,40 +128,39 @@ export function CreateInvoiceDialog({
     },
   })
 
-  const createCheckoutMutation: UseMutationResult<CheckoutResponse> =
-    useMutation({
-      ...createCheckoutOptions(branch),
-      onSuccess: (data) => {
-        console.log(data)
-        const { checkoutUrl } = data
-        try {
-          if (typeof checkoutUrl !== "string")
-            throw new Error("checkoutUrl is not a string")
-          // This will throw if the URL is invalid
+  const createCheckoutMutation = useMutation({
+    ...createCheckoutOptions(branch),
+    onSuccess: (data) => {
+      console.log(data)
+      const { checkoutUrl } = data
+      try {
+        if (typeof checkoutUrl !== "string")
+          throw new Error("checkoutUrl is not a string")
+        // This will throw if the URL is invalid
 
-          new URL(checkoutUrl)
+        new URL(checkoutUrl)
 
-          toast({
-            title: "Invoice Created",
-            description: "Opening checkout page...",
-          })
+        toast({
+          title: "Invoice Created",
+          description: "Opening checkout page...",
+        })
 
-          // Open in a new tab/window; use noopener and noreferrer for security
-          if (typeof window !== "undefined") {
-            window.open(checkoutUrl, "_blank", "noopener,noreferrer")
-          }
-
-          onOpenChange(false)
-        } catch (err) {
-          console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
-          toast({
-            title: "Checkout Error",
-            description: "Failed to open checkout URL.",
-            variant: "destructive",
-          })
+        // Open in a new tab/window; use noopener and noreferrer for security
+        if (typeof window !== "undefined") {
+          window.open(checkoutUrl, "_blank", "noopener,noreferrer")
         }
-      },
-    })
+
+        onOpenChange(false)
+      } catch (err) {
+        console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
+        toast({
+          title: "Checkout Error",
+          description: "Failed to open checkout URL.",
+          variant: "destructive",
+        })
+      }
+    },
+  })
 
   const terminalDevices = [
     {
@@ -344,21 +332,27 @@ export function CreateInvoiceDialog({
         if (!customerId) {
           queryClient.setQueryData(
             listInvoiceOptions(branch).queryKey,
-            (data: { data: Invoice[] }) => {
+            // @ts-expect-error: Invoice type does not fully type for API response
+            (data) => {
               console.log("In update cache. Data: ", data)
+              if (!data) return { data: [responseBody] }
               const invoices = data.data
-              invoices.unshift(responseBody)
-              return { ...data, data: invoices, refresh: true }
+              // @ts-expect-error: Invoice type does not fully type for API response
+              invoices?.unshift(responseBody)
+              return { ...data, data: invoices }
             }
           )
         } else {
           queryClient.setQueryData(
             listSingleInvoiceOptions(customerId, branch).queryKey,
-            (data: { data: Invoice[] }) => {
+            // @ts-expect-error: Invoice type does not fully type for API response
+            (data) => {
               console.log("In update cache. Data: ", data)
+              if (!data) return { data: [responseBody] }
               const invoices = data.data
-              invoices.unshift(responseBody)
-              return { ...data, data: invoices, refresh: true }
+              // @ts-expect-error: Invoice type does not fully type for API response
+              invoices?.unshift(responseBody)
+              return { ...data, data: invoices }
             }
           )
         }
@@ -550,7 +544,7 @@ export function CreateInvoiceDialog({
                 <Label className="text-sm">Payment Channel</Label>
                 <RadioGroup
                   value={formData.paymentMethod}
-                  onValueChange={(value: any) =>
+                  onValueChange={(value: string) =>
                     setFormData((prev) => ({
                       ...prev,
                       paymentMethod: value,

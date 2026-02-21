@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect } from "react"
+import { useState, useEffect, MouseEvent } from "react"
 import { Spinner } from "@/components/ui/spinner"
 import { getCustomerIdFromPath } from "@/lib/utils"
 import {
@@ -36,10 +36,10 @@ export default function MembershipStatus() {
   const { data: singleMemberData, isPending }: UseQueryResult<Customer> =
     useQuery(listSingleCustomerOptions(customerId, branch))
 
-  const updateMembership = async (e) => {
+  const updateMembership = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
 
-    const calculateNewDueDate = (duration: string) => {
+    const _calculateNewDueDate = (duration: string) => {
       const d = duration.toLowerCase()
       switch (d) {
         case "weekly":
@@ -57,17 +57,17 @@ export default function MembershipStatus() {
 
     const found = plans.find((plan) => plan.id === selectedPlanId)
     if (!found) return
-    const { name, duration } = found
+    // const { name, duration } = found
 
-    const newStartDate = format(new Date(), defaultDateFormat)
-    const newDueDate: string = calculateNewDueDate(duration)
-    setMemberDataState((prev) => ({
-      ...prev,
-      plan: name,
-      joinDate: newStartDate,
-      expiryDate: newDueDate,
-      status: "active",
-    }))
+    // const newStartDate = format(new Date(), defaultDateFormat)
+    // const newDueDate: string = calculateNewDueDate(duration)
+    // setMemberDataState((prev) => ({
+    //   ...prev,
+    //   plan: name,
+    //   joinDate: newStartDate,
+    //   expiryDate: newDueDate,
+    //   status: "active",
+    // }))
     setRenewOpen(false)
   }
 

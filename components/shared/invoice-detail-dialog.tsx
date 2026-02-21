@@ -161,11 +161,9 @@ export function InvoiceDetailDialog({
   if (!invoice) return null
 
   const handleRefund = async (amount: number | null) => {
-    const refundAmount = amount === null ? null : amount
-
     refundInvoiceMutation.mutate({
       invoiceId: invoice.id,
-      amount: refundAmount,
+      amount,
     })
   }
 
@@ -222,7 +220,10 @@ export function InvoiceDetailDialog({
       return
     }
 
-    recordExternalInvoiceMutation.mutate({ invoiceId: invoice.id })
+    recordExternalInvoiceMutation.mutate({
+      invoiceId: invoice.id,
+      method: externalPaymentMethod,
+    })
   }
 
   const handleEmail = async () => {

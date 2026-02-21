@@ -48,8 +48,13 @@ export function TransferCustomerDialog() {
     (b) => b.id !== branch && b.country === country
   )
 
-  const { data: currentCustomerData, isPending }: UseQueryResult<Customer> =
-    useQuery(listSingleCustomerOptions(customerId, branch))
+  const {
+    data: currentCustomerData,
+    isPending,
+    isSuccess,
+  }: UseQueryResult<Customer> = useQuery(
+    listSingleCustomerOptions(customerId, branch)
+  )
   const {
     data: currentPaymentMethod,
   }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
@@ -77,7 +82,7 @@ export function TransferCustomerDialog() {
   })
 
   const handleTransfer = async () => {
-    if (!selectedBranch) return
+    if (!selectedBranch || !isSuccess) return
 
     const customerData = {
       ...currentCustomerData,

@@ -10,7 +10,7 @@ import {
   recordExternalInvoice,
   refundInvoice,
 } from "../invoice"
-import { InvoiceCreation } from "../types/invoice"
+import { CheckoutInvoiceCreation, InvoiceCreation } from "../types/invoice"
 
 export const listSingleInvoiceOptions = (
   customerId: string | null,
@@ -57,43 +57,62 @@ export const createInvoiceOptions = (branch: string) => {
 export const createCheckoutOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["createCheckout", branch],
-    mutationFn: (data: { invoiceData: InvoiceCreation }) => {
-      return createCheckout(data.invoiceData, branch!)
+    mutationFn: (data: { invoiceData: CheckoutInvoiceCreation }) => {
+      return createCheckout(data.invoiceData, branch)
     },
   })
+}
+
+type RetryInvoiceInput = {
+  invoiceId: string
+  paymentMethodToken: string
 }
 
 export const retryInvoiceOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["retryInvoice", branch],
-    mutationFn: (data) => {
+    mutationFn: (data: RetryInvoiceInput) => {
       return retryInvoice(data.invoiceId, data.paymentMethodToken, branch!)
     },
   })
 }
 
+type WriteOffInvoiceInput = {
+  invoiceId: string
+}
+
 export const writeOffInvoiceOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["writeOffInvoice", branch],
-    mutationFn: (data) => {
+    mutationFn: (data: WriteOffInvoiceInput) => {
       return writeOffInvoice(data.invoiceId, branch!)
     },
   })
 }
 
+type RecordExternalInvoiceInput = {
+  invoiceId: string
+  method: string
+}
+
 export const recordExternalInvoiceOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["recordExternalInvoice", branch],
-    mutationFn: (data) => {
+    mutationFn: (data: RecordExternalInvoiceInput) => {
       return recordExternalInvoice(data.invoiceId, data.method, branch!)
     },
   })
 }
 
+type RefundInvoiceInput = {
+  invoiceId: string
+  amount?: number | null
+}
+
 export const refundInvoiceOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["recordExternalInvoice", branch],
-    mutationFn: (data) => {
+    mutationFn: (data: RefundInvoiceInput) => {
       return refundInvoice(data.invoiceId, data.amount, branch!)
     },
   })

@@ -2,15 +2,16 @@
 import { getEzypayToken } from "./ezypay-token"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
-import axios from "axios"
-import { Customer } from "./types/customer"
+import axios, { AxiosResponse } from "axios"
+import { CreateCustomer, Customer } from "./types/customer"
+import { PaymentMethod } from "./types/payment-method"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`
 
 export async function createCustomer(
-  customerData,
+  customerData: CreateCustomer,
   branch: string
-): Promise<any> {
+): Promise<Customer> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     // Get token directly from utility function instead of HTTP request
@@ -23,13 +24,17 @@ export async function createCustomer(
       )
     }
 
-    const response = await axios.post(apiEndpoint, customerData, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-      },
-    })
+    const response: AxiosResponse<Customer> = await axios.post(
+      apiEndpoint,
+      customerData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+        },
+      }
+    )
 
     logApiCall(
       "POST",
@@ -92,7 +97,7 @@ export async function listCustomer(
 export async function getCustomer(
   customerId: string | null,
   branch: string
-): Promise<any> {
+): Promise<Customer> {
   console.log(branch, customerId)
   const { merchantId } = await getBranchCredentials(branch)
   try {
@@ -111,7 +116,7 @@ export async function getCustomer(
     }
 
     const url = `${apiEndpoint}/${customerId}`
-    const response = await axios.get(url, {
+    const response: AxiosResponse<Customer> = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
@@ -138,7 +143,7 @@ export async function getCustomer(
 export async function getCustomerPaymentMethods(
   customerId: string,
   branch: string
-): Promise<any> {
+): Promise<{ data: PaymentMethod[] }> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {
@@ -154,12 +159,15 @@ export async function getCustomerPaymentMethods(
     }
 
     const url = `${apiEndpoint}/${customerId}/paymentmethods`
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-      },
-    })
+    const response: AxiosResponse<{ data: PaymentMethod[] }> = await axios.get(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+        },
+      }
+    )
 
     return response.data
   } catch (err: unknown) {
@@ -183,7 +191,10 @@ export async function getCustomerPaymentMethods(
   }
 }
 
-export async function updateCustomer(customer, branch: string): Promise<any> {
+export async function updateCustomer(
+  customer: Customer,
+  branch: string
+): Promise<Customer> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     // Get token directly from utility function instead of HTTP request
@@ -197,13 +208,17 @@ export async function updateCustomer(customer, branch: string): Promise<any> {
         `Create customer failed: No access_token from token utility`
       )
     }
-    const response = await axios.put(`${apiEndpoint}/${id}`, body, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-      },
-    })
+    const response: AxiosResponse<Customer> = await axios.put(
+      `${apiEndpoint}/${id}`,
+      body,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+        },
+      }
+    )
 
     await logApiCall(
       "PUT",

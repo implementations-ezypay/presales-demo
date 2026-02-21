@@ -32,7 +32,6 @@ import { toast } from "sonner"
 import { logApiCall } from "@/lib/api-logger"
 import { getBranchCountry } from "@/lib/branches"
 import { plans } from "@/lib/plan"
-import type { CreateCustomer } from "@/lib/shared-type"
 import { useMutation } from "@tanstack/react-query"
 import { createCustomerOptions } from "@/lib/query-options/customer"
 import {
@@ -43,17 +42,26 @@ import {
 const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT
 const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT
 
-const defaultformData = {
+type CreateCustomerForm = {
+  firstName: string
+  lastName: string
+  email: string
+  dateOfBirth?: string
+  address?: string
+  emergencyContact?: string
+  startDate?: number
+  plan?: string
+  status?: string
+  existingCustomerNumber?: string
+}
+
+const defaultformData: CreateCustomerForm = {
   firstName: "",
   lastName: "",
   email: "",
-  dateOfBirth: undefined,
-  address: undefined,
-  emergencyContact: undefined,
   startDate: Date.now(),
   plan: "Trial",
   status: "trial",
-  existingCustomerNumber: "", // Added optional existing customer number field
 }
 
 export default function NewMemberPage() {
@@ -61,7 +69,7 @@ export default function NewMemberPage() {
   const [isLoadingIframe, setIsLoadingIframe] = useState(false)
   const [isCustomerCreated, setIsCustomerCreated] = useState(false)
   const [emailPreviewLink, setEmailPreviewLink] = useState("")
-  const [formData, setFormData] = useState<CreateCustomer>(defaultformData)
+  const [formData, setFormData] = useState<CreateCustomerForm>(defaultformData)
   const [branch, setBranch] = useState("")
   const [country, setCountry] = useState("")
   let customerId = ""
@@ -138,7 +146,7 @@ export default function NewMemberPage() {
     return () => window.removeEventListener("message", handleMessage)
   }, [])
 
-  const loadIframeUrl = async (customerId: string | null = null) => {
+  const loadIframeUrl = async (customerId: string | undefined = undefined) => {
     setIsLoadingIframe(true)
     try {
       // Request access token from our server-side token route
@@ -171,7 +179,7 @@ export default function NewMemberPage() {
     setFormData((prev) => ({ ...prev, status: value }))
   }
 
-  const submitHpp = (e, type) => {
+  const submitHpp = (e: MouseEvent, type) => {
     e.preventDefault()
     if (!iframeRef.current) {
       toast.error("Payment form not loaded")
