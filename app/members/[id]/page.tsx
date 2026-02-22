@@ -110,7 +110,7 @@ export default function MemberProfilePage() {
             {/* Page Title */}
             {!isPending && (
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance min-w-56">
                   {`${singleMemberData?.firstName} ${singleMemberData?.lastName}`}
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground">
@@ -120,7 +120,7 @@ export default function MemberProfilePage() {
             )}
             {singleMemberData?.metadata?.originalBranch && (
               <div>
-                <p className="text-sm md:text-base text-muted-foreground">
+                <p className="text-sm md:text-base text-muted-foreground min-w-56">
                   Original Branch:{" "}
                   {getBranchName(singleMemberData?.metadata?.originalBranch)}
                 </p>

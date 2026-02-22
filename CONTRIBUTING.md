@@ -1,0 +1,1 @@
+- Any anonymous function longer than 2 line, declare it.

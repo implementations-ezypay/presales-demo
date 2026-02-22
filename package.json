@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "start": "next start"
+    "start": "next start",
+    "type-check": "npx tsc --noEmit"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

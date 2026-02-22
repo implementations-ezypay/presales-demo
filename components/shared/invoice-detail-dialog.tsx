@@ -226,22 +226,22 @@ export function InvoiceDetailDialog({
   }
 
   const handleEmail = async () => {
-    // try {
-    //   const emailPreviewLink = `${window.location.origin}/email-preview?id=${
-    //     invoice.customerId ?? null
-    //   }&name=${invoice.customerFirstName} ${invoice.customerLastName}&paymentMethod=${
-    //     invoice.paymentMethod
-    //   }&paymentMethodInvalid=${invoice.paymentMethodInvalid}&reason=${
-    //     invoice.failedPaymentReason.code +
-    //     ": " +
-    //     invoice.paymentProviderResponse.description
-    //   }`
-    //   window.open(emailPreviewLink, "_blank")
-    //   toast.success("Email draft opened in new tab")
-    // } catch (err) {
-    //   console.error("[v0] Failed to open email URL", err, invoice.payNowUrl)
-    //   toast.error("Failed to open email URL")
-    // }
+    try {
+      const emailPreviewLink = `${window.location.origin}/email-preview?id=${
+        invoice.customerId ?? null
+      }&name=${invoice.customerFirstName} ${invoice.customerLastName}&paymentMethod=${formatPaymentMethodDisplay(
+        invoice.paymentMethodData
+      )}&paymentMethodInvalid=${invoice.paymentMethodInvalid}&reason=${
+        invoice.failedPaymentReason?.code +
+        ": " +
+        invoice.paymentProviderResponse?.description
+      }`
+      window.open(emailPreviewLink, "_blank")
+      toast.success("Email draft opened in new tab")
+    } catch (err) {
+      console.error("[v0] Failed to open email URL", err, invoice.payNowUrl)
+      toast.error("Failed to open email URL")
+    }
   }
   return (
     <>

@@ -25,3 +25,25 @@ export type Customer = {
 }
 
 export type CreateCustomer = Omit<Customer, "id">
+
+export type CreateCustomerForm = {
+  firstName: string
+  lastName: string
+  email: string
+  dateOfBirth?: string
+  address?: string
+  emergencyContact?: string
+  startDate?: string
+  plan?: MembershipPlan
+  status?: MembershipStatus
+  existingCustomerNumber?: string
+}
+
+export type MembershipPlan =
+  | "trial"
+  | "basic"
+  | "annual"
+  | "premium"
+  | "personal training"
+
+export type MembershipStatus = "active" | "trial" | "expired"

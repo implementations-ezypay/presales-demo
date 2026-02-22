@@ -71,8 +71,7 @@ function EmailPreviewContent() {
                     Payment Method:{" "}
                     <PaymentMethodIcon
                       type={paymentMethod}
-                      className="h-5 w-5"
-                      style={{ display: "inline-block" }}
+                      className="h-5 w-5 inline-block"
                     />{" "}
                     {paymentMethod}
                   </p>
