@@ -8,7 +8,7 @@ export default function Loading() {
         <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
           <Search className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="text-sm text-muted-foreground">Loading member...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </div>
   )
