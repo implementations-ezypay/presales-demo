@@ -9,6 +9,7 @@ import {
   Settings,
   Dumbbell,
   Menu,
+  Webhook,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -36,6 +37,7 @@ const navigation = [
   { name: "Billing", href: "/billing", icon: CreditCard },
   { name: "Reports & Analytics", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Webhooks", href: "/webhooks", icon: Webhook },
 ]
 
 export function AppSidebar() {
