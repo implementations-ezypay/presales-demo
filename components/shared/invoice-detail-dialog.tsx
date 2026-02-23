@@ -1,0 +1,676 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import {
+  CheckCircle,
+  XCircle,
+  DollarSign,
+  RefreshCw,
+  MailIcon,
+} from "lucide-react"
+import { toast } from "sonner"
+import { RefundDialog } from "./refund-dialog"
+import { Spinner } from "../ui/spinner"
+import { PaymentMethodsList } from "./payment-methods-list"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
+import {
+  formatPaymentMethodDisplay,
+  getPaymentMethodType,
+  getStatusBadgeVariant,
+  parseCurrency,
+} from "@/lib/utils"
+import { Invoice, Transaction } from "@/lib/types/invoice"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
+import {
+  listInvoiceOptions,
+  listSingleInvoiceOptions,
+  listTransactionOptions,
+  recordExternalInvoiceOptions,
+  refundInvoiceOptions,
+  retryInvoiceOptions,
+  writeOffInvoiceOptions,
+} from "@/lib/query-options/invoice"
+
+interface InvoiceDetailDialogProps {
+  invoiceProp: Invoice | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function InvoiceDetailDialog({
+  invoiceProp,
+  open,
+  onOpenChange,
+}: InvoiceDetailDialogProps) {
+  const [invoice, setInvoice] = useState<Invoice | null>(invoiceProp)
+  const [showExternalPayment, setShowExternalPayment] = useState(false)
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
+  const [showRetryPaymentSelection, setShowRetryPaymentSelection] =
+    useState(false)
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<
+    string | null
+  >(null)
+  const [externalPaymentMethod, setExternalPaymentMethod] = useState<string>("")
+  const [branch, setBranch] = useState("")
+  const queryClient = useQueryClient()
+
+  const retryInvoiceMutation = useMutation({
+    ...retryInvoiceOptions(branch),
+    onSuccess: async (data) => {
+      onOpenChange(false)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
+    },
+  })
+
+  const writeOffInvoiceMutation = useMutation({
+    ...writeOffInvoiceOptions(branch),
+    onSuccess: (data) => {
+      onOpenChange(false)
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
+    },
+  })
+
+  const recordExternalInvoiceMutation = useMutation({
+    ...recordExternalInvoiceOptions(branch),
+    onSuccess: (data) => {
+      onOpenChange(false)
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
+    },
+  })
+
+  const refundInvoiceMutation = useMutation({
+    ...refundInvoiceOptions(branch),
+    onSuccess: async (data) => {
+      onOpenChange(false)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+      queryClient.invalidateQueries(listTransactionOptions(invoice?.id, branch))
+    },
+  })
+
+  const isProcessing =
+    retryInvoiceMutation.isPending ||
+    writeOffInvoiceMutation.isPending ||
+    recordExternalInvoiceMutation.isPending ||
+    refundInvoiceMutation.isPending
+
+  useEffect(() => {
+    setInvoice(invoiceProp)
+  }, [invoiceProp])
+
+  useEffect(() => {
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+  }, [])
+
+  const {
+    data: transactionData,
+    isPending,
+  }: UseQueryResult<{ data: Transaction[] }> = useQuery(
+    listTransactionOptions(invoice?.id, branch)
+  )
+
+  if (!invoice) return null
+
+  const handleRefund = async (amount: number | null) => {
+    refundInvoiceMutation.mutate({
+      invoiceId: invoice.id,
+      amount,
+    })
+  }
+
+  const handleWriteOff = async () => {
+    writeOffInvoiceMutation.mutate({ invoiceId: invoice.id })
+  }
+
+  const handleRetry = async () => {
+    if (!showRetryPaymentSelection) {
+      setShowRetryPaymentSelection(true)
+      return
+    }
+
+    if (!selectedPaymentMethodId) {
+      toast.error("Please select a payment method")
+      return
+    }
+
+    retryInvoiceMutation.mutate({
+      invoiceId: invoice.id,
+      paymentMethodToken: selectedPaymentMethodId,
+    })
+  }
+
+  const handlePayNow = async () => {
+    if (!invoice?.payNowUrl) {
+      toast.error("No Pay Now URL available for this invoice")
+      return
+    }
+
+    try {
+      if (typeof invoice.payNowUrl !== "string") throw new Error("Invalid URL")
+      // validate URL
+
+      new URL(invoice.payNowUrl)
+
+      if (typeof window !== "undefined") {
+        window.open(invoice.payNowUrl, "_blank", "noopener,noreferrer")
+      }
+    } catch (err) {
+      console.error("[v0] Failed to open Pay Now URL", err, invoice.payNowUrl)
+      toast.error("Failed to open Pay Now URL")
+    }
+  }
+
+  const handleTrackExternal = async () => {
+    if (!invoice.id) {
+      toast.error("No Invoice ID")
+      return
+    }
+
+    if (!externalPaymentMethod) {
+      toast.error("Please select a payment method")
+      return
+    }
+
+    recordExternalInvoiceMutation.mutate({
+      invoiceId: invoice.id,
+      method: externalPaymentMethod,
+    })
+  }
+
+  const handleEmail = async () => {
+    try {
+      const emailPreviewLink = `${window.location.origin}/email-preview?id=${
+        invoice.customerId ?? null
+      }&name=${invoice.customerFirstName} ${invoice.customerLastName}&paymentMethod=${formatPaymentMethodDisplay(
+        invoice.paymentMethodData
+      )}&paymentMethodInvalid=${invoice.paymentMethodInvalid}&reason=${
+        invoice.failedPaymentReason?.code +
+        ": " +
+        invoice.paymentProviderResponse?.description
+      }`
+      window.open(emailPreviewLink, "_blank")
+      toast.success("Email draft opened in new tab")
+    } catch (err) {
+      console.error("[v0] Failed to open email URL", err, invoice.payNowUrl)
+      toast.error("Failed to open email URL")
+    }
+  }
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Invoice Details</DialogTitle>
+            <DialogDescription>
+              View invoice information and payment history
+            </DialogDescription>
+            <DialogDescription className="italic">
+              Transparency on the invoice status and information is important to
+              both customer and merchant. They should be able to view all the
+              fees charged to the customer and the failed reasons.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-12">
+            {/* Invoice Summary */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Invoice ID
+                </p>
+                <p className="text-lg font-semibold">
+                  {invoice.documentNumber}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Member
+                </p>
+                <p className="text-lg font-semibold">{`${invoice.customerFirstName} ${invoice.customerLastName}`}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Amount
+                </p>
+                <p className="text-lg font-semibold">
+                  {parseCurrency(invoice.amount.value)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Status
+                </p>
+                <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                  {invoice.status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Invoice Date
+                </p>
+                <p className="text-base">{invoice.dueDate}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Scheduled Date
+                </p>
+                <p className="text-base">
+                  {invoice.scheduledPaymentDate ?? "null"}
+                </p>
+              </div>
+              {invoice.items[0].accountingCode && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Accounting Code
+                  </p>
+                  <p className="text-base font-mono">
+                    {invoice.items[0].accountingCode}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {invoice.status.match(/refund/i) && (
+              <>
+                <Separator />
+                <div className="rounded-lg border border-orange-500/50 bg-orange-50 dark:bg-orange-950/20 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <RefreshCw className="h-5 w-5 text-orange-500" />
+                    <h4 className="font-semibold text-orange-700 dark:text-orange-400">
+                      Refund Information
+                    </h4>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Refund Type
+                      </p>
+                      <p className="text-base font-semibold capitalize">
+                        {invoice.status.match(/partial/i)
+                          ? "Partial "
+                          : "Full "}
+                        Refund
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Refund Amount
+                      </p>
+                      <p className="text-base font-semibold text-orange-600 dark:text-orange-400">
+                        {parseCurrency(invoice.totalRefunded.value)}
+                      </p>
+                    </div>
+                    {invoice.status.match(/partial/i) && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Remaining Balance
+                        </p>
+                        <p className="text-base font-semibold">
+                          {parseCurrency(
+                            invoice.amount.value - invoice.totalRefunded.value
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            {/* Invoice Item breakdown */}
+            <div>
+              <p className="mb-3">Breakdown</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoice.items?.map((item) => (
+                    <TableRow key={item.description}>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.amount.value}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <Separator />
+
+            {/* Failed Payment Reasons */}
+            {invoice.failedPaymentReason ? (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">
+                  Failed Reasons
+                </p>
+                <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                  <p className="font-medium">
+                    {invoice.failedPaymentReason?.code}:
+                  </p>
+                  <p className="font-medium">
+                    {invoice.paymentProviderResponse?.description}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              ""
+            )}
+
+            <Separator />
+
+            {/* Payment Method */}
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-2">
+                Payment Method
+              </p>
+              <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                <PaymentMethodIcon
+                  type={getPaymentMethodType(invoice.paymentMethodData)}
+                  className="h-5 w-10"
+                />
+                <span className="font-medium">
+                  {formatPaymentMethodDisplay(invoice.paymentMethodData)}
+                </span>
+                {invoice.paymentMethodInvalid && (
+                  <Badge variant="destructive">invalid</Badge>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Payment Attempts */}
+            <div>
+              <p className="text-sm font-medium mb-3">Payment History</p>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Details</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isPending ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="pt-2 text-center">
+                        <div className="flex items-center justify-center">
+                          <Spinner className="h-6 w-6 mr-2" />
+                          <span>Loading History...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    transactionData?.data.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>
+                          {transaction.createdOn.split("T")[0]}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {parseCurrency(transaction.amount.value)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <PaymentMethodIcon
+                              type={
+                                transaction.source !== "external_payment"
+                                  ? getPaymentMethodType(
+                                      invoice.paymentMethodData
+                                    )
+                                  : ""
+                              }
+                              className="h-4 w-8"
+                            />
+                            <span>
+                              {transaction.source === "external_payment"
+                                ? `External (${transaction.paymentMethodType})`
+                                : getPaymentMethodType(
+                                    invoice.paymentMethodData
+                                  )}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {transaction.status.toLowerCase() === "success" ||
+                            transaction.status.toLowerCase() === "settled" ? (
+                              <CheckCircle className="h-4 w-4 text-accent" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            )}
+                            <span className="capitalize">
+                              {transaction.status}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {transaction.failedPaymentReason && (
+                            <span className="text-xs text-destructive">
+                              {transaction.failedPaymentReason.code}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              {/* )} */}
+            </div>
+
+            {showRetryPaymentSelection && invoice.customerId && (
+              <>
+                <Separator />
+                <div className="space-y-4 rounded-lg border border-border p-4">
+                  <h4 className="font-medium">
+                    Select Payment Method for Retry
+                  </h4>
+                  <PaymentMethodsList
+                    customerId={invoice.customerId}
+                    variant="selection"
+                    selectedMethodId={selectedPaymentMethodId}
+                    onMethodSelect={setSelectedPaymentMethodId}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleRetry}
+                      disabled={isProcessing || !selectedPaymentMethodId}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Confirm Retry
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowRetryPaymentSelection(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* External Payment Form */}
+            {showExternalPayment && (
+              <>
+                <Separator />
+                <div className="space-y-4 rounded-lg border border-border p-4">
+                  <h4 className="font-medium">Track External Payment</h4>
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Select
+                      value={externalPaymentMethod}
+                      onValueChange={setExternalPaymentMethod}
+                    >
+                      <SelectTrigger id="paymentMethod">
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="cheque">Cheque</SelectItem>
+                        <SelectItem value="card">Card</SelectItem>
+                        <SelectItem value="bank_transfer">
+                          Bank Transfer
+                        </SelectItem>
+                        <SelectItem value="others">Others</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleTrackExternal}
+                      disabled={isProcessing || !externalPaymentMethod}
+                    >
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Confirm Payment
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowExternalPayment(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {invoice.status.toLowerCase().match(/paid|partial/i) && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowRefundDialog(true)}
+                  disabled={isProcessing}
+                >
+                  Refund Invoice
+                </Button>
+              )}
+
+              {(invoice.status.toLowerCase() === "failed" ||
+                invoice.status.toLowerCase() === "past_due" ||
+                invoice.status.toLowerCase() === "unpaid") && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={handleRetry}
+                    disabled={isProcessing}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Retry
+                  </Button>
+
+                  {invoice.payNowUrl && (
+                    <Button
+                      variant="secondary"
+                      onClick={handlePayNow}
+                      disabled={isProcessing}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Pay Now
+                    </Button>
+                  )}
+
+                  {invoice.paymentMethodInvalid && (
+                    <Button
+                      variant="secondary"
+                      onClick={handleEmail}
+                      disabled={isProcessing}
+                    >
+                      <MailIcon className="mr-2 h-4 w-4" />
+                      Email Customer
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowExternalPayment(!showExternalPayment)}
+                    disabled={isProcessing}
+                  >
+                    Track External Payment
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    onClick={handleWriteOff}
+                    disabled={isProcessing}
+                  >
+                    Write off
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <RefundDialog
+        open={showRefundDialog}
+        onOpenChange={setShowRefundDialog}
+        invoiceAmount={invoice.amount.value - invoice.totalRefunded.value}
+        onConfirm={handleRefund}
+        isProcessing={isProcessing}
+      />
+    </>
+  )
+}

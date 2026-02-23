@@ -1,9 +1,29 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from "recharts"
 import {
   ChartContainer,
   ChartLegend,
@@ -35,7 +55,9 @@ export function RevenueReport() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Revenue Analysis</h2>
-          <p className="text-sm text-muted-foreground">Detailed breakdown of revenue streams and trends</p>
+          <p className="text-sm text-muted-foreground">
+            Detailed breakdown of revenue streams and trends
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select defaultValue="6months">
@@ -60,7 +82,9 @@ export function RevenueReport() {
         <Card>
           <CardHeader>
             <CardTitle>Monthly Revenue Trend</CardTitle>
-            <CardDescription>Total revenue over the selected period</CardDescription>
+            <CardDescription>
+              Total revenue over the selected period
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -75,12 +99,25 @@ export function RevenueReport() {
               <AreaChart data={monthlyData}>
                 <defs>
                   <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-chart-1)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--color-chart-1)" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-chart-1)"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-chart-1)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="month"
+                  className="text-xs"
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis
                   className="text-xs"
                   tickLine={false}
@@ -117,7 +154,12 @@ export function RevenueReport() {
             >
               <BarChart data={planBreakdown}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="plan" className="text-xs" tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="plan"
+                  className="text-xs"
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis
                   className="text-xs"
                   tickLine={false}
@@ -125,7 +167,11 @@ export function RevenueReport() {
                   tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="revenue" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="revenue"
+                  fill="var(--color-chart-2)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -134,7 +180,9 @@ export function RevenueReport() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>New Members vs Renewals</CardTitle>
-            <CardDescription>Comparison of new sign-ups and membership renewals</CardDescription>
+            <CardDescription>
+              Comparison of new sign-ups and membership renewals
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -152,12 +200,25 @@ export function RevenueReport() {
             >
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="month"
+                  className="text-xs"
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis className="text-xs" tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar dataKey="newMembers" fill="var(--color-chart-3)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="renewals" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="newMembers"
+                  fill="var(--color-chart-3)"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="renewals"
+                  fill="var(--color-chart-4)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>

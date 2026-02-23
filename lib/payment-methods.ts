@@ -1,309 +1,271 @@
-"use server";
+"use server"
 
-import { getEzypayToken } from "./ezypay-token";
-import { logApiCall } from "./api-logger";
-import { getBranchCredentials } from "./branch-config";
+import axios, { AxiosResponse } from "axios"
+import { getEzypayToken } from "./ezypay-token"
+import { logApiCall } from "./api-logger"
+import { getBranchCredentials } from "./branch-config"
+import { PaymentMethod } from "./types/payment-method"
 
-const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`;
-const mandateEndpoint = `${process.env.API_ENDPOINT}/v2/npp/mandate/status`;
-const vaultEndpoint = `${process.env.VAULT_ENDPOINT}/v2/vault`;
+const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`
+const mandateEndpoint = `${process.env.API_ENDPOINT}/v2/npp/mandate/status`
+const vaultEndpoint = `${process.env.VAULT_ENDPOINT}/v2/vault`
 
 export async function replacePaymentMethod(
-  customerId,
-  paymentMethod,
-  newPaymentMethod,
-  branch,
-) {
-  const { merchantId } = await getBranchCredentials(branch);
+  customerId: string,
+  paymentMethodToken: string,
+  newPaymentMethodToken: string,
+  branch: string
+): Promise<PaymentMethod> {
+  const { merchantId } = await getBranchCredentials(branch)
   try {
-    if (!customerId || !paymentMethod || !newPaymentMethod) {
-      throw new Error("Not enough information");
+    if (!customerId || !paymentMethodToken || !newPaymentMethodToken) {
+      throw new Error("Not enough information")
     }
 
     // Get token directly from utility function instead of HTTP request
-    const tokenData = await getEzypayToken(branch);
-    const token = tokenData.access_token;
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
     if (!token) {
-      console.error("No access_token from token utility", tokenData);
+      console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Replace Payment Method failed: No access_token from token utility`,
-      );
+        `Replace Payment Method failed: No access_token from token utility`
+      )
     }
 
-    const url = `${apiEndpoint}/${customerId}/paymentmethods/${paymentMethod}/new`;
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: `{"newPaymentMethodToken":"${newPaymentMethod}"}`,
-    });
-
-    const data = response.ok ? await response.json() : await response.text();
-    await logApiCall("PUT", url, data, response.status, {
-      newPaymentMethodToken: newPaymentMethod,
-    });
-
-    if (!response.ok) {
-      console.error("Replace Payment Method failed:", response.status, data);
-
-      try {
-        const errorData = typeof data === "string" ? JSON.parse(data) : data;
-        return {
-          success: false,
-          error: {
-            type: errorData.type,
-            code: errorData.code,
-            message: errorData.message,
-          },
-        };
-      } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Replace Payment Method failed: ${response.status}`,
-          },
-        };
+    const url = `${apiEndpoint}/${customerId}/paymentmethods/${paymentMethodToken}/new`
+    const response: AxiosResponse<PaymentMethod> = await axios.put(
+      url,
+      { newPaymentMethodToken },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
       }
-    }
+    )
 
-    return {
-      success: true,
-      data: data,
-    };
-  } catch (err) {
-    console.error("Replace Payment Method failed error:", err);
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    };
+    await logApiCall("PUT", url, response.data, response.status, {
+      newPaymentMethodToken,
+    })
+
+    return response.data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Replace Payment Method failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Replace Payment Method failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Replace Payment Method failed error:", err)
+      throw err
+    }
+    console.error("Replace Payment Method failed error:", err)
+    throw new Error(`Replace Payment Method failed: unknown error`, {
+      cause: err,
+    })
   }
 }
 
-export async function deletePaymentMethod(customerId, paymentMethod, branch) {
-  const { merchantId } = await getBranchCredentials(branch);
+export async function deletePaymentMethod(
+  customerId: string,
+  paymentMethod: string,
+  branch: string
+): Promise<PaymentMethod> {
+  const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId || !paymentMethod) {
-      throw new Error("Not enough information");
+      throw new Error("Not enough information")
     }
 
     // Get token directly from utility function instead of HTTP request
-    const tokenData = await getEzypayToken(branch);
-    const token = tokenData.access_token;
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
     if (!token) {
-      console.error("No access_token from token utility", tokenData);
+      console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Delete Payment Method failed: No access_token from token utility`,
-      );
+        `Delete Payment Method failed: No access_token from token utility`
+      )
     }
 
-    const url = `${apiEndpoint}/${customerId}/paymentmethods/${paymentMethod}`;
-    const response = await fetch(url, {
-      method: "DELETE",
+    const url = `${apiEndpoint}/${customerId}/paymentmethods/${paymentMethod}`
+    const response: AxiosResponse<PaymentMethod> = await axios.delete(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
-    });
+    })
 
-    const data = response.ok ? await response.json() : await response.text();
-    await logApiCall("DELETE", url, data, response.status);
+    const data = response.data
+    await logApiCall("DELETE", url, data, response.status)
 
-    if (!response.ok) {
-      console.error("Delete Payment Method failed:", response.status, data);
-
-      try {
-        const errorData = typeof data === "string" ? JSON.parse(data) : data;
-        return {
-          success: false,
-          error: {
-            type: errorData.type,
-            code: errorData.code,
-            message: errorData.message,
-          },
-        };
-      } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Delete Payment Method failed: ${response.status}`,
-          },
-        };
-      }
+    return data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Delete Payment Method failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Delete Payment Method failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    return {
-      success: true,
-      data: data,
-    };
-  } catch (err) {
-    console.error("Delete Payment Method failed error:", err);
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    };
+    if (err instanceof Error) {
+      console.error("Delete Payment Method failed error:", err)
+      throw err
+    }
+    console.error("Delete Payment Method failed error:", err)
+    throw new Error(`Delete Payment Method failed: unknown error`, {
+      cause: err,
+    })
   }
 }
 
-export async function linkPaymentMethod(customerId, paymentMethod, branch) {
-  const { merchantId } = await getBranchCredentials(branch);
+export async function linkPaymentMethod(
+  customerId: string,
+  paymentMethod: string,
+  branch: string
+): Promise<PaymentMethod> {
+  const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId || !paymentMethod) {
-      throw new Error("Not enough information");
+      throw new Error("Not enough information")
     }
 
     // Get token directly from utility function instead of HTTP request
-    const tokenData = await getEzypayToken(branch);
-    const token = tokenData.access_token;
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
     if (!token) {
-      console.error("No access_token from token utility", tokenData);
+      console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Link Payment Method failed: No access_token from token utility`,
-      );
+        `Link Payment Method failed: No access_token from token utility`
+      )
     }
 
-    const url = `${apiEndpoint}/${customerId}/paymentmethods`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: `{"paymentMethodToken":"${paymentMethod}"}`,
-    });
+    const url = `${apiEndpoint}/${customerId}/paymentmethods`
+    const response: AxiosResponse<PaymentMethod> = await axios.post(
+      url,
+      { paymentMethodToken: paymentMethod },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
 
-    const data = response.ok ? await response.json() : await response.text();
+    const data = response.data
     await logApiCall("POST", url, data, response.status, {
       paymentMethodToken: paymentMethod,
-    });
+    })
 
-    if (!response.ok) {
-      console.error("Link Payment Method failed:", response.status, data);
-
-      try {
-        const errorData = typeof data === "string" ? JSON.parse(data) : data;
-        return {
-          success: false,
-          error: {
-            type: errorData.type,
-            code: errorData.code,
-            message: errorData.message,
-          },
-        };
-      } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Link Payment Method failed: ${response.status}`,
-          },
-        };
-      }
+    return data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Link Payment Method failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Link Payment Method failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    return {
-      success: true,
-      data,
-    };
-  } catch (err) {
-    console.error("Link Payment Method failed error:", err);
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    };
+    if (err instanceof Error) {
+      console.error("Link Payment Method failed error:", err)
+      throw err
+    }
+    console.error("Link Payment Method failed error:", err)
+    throw new Error(`Link Payment Method failed: unknown error`, {
+      cause: err,
+    })
   }
 }
 
 export async function activatePayTo(
   paymentMethodToken: string,
   branch: string,
-  action: string,
+  action: string
 ) {
-  const { merchantId } = await getBranchCredentials(branch);
+  const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!paymentMethodToken) {
-      throw new Error("Payment method token is required");
+      throw new Error("Payment method token is required")
     }
 
     // Get token directly from utility function
-    const tokenData = await getEzypayToken(branch);
-    const token = tokenData.access_token;
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
     if (!token) {
-      console.error("No access_token from token utility", tokenData);
+      console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Activate PayTo failed: No access_token from token utility`,
-      );
+        `Activate PayTo failed: No access_token from token utility`
+      )
     }
 
-    const body = new URLSearchParams();
+    const body = new URLSearchParams()
 
     if (action === "authorise") {
-      body.append("mandateStatus", "ACTV");
+      body.append("mandateStatus", "ACTV")
     } else {
-      body.append("mandateStatus", "CNCD");
+      body.append("mandateStatus", "CNCD")
     }
 
-    const url = `${mandateEndpoint}/${paymentMethodToken}/mock`;
-    const response = await fetch(url, {
-      method: "POST",
+    const url = `${mandateEndpoint}/${paymentMethodToken}/mock`
+    const response = await axios.post(url, body, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body,
-    });
+    })
 
-    await logApiCall(
-      "POST",
-      url,
-      "",
-      response.status,
-      Object.fromEntries(body),
-    );
+    await logApiCall("POST", url, "", response.status, Object.fromEntries(body))
 
-    if (!response.ok) {
-      console.error("Activate PayTo failed:", response.status);
+    return ""
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Update PayTo Agreement failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Update PayTo Agreement failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    return {
-      success: true,
-      data: "",
-    };
-  } catch (err: any) {
-    console.error("Activate PayTo error:", err);
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    };
+    if (err instanceof Error) {
+      console.error("Update PayTo Agreement failed error:", err)
+      throw err
+    }
+    console.error("Update PayTo Agreement error:", err)
+    throw new Error(`Update PayTo Agreement: unknown error`, {
+      cause: err,
+    })
   }
 }
 
-export async function createPromptPay(customerId, branch) {
-  const { merchantId } = await getBranchCredentials(branch);
+export async function createPromptPay(
+  customerId: string,
+  branch: string
+): Promise<PaymentMethod> {
+  const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {
-      throw new Error("Missing customer ID");
+      throw new Error("Missing customer ID")
     }
 
     // Get token directly from utility function instead of HTTP request
-    const tokenData = await getEzypayToken(branch);
-    const token = tokenData.access_token;
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
     if (!token) {
-      console.error("No access_token from token utility", tokenData);
+      console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Create PromptPay Token failed: No access_token from token utility`,
-      );
+        `Create PromptPay Token failed: No access_token from token utility`
+      )
     }
 
     const body = {
@@ -312,56 +274,38 @@ export async function createPromptPay(customerId, branch) {
       qrType: "PROMPTPAY",
       termAndConditionAgreed: true,
       customerId,
-    };
+    }
 
-    const url = `${vaultEndpoint}/paymentmethodtokens/qrpayment`;
-    const response = await fetch(url, {
-      method: "POST",
+    const url = `${vaultEndpoint}/paymentmethodtokens/qrpayment`
+    const response: AxiosResponse<PaymentMethod> = await axios.post(url, body, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
         "Content-type": "application/json",
       },
-      body: JSON.stringify(body),
-    });
+    })
 
-    const data = response.ok ? await response.json() : await response.text();
-    await logApiCall("POST", url, data, response.status, body);
+    const data = response.data
+    await logApiCall("POST", url, data, response.status, body)
 
-    if (!response.ok) {
-      console.error("Create PromptPay failed:", response.status, data);
-
-      try {
-        const errorData = typeof data === "string" ? JSON.parse(data) : data;
-        return {
-          success: false,
-          error: {
-            type: errorData.type,
-            code: errorData.code,
-            message: errorData.message,
-          },
-        };
-      } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Create PromptPay failed: ${response.status}`,
-          },
-        };
-      }
+    return data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Create PromptPay failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Create PromptPay failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    return {
-      success: true,
-      data,
-    };
-  } catch (err) {
-    console.error("Create PromptPay failed error:", err);
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    };
+    if (err instanceof Error) {
+      console.error("Create PromptPay failed error:", err)
+      throw err
+    }
+    console.error("Create PromptPay failed error:", err)
+    throw new Error(`Create PromptPay failed: unknown error`, {
+      cause: err,
+    })
   }
 }

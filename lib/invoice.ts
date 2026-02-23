@@ -1,139 +1,67 @@
 "use server"
 
+import axios, { AxiosResponse } from "axios"
 import { getEzypayToken } from "./ezypay-token"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
-import { getBranchCurrency } from "./branches"
 import { randomUUID } from "node:crypto"
+import {
+  CheckoutInvoiceCreation,
+  CheckoutResponse,
+  Invoice,
+  InvoiceCreation,
+  Transaction,
+} from "./types/invoice"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/invoices`
 const checkoutEndpoint = `${process.env.API_ENDPOINT}/v2/billing/checkout`
 const transactionEndpoint = `${process.env.API_ENDPOINT}/v2/billing/transactions`
-//const merchantId = process.env.EZYPAY_MERCHANT_ID;
 
-function normalisedEzypayInvoice(invoices, customerName = null) {
-  function extractPaymentMethodData(paymentMethodData) {
-    if (!paymentMethodData) return
-    const type = paymentMethodData.type.toLowerCase()
-
-    switch (type) {
-      case "card":
-        return `${paymentMethodData.card?.origin ?? ""} ${
-          paymentMethodData.card?.type
-        } **** ${paymentMethodData.card?.last4}`
-        break
-      case "bank":
-        return `BANK **** ${paymentMethodData.bank?.last4}`
-        break
-      case "payto":
-        return `PayTo ${paymentMethodData.payTo?.bbanAccountNo ?? paymentMethodData.payTo?.aliasId}`
-      case "qrpayment":
-        return `${paymentMethodData.qrPayment?.qrType}`
-      case "wallet":
-        return `${paymentMethodData.wallet?.walletType}`
-      default:
-        return `type`
-    }
-  }
-
-  function mergeItemsByDescription(items) {
-    const merged = {}
-
-    items.forEach((item) => {
-      const desc = item.description
-      const amount = item.amount.value
-
-      if (merged[desc]) {
-        merged[desc] += amount
-      } else {
-        merged[desc] = amount
-      }
-    })
-
-    return Object.entries(merged).map(([description, amount]) => ({
-      description,
-      amount: `$${amount.toFixed(2)}`,
-    }))
-  }
-  const normalisedInvoice = invoices.data.map((invoice) => ({
-    id: invoice.id,
-    member: customerName,
-    amount: `$${invoice.amount.value}`,
-    number: "IN" + Number.parseInt(invoice.documentNumber.substring(4)),
-    date: invoice.date,
-    dueDate: invoice.scheduledPaymentDate,
-    paymentMethod: extractPaymentMethodData(invoice.paymentMethodData),
-    items: mergeItemsByDescription(invoice.items),
-    status: invoice.status.toLowerCase(),
-    paymentAttempts: [],
-    customerId: invoice.customerId,
-    failedPaymentReason: invoice.failedPaymentReason,
-    paymentProviderResponse: invoice.paymentProviderResponse,
-    payNowUrl: invoice.payNowUrl,
-    accountingCode: invoice.items?.[0]?.accountingCode || null,
-    paymentMethodInvalid: invoice.paymentMethodInvalid,
-  }))
-
-  return normalisedInvoice
-}
-
-export async function listInvoice(branch): Promise<any> {
+export async function listInvoice(
+  branch: string
+): Promise<{ data: Invoice[] }> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
-    if (!process.env.API_ENDPOINT) {
-      console.error("API_ENDPOINT environment variable is not configured")
-      return []
-    }
-
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
     if (!token) {
       console.error("No access_token from token utility", tokenData)
-      return []
+      throw new Error(`List Invoice failed: No access_token from token utility`)
     }
 
-    const url = `${apiEndpoint}?limit=30`
-    const invoiceResponse = await fetch(url, {
+    const url = `${apiEndpoint}?limit=50`
+    const response = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
     })
 
-    if (!invoiceResponse.ok) {
-      const text = await invoiceResponse.text()
-      console.error("List invoice failed:", invoiceResponse.status, text)
-      return []
+    return response.data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("List invoice error:", err.response?.data || err.message)
+      throw new Error(`List invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("List invoice error:", err)
+      throw err
     }
 
-    const contentType = invoiceResponse.headers.get("content-type")
-    if (!contentType || !contentType.includes("application/json")) {
-      const text = await invoiceResponse.text()
-      console.error(
-        "List invoice error: Expected JSON but received:",
-        contentType,
-        text.substring(0, 200),
-      )
-      return []
-    }
-
-    const invoiceData = await invoiceResponse.json()
-
-    const normalisedInvoice = normalisedEzypayInvoice(invoiceData)
-
-    return normalisedInvoice
-  } catch (err) {
     console.error("List invoice error:", err)
-    return []
+    throw new Error(`List invoice failed: unknown error`, {
+      cause: err,
+    })
   }
 }
 
 export async function listInvoiceByCustomer(
-  customerId,
-  customerName,
-  branch,
-): Promise<any> {
+  customerId: string,
+  branch: string
+): Promise<{ data: Invoice[] }> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {
@@ -146,45 +74,44 @@ export async function listInvoiceByCustomer(
     if (!token) {
       console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `List customer failed: No access_token from token utility`,
+        `List customer failed: No access_token from token utility`
       )
     }
 
     const url = `${apiEndpoint}?customerId=${customerId}&limit=30`
-    const invoiceResponse = await fetch(url, {
+    const response: AxiosResponse<{ data: Invoice[] }> = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
     })
 
-    const invoiceData = invoiceResponse.ok
-      ? await invoiceResponse.json()
-      : await invoiceResponse.text()
-
-    if (!invoiceResponse.ok) {
+    return response.data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
       console.error(
-        "List Customer invoice failed:",
-        invoiceResponse.status,
-        invoiceData,
+        "List Customer invoice error:",
+        err.response?.data || err.message
       )
-      throw new Error(`List Customer invoice failed: ${invoiceResponse.status}`)
+      throw new Error(`List Customer invoice failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    const normalisedInvoice = normalisedEzypayInvoice(invoiceData, customerName)
-
-    return normalisedInvoice
-  } catch (err) {
-    console.error("List invoice error:", err)
-    throw err
+    if (err instanceof Error) {
+      console.error("List Customer invoice error:", err)
+      throw err
+    }
+    console.error("List Customer invoice error:", err)
+    throw new Error(`List Customer invoice failed: Unknown error`, {
+      cause: err,
+    })
   }
 }
 
 export async function listTransactionByInvoice(
-  invoiceId,
-  paymentMethod,
-  branch,
-): Promise<any> {
+  invoiceId: string,
+  branch: string
+): Promise<{ data: Transaction[] }> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -197,50 +124,46 @@ export async function listTransactionByInvoice(
     if (!token) {
       console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `List customer failed: No access_token from token utility`,
+        `List customer failed: No access_token from token utility`
       )
     }
 
     const url = `${transactionEndpoint}?documentId=${invoiceId}&limit=10`
-    const transactionResponse = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-      },
-    })
+    const response: AxiosResponse<{ data: Transaction[] }> = await axios.get(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+        },
+      }
+    )
 
-    const transactionData = transactionResponse.ok
-      ? await transactionResponse.json()
-      : await transactionResponse.text()
-
-    if (!transactionResponse.ok) {
+    return response.data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
       console.error(
-        "List transaction failed:",
-        transactionResponse.status,
-        transactionData,
+        "List transaction error:",
+        err.response?.data || err.message
       )
-      throw new Error(`List transaction failed: ${transactionResponse.status}`)
+      throw new Error(`List transaction failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    const transactions = transactionData.data.map((transaction) => ({
-      id: transaction.id,
-      date: transaction.createdOn?.split("T")[0],
-      amount: `$${transaction.amount.value}`,
-      status: transaction.status.toLowerCase(),
-      method:
-        transaction.source == "external_payment"
-          ? `External (${transaction.paymentMethodType})`
-          : paymentMethod,
-    }))
-
-    return transactions
-  } catch (err) {
+    if (err instanceof Error) {
+      console.error("List transaction error:", err)
+      throw err
+    }
     console.error("List transaction error:", err)
-    throw err
+    throw new Error(`List transaction failed: Unknown error`, { cause: err })
   }
 }
 
-export async function retryInvoice(invoiceId, paymentMethodId, branch) {
+export async function retryInvoice(
+  invoiceId: string,
+  paymentMethodId: string,
+  branch: string
+): Promise<Invoice> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -253,7 +176,7 @@ export async function retryInvoice(invoiceId, paymentMethodId, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `List customer failed: No access_token from token utility`,
+        `List customer failed: No access_token from token utility`
       )
     }
 
@@ -263,32 +186,42 @@ export async function retryInvoice(invoiceId, paymentMethodId, branch) {
     }
 
     const url = `${apiEndpoint}/${invoiceId}/retrypayment`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    })
+    const response: AxiosResponse<Invoice> = await axios.post(
+      url,
+      requestBody,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
 
-    const data = response.ok ? await response.json() : await response.text()
+    const data = response.data
     await logApiCall("POST", url, data, response.status, requestBody)
 
-    if (!response.ok) {
-      console.error("Retry Invoice failed:", response.status, data)
-      throw new Error(`Retry invoice failed: ${response.status}`)
-    }
-
     return data
-  } catch (err) {
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("Retry Invoice failed:", err.response?.data || err.message)
+      throw new Error(`Retry invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Retry Invoice failed error:", err)
+      throw err
+    }
     console.error("Retry Invoice failed error:", err)
-    throw err
+    throw new Error(`Retry invoice failed: Unknown error`, { cause: err })
   }
 }
 
-export async function writeOffInvoice(invoiceId, branch) {
+export async function writeOffInvoice(
+  invoiceId: string,
+  branch: string
+): Promise<Invoice> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -304,32 +237,46 @@ export async function writeOffInvoice(invoiceId, branch) {
     }
 
     const url = `${apiEndpoint}/${invoiceId}/writeoff`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: "{}",
-    })
+    const response: AxiosResponse<Invoice> = await axios.post(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
 
-    const data = response.ok ? await response.json() : await response.text()
+    const data = response.data
     await logApiCall("POST", url, data, response.status, {})
 
-    if (!response.ok) {
-      console.error("Write off Invoice failed:", response.status, data)
-      throw new Error(`Write off invoice failed: ${response.status}`)
-    }
-
     return data
-  } catch (err) {
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Write off Invoice failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Write off invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Write off Invoice failed error:", err)
+      throw err
+    }
     console.error("Write off Invoice failed error:", err)
-    throw err
+    throw new Error(`Write off invoice failed: Unknown error`, { cause: err })
   }
 }
 
-export async function recordExternalInvoice(invoiceId, method, branch) {
+export async function recordExternalInvoice(
+  invoiceId: string,
+  method: string,
+  branch: string
+): Promise<Invoice> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -342,39 +289,55 @@ export async function recordExternalInvoice(invoiceId, method, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `List customer failed: No access_token from token utility`,
+        `List customer failed: No access_token from token utility`
       )
     }
 
     const requestBody = { paymentMethodType: method }
 
     const url = `${apiEndpoint}/${invoiceId}/recordpayment`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    })
+    const response: AxiosResponse<Invoice> = await axios.post(
+      url,
+      requestBody,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
 
-    const data = response.ok ? await response.json() : await response.text()
+    const data = response.data
     await logApiCall("POST", url, data, response.status, requestBody)
 
-    if (!response.ok) {
-      console.error("Record External Invoice failed:", response.status, data)
-      throw new Error(`Record External invoice failed: ${response.status}`)
-    }
-
     return data
-  } catch (err) {
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Record External Invoice failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Record External invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Record External Invoice failed error:", err)
+      throw err
+    }
     console.error("Record External Invoice failed error:", err)
-    throw err
+    throw new Error(`Record External invoice failed: Unknown error`, {
+      cause: err,
+    })
   }
 }
 
-export async function refundInvoice(invoiceId, amount = null, branch) {
+export async function refundInvoice(
+  invoiceId: string,
+  amount: number | null = null,
+  branch: string
+): Promise<Invoice> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceId) {
@@ -392,58 +355,40 @@ export async function refundInvoice(invoiceId, amount = null, branch) {
     const requestBody = amount ? { amount: amount } : {}
 
     const url = `${apiEndpoint}/${invoiceId}/refund`
-    const response = await fetch(url, {
-      method: "PUT",
+    const response: AxiosResponse<Invoice> = await axios.put(url, requestBody, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
         "Content-type": "application/json",
       },
-      body: JSON.stringify(requestBody),
     })
 
-    const data = response.ok ? await response.json() : await response.text()
+    const data = response.data
     await logApiCall("PUT", url, data, response.status, requestBody)
 
-    if (!response.ok) {
-      console.error("Refund Invoice failed:", response.status, data)
-
-      try {
-        const errorData = typeof data === "string" ? JSON.parse(data) : data
-        return {
-          success: false,
-          error: {
-            type: errorData.type,
-            code: errorData.code,
-            message: errorData.message,
-          },
-        }
-      } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Refund invoice failed: ${response.status}`,
-          },
-        }
-      }
+    return data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("Refund Invoice failed:", err.response?.data || err.message)
+      throw new Error(`Refund invoice failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    return {
-      success: true,
-      data: data,
+    if (err instanceof Error) {
+      console.error("Refund Invoice failed error:", err)
+      throw err
     }
-  } catch (err) {
     console.error("Refund Invoice failed error:", err)
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    }
+    throw new Error(`Refund invoice failed: Unknown error`, {
+      cause: err,
+    })
   }
 }
 
-export async function createInvoice(invoiceData, branch) {
+export async function createInvoice(
+  invoiceData: InvoiceCreation,
+  branch: string
+): Promise<Invoice> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceData) {
@@ -456,59 +401,52 @@ export async function createInvoice(invoiceData, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Create invoice failed: No access_token from token utility`,
+        `Create invoice failed: No access_token from token utility`
       )
     }
 
-    const itemData: any = {
-      description: invoiceData.description || "On demand Invoice",
-      amount: {
-        currency: getBranchCurrency(branch),
-        value: invoiceData.amount,
-      },
-    }
-
-    if (invoiceData.accountingCode) {
-      itemData.accountingCode = invoiceData.accountingCode
-    }
-
-    const requestBody = {
-      customerId: invoiceData.memberId,
-      items: [itemData],
-      processingModel: "cardonfile",
-      paymentMethodToken: null,
+    const requestBody: InvoiceCreation = {
+      ...invoiceData,
       externalInvoiceId: randomUUID(),
+      processingModel: "cardonfile",
     }
 
-    if (invoiceData.paymentMethodId) {
-      requestBody.paymentMethodToken = invoiceData.paymentMethodId
-    }
+    const response: AxiosResponse<Invoice> = await axios.post(
+      apiEndpoint,
+      requestBody,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
 
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    })
-
-    const data = response.ok ? await response.json() : await response.text()
+    const data = response.data
     await logApiCall("POST", apiEndpoint, data, response.status, requestBody)
-    if (!response.ok) {
-      console.error("Create Invoice failed:", response.status, data)
-      throw new Error(`Create invoice failed: ${response.status}`)
-    }
 
     return data
-  } catch (err) {
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("Create Invoice failed:", err.response?.data || err.message)
+      throw new Error(`Create invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Create Invoice failed error:", err)
+      throw err
+    }
     console.error("Create Invoice failed error:", err)
-    throw err
+    throw new Error(`Create invoice failed: Unknown error`, { cause: err })
   }
 }
 
-export async function createCheckout(invoiceData, branch) {
+export async function createCheckout(
+  invoiceData: CheckoutInvoiceCreation,
+  branch: string
+): Promise<CheckoutResponse> {
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!invoiceData) {
@@ -521,72 +459,49 @@ export async function createCheckout(invoiceData, branch) {
     if (!token) {
       console.error("No access_token from token utility", tokenData)
       throw new Error(
-        `Checkout session failed: No access_token from token utility`,
+        `Checkout session failed: No access_token from token utility`
       )
     }
 
-    const requestBody = {
-      description: invoiceData.description || "Checkout",
-      amount: {
-        currency: "AUD",
-        value: invoiceData.amount,
-      },
-      customerId: invoiceData.memberId,
-    }
+    const response: AxiosResponse<CheckoutResponse> = await axios.post(
+      checkoutEndpoint,
+      invoiceData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
 
-    const response = await fetch(checkoutEndpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        merchant: merchantId,
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    })
-
-    const data = response.ok ? await response.json() : await response.text()
+    const data = response.data
     await logApiCall(
       "POST",
       checkoutEndpoint,
       data,
       response.status,
-      requestBody,
+      invoiceData
     )
 
-    if (!response.ok) {
-      console.error("Refund Invoice failed:", response.status, data)
-
-      try {
-        const errorData = typeof data === "string" ? JSON.parse(data) : data
-        return {
-          success: false,
-          error: {
-            type: errorData.type,
-            code: errorData.code,
-            message: errorData.message,
-          },
-        }
-      } catch (parseError) {
-        return {
-          success: false,
-          error: {
-            message: `Refund invoice failed: ${response.status}`,
-          },
-        }
-      }
+    return data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Create Checkout failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Create Checkout failed: ${err.message}`, {
+        cause: err,
+      })
     }
-
-    return {
-      success: true,
-      data: data.checkoutUrl,
+    if (err instanceof Error) {
+      console.error("Create Checkout failed error:", err)
+      throw err
     }
-  } catch (err) {
-    console.error("Refund Invoice failed error:", err)
-    return {
-      success: false,
-      error: {
-        message: err.message || "An unexpected error occurred",
-      },
-    }
+    console.error("Create Checkout failed error:", err)
+    throw new Error(`Create Checkout failed: Unknown error`, {
+      cause: err,
+    })
   }
 }

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog"
 import { Trash2, Plus, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
-import { AutoBillingSettings } from "@/components/billing/auto-billing-settings"
+import { AutoBillingSettings } from "@/components/settings/auto-billing-settings"
 import { logApiCall } from "@/lib/api-logger"
 
 type DeviceStatus = "active" | "inactive" | "pending"
@@ -78,7 +78,7 @@ export default function SettingsPage() {
   const [ezypayUsername, setEzypayUsername] = useState("EzypayDemoAccount")
   const [ezypayPassword, setEzypayPassword] = useState("********")
   const [ezypayMerchantId, setEzypayMerchantId] = useState(
-    "5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d",
+    "5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d"
   )
   const [devices, setDevices] = useState<Device[]>(initialDevices)
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false)

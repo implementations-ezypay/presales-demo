@@ -1,8 +1,26 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from "recharts"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
 const revenueData = [
   { month: "Jan", revenue: 32400, expenses: 18200 },
@@ -25,7 +43,9 @@ export function BillingOverview() {
       <Card>
         <CardHeader>
           <CardTitle>Revenue vs Expenses</CardTitle>
-          <CardDescription>Monthly comparison over the last 6 months</CardDescription>
+          <CardDescription>
+            Monthly comparison over the last 6 months
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer
@@ -44,16 +64,37 @@ export function BillingOverview() {
             <AreaChart data={revenueData}>
               <defs>
                 <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-chart-1)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="var(--color-chart-1)" stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-chart-1)"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-chart-1)"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
                 <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-chart-2)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="var(--color-chart-2)" stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-chart-2)"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-chart-2)"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="month"
+                className="text-xs"
+                tickLine={false}
+                axisLine={false}
+              />
               <YAxis
                 className="text-xs"
                 tickLine={false}
@@ -97,7 +138,12 @@ export function BillingOverview() {
           >
             <BarChart data={paymentMethodData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="method" className="text-xs" tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="method"
+                className="text-xs"
+                tickLine={false}
+                axisLine={false}
+              />
               <YAxis
                 className="text-xs"
                 tickLine={false}
@@ -105,7 +151,11 @@ export function BillingOverview() {
                 tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="amount" fill="var(--color-chart-3)" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="amount"
+                fill="var(--color-chart-3)"
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ChartContainer>
         </CardContent>

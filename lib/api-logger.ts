@@ -5,9 +5,13 @@ export type ApiLog = {
   timestamp: string
   method: string
   url: string
-  requestBody?: any
-  response: any
+  requestBody?: unknown
+  response: unknown
   status: number
+}
+
+export type ApiDBSchema = Omit<ApiLog, "requestBody"> & {
+  request_body?: unknown
 }
 
 function getSupabaseClient() {
@@ -24,9 +28,9 @@ function getSupabaseClient() {
 export async function logApiCall(
   method: string,
   url: string,
-  response: any,
+  response: unknown,
   status: number,
-  requestBody?: any,
+  requestBody?: unknown
 ) {
   const log: ApiLog = {
     id: `${Date.now()}-${Math.random()}`,
@@ -40,11 +44,10 @@ export async function logApiCall(
 
   try {
     const client = getSupabaseClient()
-    
+
     // Insert the new log
-    const { error: insertError } = await client
-      .from("api_logs")
-      .insert([{
+    const { error: insertError } = await client.from("api_logs").insert([
+      {
         id: log.id,
         timestamp: log.timestamp,
         method: log.method,
@@ -52,7 +55,8 @@ export async function logApiCall(
         request_body: log.requestBody,
         response: log.response,
         status: log.status,
-      }])
+      },
+    ])
 
     if (insertError) {
       console.error("[v0] Failed to insert log:", insertError)
@@ -71,7 +75,7 @@ export async function logApiCall(
     }
 
     if (logs && logs.length > 100) {
-      const logsToDelete = logs.slice(100).map(log => log.id)
+      const logsToDelete = logs.slice(100).map((log) => log.id)
       const { error: deleteError } = await client
         .from("api_logs")
         .delete()
@@ -91,7 +95,7 @@ export async function logApiCall(
 export async function getApiLogs(): Promise<ApiLog[]> {
   try {
     const client = getSupabaseClient()
-    
+
     const { data, error } = await client
       .from("api_logs")
       .select("*")
@@ -103,7 +107,7 @@ export async function getApiLogs(): Promise<ApiLog[]> {
       return []
     }
 
-    return (data || []).map((log: any) => ({
+    return (data || []).map((log: ApiDBSchema) => ({
       id: log.id,
       timestamp: log.timestamp,
       method: log.method,
@@ -121,11 +125,8 @@ export async function getApiLogs(): Promise<ApiLog[]> {
 export async function clearApiLogs(): Promise<void> {
   try {
     const client = getSupabaseClient()
-    
-    const { error } = await client
-      .from("api_logs")
-      .delete()
-      .neq("id", "")
+
+    const { error } = await client.from("api_logs").delete().neq("id", "")
 
     if (error) {
       console.error("[v0] Failed to clear logs from Supabase:", error)

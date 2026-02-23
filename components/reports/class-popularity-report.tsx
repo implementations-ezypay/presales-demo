@@ -1,10 +1,26 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 import { Download, TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
@@ -31,7 +47,9 @@ export function ClassPopularityReport() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Class Popularity Analysis</h2>
-          <p className="text-sm text-muted-foreground">Track class attendance and utilization rates</p>
+          <p className="text-sm text-muted-foreground">
+            Track class attendance and utilization rates
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select defaultValue="1month">
@@ -69,10 +87,19 @@ export function ClassPopularityReport() {
             >
               <BarChart data={classData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="class" className="text-xs" tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="class"
+                  className="text-xs"
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis className="text-xs" tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="attendance" fill="var(--color-chart-3)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="attendance"
+                  fill="var(--color-chart-3)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -95,10 +122,19 @@ export function ClassPopularityReport() {
             >
               <BarChart data={timeSlotData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="time" className="text-xs" tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="time"
+                  className="text-xs"
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis className="text-xs" tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="attendance" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="attendance"
+                  fill="var(--color-chart-4)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -108,7 +144,9 @@ export function ClassPopularityReport() {
       <Card>
         <CardHeader>
           <CardTitle>Class Utilization Rates</CardTitle>
-          <CardDescription>Capacity utilization for each class type</CardDescription>
+          <CardDescription>
+            Capacity utilization for each class type
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -118,14 +156,18 @@ export function ClassPopularityReport() {
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{item.class}</span>
                     {item.utilization >= 85 && (
-                      <Badge variant="default" className="flex items-center gap-1">
+                      <Badge
+                        variant="default"
+                        className="flex items-center gap-1"
+                      >
                         <TrendingUp className="h-3 w-3" />
                         High Demand
                       </Badge>
                     )}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {item.attendance}/{item.capacity} ({item.utilization.toFixed(1)}%)
+                    {item.attendance}/{item.capacity} (
+                    {item.utilization.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">

@@ -1,9 +1,9 @@
-import { TopBar } from "@/components/top-bar";
-import { OverviewCards } from "@/components/dashboard/overview-cards";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { MemberGrowthChart } from "@/components/dashboard/member-growth-chart";
-import { ClassAttendanceChart } from "@/components/dashboard/class-attendance-chart";
-import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
+import { TopBar } from "@/components/top-bar"
+import { OverviewCards } from "@/components/dashboard/overview-cards"
+import { RevenueChart } from "@/components/dashboard/revenue-chart"
+import { MemberGrowthChart } from "@/components/dashboard/member-growth-chart"
+import { ClassAttendanceChart } from "@/components/dashboard/class-attendance-chart"
+import { NotificationsPanel } from "@/components/dashboard/notifications-panel"
 
 export default function DashboardPage() {
   return (
@@ -33,5 +33,5 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
-  );
+  )
 }

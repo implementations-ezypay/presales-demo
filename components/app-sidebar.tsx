@@ -12,9 +12,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn, normalisedEzypayCustomer } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
-import { listCustomer } from "@/lib/passer-functions"
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +25,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Card, CardContent } from "./ui/card"
+import { useQueries } from "@tanstack/react-query"
+import { listCustomerOptions } from "@/lib/query-options/customer"
+import { listInvoiceOptions } from "@/lib/query-options/invoice"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -45,25 +47,9 @@ export function AppSidebar() {
     setBranch(selectedBranch)
   }, [])
 
-  useEffect(() => {
-    if (!branch) return
-    let mounted = true
-    listCustomer(branch)
-      .then((res) => {
-        if (!mounted) return
-        const customers = res.data.map((customer) =>
-          normalisedEzypayCustomer(customer),
-        )
-        sessionStorage.setItem("defaultCustomerList", JSON.stringify(customers))
-      })
-      .catch((err) => {
-        console.error("[v0] Failed to load customer list for sidebar", err)
-      })
-
-    return () => {
-      mounted = false
-    }
-  }, [branch])
+  const _loadCustomers = useQueries({
+    queries: [listCustomerOptions(branch), listInvoiceOptions(branch)],
+  })
 
   const pathname = usePathname()
 
@@ -72,7 +58,6 @@ export function AppSidebar() {
       setOpenMobile(false)
     }
   }
-
   return (
     <>
       <div className="fixed left-4 top-4 z-50 md:hidden">
@@ -82,6 +67,7 @@ export function AppSidebar() {
       </div>
 
       <Sidebar collapsible="offcanvas">
+        {/* Logo and header */}
         <Card className="my-4 mx-2">
           <CardContent>
             <SidebarHeader>
@@ -98,6 +84,8 @@ export function AppSidebar() {
             </SidebarHeader>
           </CardContent>
         </Card>
+
+        {/* Navigation */}
         <Card className="h-full mb-2 mx-2">
           <SidebarContent>
             <SidebarMenu className="space-y-1 p-4">
@@ -112,7 +100,7 @@ export function AppSidebar() {
                         "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                       )}
                       onClick={handleNavClick}
                     >

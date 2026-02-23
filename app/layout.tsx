@@ -1,5 +1,4 @@
 import type React from "react"
-import { Suspense } from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -7,6 +6,7 @@ import { ApiLoggerViewer } from "@/components/api-logger-viewer"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import "./globals.css"
+import Provider from "./Provider"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -36,13 +36,15 @@ export default function RootLayout({
           defaultTheme={getThemeFromStorage()}
           enableSystem
         >
-          <SidebarProvider>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-auto">{children}</main>
-            </div>
-          </SidebarProvider>
-          <ApiLoggerViewer />
+          <Provider>
+            <SidebarProvider>
+              <div className="flex h-screen w-full">
+                <AppSidebar />
+                <main className="flex-1 overflow-auto">{children}</main>
+              </div>
+            </SidebarProvider>
+            <ApiLoggerViewer />
+          </Provider>
         </ThemeProvider>
       </body>
     </html>

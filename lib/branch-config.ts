@@ -1,11 +1,11 @@
-"use server";
+"use server"
 
 // Branch configuration with environment variable mapping
 // Each branch has its own set of Ezypay credentials stored in env vars
 
 // Helper function to get branch credentials from environment variables
-export async function getBranchCredentials(branchId: String) {
-  const isMainBranch = branchId === "main";
+export async function getBranchCredentials(branchId: string) {
+  const isMainBranch = branchId === "main"
 
   return {
     clientId: process.env.EZYPAY_CLIENT_ID,
@@ -28,5 +28,5 @@ export async function getBranchCredentials(branchId: String) {
           ? "EZYPAY_MERCHANT_ID"
           : `${branchId.toUpperCase()}_EZYPAY_MERCHANT_ID`
       ] || "",
-  };
+  }
 }

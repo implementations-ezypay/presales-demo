@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, Clock, UserPlus } from "lucide-react"
 
@@ -49,7 +55,10 @@ export function NotificationsPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         {notifications.map((notification, index) => (
-          <div key={index} className="flex items-start gap-3 rounded-lg border border-border p-3">
+          <div
+            key={index}
+            className="flex items-start gap-3 rounded-lg border border-border p-3"
+          >
             <div
               className={`rounded-full p-2 ${
                 notification.type === "error"
@@ -63,12 +72,16 @@ export function NotificationsPanel() {
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium leading-none">{notification.title}</p>
+                <p className="text-sm font-medium leading-none">
+                  {notification.title}
+                </p>
                 <Badge variant="outline" className="text-xs">
                   {notification.time}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">{notification.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {notification.description}
+              </p>
             </div>
           </div>
         ))}

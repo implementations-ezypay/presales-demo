@@ -2,10 +2,22 @@
 
 import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Plus, X } from "lucide-react"
@@ -41,8 +53,12 @@ export default function NewPlanPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-balance">Create Membership Plan</h1>
-              <p className="text-muted-foreground">Add a new membership plan to your gym</p>
+              <h1 className="text-3xl font-bold tracking-tight text-balance">
+                Create Membership Plan
+              </h1>
+              <p className="text-muted-foreground">
+                Add a new membership plan to your gym
+              </p>
             </div>
           </div>
 
@@ -50,16 +66,25 @@ export default function NewPlanPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Plan Details</CardTitle>
-                <CardDescription>Basic information about the membership plan</CardDescription>
+                <CardDescription>
+                  Basic information about the membership plan
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="planName">Plan Name</Label>
-                  <Input id="planName" placeholder="e.g., Premium, Basic, Annual" />
+                  <Input
+                    id="planName"
+                    placeholder="e.g., Premium, Basic, Annual"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Brief description of the plan" rows={3} />
+                  <Textarea
+                    id="description"
+                    placeholder="Brief description of the plan"
+                    rows={3}
+                  />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
@@ -76,7 +101,9 @@ export default function NewPlanPage() {
                         <SelectItem value="monthly">Monthly</SelectItem>
                         <SelectItem value="quarterly">Quarterly</SelectItem>
                         <SelectItem value="annual">Annual</SelectItem>
-                        <SelectItem value="personal">Personal Training</SelectItem>
+                        <SelectItem value="personal">
+                          Personal Training
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -84,7 +111,9 @@ export default function NewPlanPage() {
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div className="space-y-0.5">
                     <Label htmlFor="popular">Mark as Popular</Label>
-                    <p className="text-sm text-muted-foreground">Display a "Most Popular" badge on this plan</p>
+                    <p className="text-sm text-muted-foreground">
+                      Display a "Most Popular" badge on this plan
+                    </p>
                   </div>
                   <Switch id="popular" />
                 </div>
@@ -94,7 +123,9 @@ export default function NewPlanPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Included Features</CardTitle>
-                <CardDescription>List all features and services included in this plan</CardDescription>
+                <CardDescription>
+                  List all features and services included in this plan
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {features.map((feature, index) => (
@@ -117,7 +148,12 @@ export default function NewPlanPage() {
                     )}
                   </div>
                 ))}
-                <Button type="button" variant="outline" onClick={addFeature} className="w-full bg-transparent">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addFeature}
+                  className="w-full bg-transparent"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Feature
                 </Button>

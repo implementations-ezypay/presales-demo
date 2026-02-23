@@ -1,0 +1,549 @@
+"use client"
+
+import { useState, useEffect, MouseEvent } from "react"
+import { Trash2, Star, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
+
+import {
+  cn,
+  formatPaymentMethodDisplay,
+  getPaymentMethodType,
+} from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
+import { PaymentMethod } from "@/lib/types/payment-method"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
+import {
+  deletePaymentMethodOptions,
+  getCustomerPaymentMethodsOptions,
+  replacePaymentMethodOptions,
+  updatePayToStatusOptions,
+} from "@/lib/query-options/payment-method"
+
+interface PaymentMethodsListProps {
+  customerId: string
+  variant?: "display" | "selection"
+  selectedMethodId?: string | null
+  onMethodSelect?: (methodId: string) => void
+  showInvalid?: boolean
+  refreshTrigger?: number
+}
+
+export function PaymentMethodsList({
+  customerId,
+  variant = "display",
+  selectedMethodId,
+  onMethodSelect,
+  showInvalid = false,
+}: PaymentMethodsListProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
+    null
+  )
+  const [replaceDialogOpen, setReplaceDialogOpen] = useState(false)
+  const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
+    null
+  )
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [branch, setBranch] = useState("")
+  const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
+  const [methodToActivate, setMethodToActivate] =
+    useState<PaymentMethod | null>(null)
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
+    setBranch(selectedBranch)
+  }, [])
+
+  const { data, isPending }: UseQueryResult<{ data: PaymentMethod[] }> =
+    useQuery({
+      ...getCustomerPaymentMethodsOptions(customerId, branch),
+    })
+
+  const replacePaymentMethodMutation = useMutation({
+    ...replacePaymentMethodOptions(customerId, branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+      setReplaceDialogOpen(false)
+    },
+  })
+
+  const deletePaymentMethodMutation = useMutation({
+    ...deletePaymentMethodOptions(customerId, branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+      setDeleteDialogOpen(false)
+    },
+  })
+
+  const updatePayToStatusMutation = useMutation({
+    ...updatePayToStatusOptions(branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        getCustomerPaymentMethodsOptions(customerId, branch)
+      )
+      setActivatePayToDialogOpen(false)
+    },
+  })
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <Spinner className="h-6 w-6" />
+      </div>
+    )
+  }
+
+  if (data?.data?.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground py-4">
+        No payment methods found
+      </div>
+    )
+  }
+
+  const customerPaymentMethods = data?.data.sort((a, b) => {
+    if (a.primary && !b.primary) return -1
+    if (!a.primary && b.primary) return 1
+    if (a.valid && !b.valid) return -1
+    if (!a.valid && b.valid) return 1
+    return 0
+  })
+
+  const handleDeleteClick = (method: PaymentMethod, e: MouseEvent) => {
+    e.stopPropagation()
+    setMethodToDelete(method)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async (e: MouseEvent) => {
+    e.preventDefault()
+    if (!methodToDelete) return
+
+    deletePaymentMethodMutation.mutate({
+      paymentMethodToken: methodToDelete.paymentMethodToken,
+    })
+  }
+
+  const handleReplaceClick = (method: PaymentMethod, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setMethodToReplace(method)
+    setReplaceDialogOpen(true)
+  }
+
+  const handleReplaceConfirm = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    if (!methodToReplace || !customerPaymentMethods) return
+
+    replacePaymentMethodMutation.mutate({
+      paymentMethodToken: customerPaymentMethods[0].paymentMethodToken,
+      newPaymentMethodToken: methodToReplace.paymentMethodToken,
+    })
+  }
+
+  const handleActivatePayToClick = (
+    method: PaymentMethod,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation()
+    setMethodToActivate(method)
+    setActivatePayToDialogOpen(true)
+    setActionError(null)
+  }
+
+  const handlePayToAgreement = async (
+    e: MouseEvent,
+    action: "authorise" | "decline" = "decline"
+  ) => {
+    e.preventDefault()
+    if (!methodToActivate || !branch) return
+
+    updatePayToStatusMutation.mutate({
+      paymentMethodToken: methodToActivate.paymentMethodToken,
+      action,
+    })
+  }
+
+  if (variant === "selection") {
+    return (
+      <RadioGroup
+        value={selectedMethodId || ""}
+        onValueChange={(value) => onMethodSelect?.(value)}
+      >
+        <div className="space-y-2">
+          {customerPaymentMethods?.map((method) => {
+            const isInvalid = !method.valid
+            const isDisabled = isInvalid && !showInvalid
+
+            return (
+              <div
+                key={method.paymentMethodToken}
+                className={cn(
+                  "flex items-center space-x-3 rounded-lg border p-3",
+                  isInvalid && "opacity-50 bg-muted",
+                  !isDisabled && "cursor-pointer hover:bg-accent"
+                )}
+              >
+                <RadioGroupItem
+                  value={method.paymentMethodToken}
+                  id={method.paymentMethodToken}
+                  disabled={isDisabled}
+                />
+                <Label
+                  htmlFor={method.paymentMethodToken}
+                  className={cn(
+                    "flex flex-1 items-center justify-between w-full",
+                    isDisabled && "cursor-not-allowed"
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onMethodSelect?.(method.paymentMethodToken)
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <PaymentMethodIcon
+                      type={getPaymentMethodType(method)}
+                      className="h-4 w-8"
+                    />
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        {formatPaymentMethodDisplay(method)?.replace(
+                          /amex|visa|mastercard/i,
+                          ""
+                        )}{" "}
+                        {method.card
+                          ? `${method.card?.expiryMonth}/${method.card?.expiryYear}`
+                          : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    {method.primary && (
+                      <Badge variant="default" className="text-xs">
+                        Default
+                      </Badge>
+                    )}
+                    {isInvalid && (
+                      <Badge variant="destructive" className="text-xs">
+                        Invalid
+                      </Badge>
+                    )}
+                  </div>
+                </Label>
+              </div>
+            )
+          })}
+        </div>
+      </RadioGroup>
+    )
+  }
+
+  return (
+    <>
+      <div className="h-56 overflow-auto space-y-2">
+        {customerPaymentMethods?.map((method) => {
+          const isPayTo = method.type?.toUpperCase() === "PAYTO"
+          return (
+            <div
+              key={method.paymentMethodToken}
+              className="flex items-center justify-between rounded-lg border border-border p-2"
+            >
+              <div className="flex items-center">
+                <div className="min-w-20 justify-center flex items-center relative h-4 w-4">
+                  <PaymentMethodIcon type={getPaymentMethodType(method)} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">
+                    {getPaymentMethodType(method, "card-type")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatPaymentMethodDisplay(method)?.replace(
+                      /amex|visa|mastercard/i,
+                      ""
+                    )}{" "}
+                    {method.card
+                      ? `${method.card?.expiryMonth}/${method.card?.expiryYear}`
+                      : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 items-center">
+                {method.primary && (
+                  <Badge variant="default" className="text-xs">
+                    Default
+                  </Badge>
+                )}
+                {!method.valid && (
+                  <Badge variant="destructive" className="text-xs">
+                    Invalid
+                  </Badge>
+                )}
+                {isPayTo && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1 bg-transparent"
+                    onClick={(e) => handleActivatePayToClick(method, e)}
+                  >
+                    Agreement
+                  </Button>
+                )}
+                <div className="flex gap-1">
+                  {!method.primary && method.valid && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => handleReplaceClick(method, e)}
+                      title="Make Default"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {!method.primary && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={(e) => handleDeleteClick(method, e)}
+                      title="Delete payment method"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <Dialog
+        open={activatePayToDialogOpen}
+        onOpenChange={setActivatePayToDialogOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>PayTo Agreement</DialogTitle>
+            <DialogDescription className="italic">
+              This screen it a sample on what customer might see in their
+              banking app.
+              <br></br>
+              <br></br>
+              Customer will need to agree the PayTo agreement before they can be
+              used to process payments.
+            </DialogDescription>
+          </DialogHeader>
+
+          {methodToActivate && (
+            <div className="space-y-4 pt-18">
+              <div className="rounded-lg border p-4 bg-muted/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <PaymentMethodIcon
+                    type={methodToActivate.type}
+                    className="h-5 w-5"
+                  />
+                  <span className="font-medium">Agreement Details</span>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Payee</span>
+                    <span className="font-mono">GymFlow Pty Ltd</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Account</span>
+                    <span className="font-mono">
+                      {methodToActivate?.payTo?.aliasId ||
+                        methodToActivate?.payTo?.bBanAccountNo}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Amount</span>
+                    Upto $1,000
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status</span>
+                    <Badge
+                      className="text-xs"
+                      variant={
+                        methodToActivate?.payTo?.mandateStatus === "ACTV"
+                          ? null
+                          : "destructive"
+                      }
+                    >
+                      {methodToActivate?.payTo?.mandateReason.replaceAll(
+                        /[^a-zA-Z0-9]/g,
+                        ""
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {actionError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setActivatePayToDialogOpen(false)}
+              disabled={updatePayToStatusMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={(e) => handlePayToAgreement(e, "authorise")}
+              disabled={
+                updatePayToStatusMutation.isPending || methodToActivate?.valid
+              }
+            >
+              {updatePayToStatusMutation.isPending ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Authorising...
+                </>
+              ) : (
+                <>Authorise</>
+              )}
+            </Button>
+            <Button
+              onClick={(e) => handlePayToAgreement(e)}
+              disabled={
+                updatePayToStatusMutation.isPending || !methodToActivate?.valid
+              }
+              variant={"destructive"}
+            >
+              {updatePayToStatusMutation.isPending ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Declining...
+                </>
+              ) : (
+                <>Decline</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={replaceDialogOpen} onOpenChange={setReplaceDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Make Default Payment Method</AlertDialogTitle>
+            All future payments will be defaulted to this payment method.
+            {methodToReplace && (
+              <div className="flex mt-2 py-3 bg-muted rounded">
+                <PaymentMethodIcon
+                  type={getPaymentMethodType(methodToReplace)}
+                ></PaymentMethodIcon>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {formatPaymentMethodDisplay(methodToReplace)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </AlertDialogHeader>
+          {actionError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={replacePaymentMethodMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReplaceConfirm}
+              disabled={replacePaymentMethodMutation.isPending}
+            >
+              {replacePaymentMethodMutation.isPending
+                ? "Processing..."
+                : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment Method</AlertDialogTitle>
+            Are you sure you want to delete this payment method? This action
+            cannot be undone.
+            {methodToDelete && (
+              <div className="flex mt-2 py-3 bg-muted rounded">
+                <PaymentMethodIcon
+                  type={getPaymentMethodType(methodToDelete)}
+                ></PaymentMethodIcon>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {formatPaymentMethodDisplay(methodToDelete)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </AlertDialogHeader>
+          {actionError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePaymentMethodMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deletePaymentMethodMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletePaymentMethodMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}

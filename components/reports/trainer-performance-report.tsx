@@ -1,8 +1,20 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Download, Star } from "lucide-react"
@@ -67,7 +79,9 @@ export function TrainerPerformanceReport() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Trainer Performance</h2>
-          <p className="text-sm text-muted-foreground">Evaluate trainer effectiveness and member satisfaction</p>
+          <p className="text-sm text-muted-foreground">
+            Evaluate trainer effectiveness and member satisfaction
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select defaultValue="1month">
@@ -90,7 +104,9 @@ export function TrainerPerformanceReport() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Top Rated Trainer</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Top Rated Trainer
+            </CardTitle>
             <Star className="h-4 w-4 text-chart-5" />
           </CardHeader>
           <CardContent>
@@ -100,7 +116,9 @@ export function TrainerPerformanceReport() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Class Attendance</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg. Class Attendance
+            </CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -110,7 +128,9 @@ export function TrainerPerformanceReport() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Overall Satisfaction</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Overall Satisfaction
+            </CardTitle>
             <Star className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
@@ -123,7 +143,9 @@ export function TrainerPerformanceReport() {
       <Card>
         <CardHeader>
           <CardTitle>Trainer Rankings</CardTitle>
-          <CardDescription>Performance metrics for all trainers</CardDescription>
+          <CardDescription>
+            Performance metrics for all trainers
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -132,7 +154,9 @@ export function TrainerPerformanceReport() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-muted-foreground">#{index + 1}</span>
+                      <span className="text-2xl font-bold text-muted-foreground">
+                        #{index + 1}
+                      </span>
                       <Avatar>
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {trainer.initials}
@@ -143,12 +167,17 @@ export function TrainerPerformanceReport() {
                       <div className="flex items-center gap-2">
                         <p className="font-semibold">{trainer.name}</p>
                         {index === 0 && (
-                          <Badge variant="default" className="bg-chart-5 text-chart-5-foreground">
+                          <Badge
+                            variant="default"
+                            className="bg-chart-5 text-chart-5-foreground"
+                          >
                             Top Performer
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{trainer.specialty}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {trainer.specialty}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -159,22 +188,37 @@ export function TrainerPerformanceReport() {
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total Classes</span>
-                      <span className="font-medium">{trainer.totalClasses}</span>
+                      <span className="text-muted-foreground">
+                        Total Classes
+                      </span>
+                      <span className="font-medium">
+                        {trainer.totalClasses}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Avg. Attendance</span>
-                      <span className="font-medium">{trainer.avgAttendance}</span>
+                      <span className="text-muted-foreground">
+                        Avg. Attendance
+                      </span>
+                      <span className="font-medium">
+                        {trainer.avgAttendance}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Satisfaction</span>
-                      <span className="font-medium">{trainer.memberSatisfaction}%</span>
+                      <span className="text-muted-foreground">
+                        Satisfaction
+                      </span>
+                      <span className="font-medium">
+                        {trainer.memberSatisfaction}%
+                      </span>
                     </div>
-                    <Progress value={trainer.memberSatisfaction} className="h-1" />
+                    <Progress
+                      value={trainer.memberSatisfaction}
+                      className="h-1"
+                    />
                   </div>
                 </div>
               </div>

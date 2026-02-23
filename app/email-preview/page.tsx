@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { PaymentMethodIcon } from "@/components/ui/payment-method-icon";
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
 
 function EmailPreviewContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()
 
-  const id = searchParams.get("id");
-  const customerName = searchParams.get("name");
-  const paymentMethod = searchParams.get("paymentMethod");
+  const id = searchParams.get("id")
+  const customerName = searchParams.get("name")
+  const paymentMethod = searchParams.get("paymentMethod")
   const paymentMethodInvalid =
-    searchParams.get("paymentMethodInvalid") === "true";
-  const failedReason = searchParams.get("reason");
+    searchParams.get("paymentMethodInvalid") === "true"
+  const failedReason = searchParams.get("reason")
 
-  const memberPageUrl = `${typeof window !== "undefined" ? window.location.origin : "https://example.com"}/members/${id}?addPayment=true`;
+  const memberPageUrl = `${typeof window !== "undefined" ? window.location.origin : "https://example.com"}/members/${id}?addPayment=true`
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
@@ -59,7 +59,7 @@ function EmailPreviewContent() {
             </p>
 
             <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-8 rounded">
-              {paymentMethodInvalid ? (
+              {paymentMethodInvalid && paymentMethod ? (
                 <>
                   <p className="text-slate-800 leading-relaxed">
                     We noticed your payment method has become invalid. To ensure
@@ -71,8 +71,7 @@ function EmailPreviewContent() {
                     Payment Method:{" "}
                     <PaymentMethodIcon
                       type={paymentMethod}
-                      className="h-5 w-5"
-                      style={{ display: "inline-block" }}
+                      className="h-5 w-5 inline-block"
                     />{" "}
                     {paymentMethod}
                   </p>
@@ -114,7 +113,7 @@ function EmailPreviewContent() {
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-start">
-                  <span className="inline-block w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                  <span className=" w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
                     <span className="text-green-600 font-bold text-sm">✓</span>
                   </span>
                   <span className="text-slate-700">
@@ -122,7 +121,7 @@ function EmailPreviewContent() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="inline-block w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                  <span className=" w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
                     <span className="text-green-600 font-bold text-sm">✓</span>
                   </span>
                   <span className="text-slate-700">
@@ -130,7 +129,7 @@ function EmailPreviewContent() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="inline-block w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                  <span className=" w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
                     <span className="text-green-600 font-bold text-sm">✓</span>
                   </span>
                   <span className="text-slate-700">
@@ -211,7 +210,7 @@ function EmailPreviewContent() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export default function EmailPreviewPage() {
@@ -225,5 +224,5 @@ export default function EmailPreviewPage() {
     >
       <EmailPreviewContent />
     </Suspense>
-  );
+  )
 }
