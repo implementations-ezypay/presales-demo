@@ -9,19 +9,33 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Copy, Check, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { JsonHighlighter } from "@/components/json-highlighter"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion"
 
 type Webhook = {
   id: string
   webhook_type: string
+  // The payload can come in any shapes and we dont care as long as is json
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   headers: any
   created_at: string
 }
 
-export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] }) {
+export function WebhookViewer({
+  initialWebhooks,
+}: {
+  initialWebhooks: Webhook[]
+}) {
   const [webhooks, setWebhooks] = useState<Webhook[]>(initialWebhooks)
-  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(initialWebhooks[0] || null)
+  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(
+    initialWebhooks[0] || null
+  )
   const [searchQuery, setSearchQuery] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -51,7 +65,7 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
           setWebhooks((prev) => [newWebhook, ...prev])
           // Auto-select the new webhook
           setSelectedWebhook(newWebhook)
-        },
+        }
       )
       .subscribe()
 
@@ -114,7 +128,9 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
             <Search className="h-8 w-8 text-muted-foreground" />
           </div>
-          <p className="text-sm text-muted-foreground">Loading webhook viewer...</p>
+          <p className="text-sm text-muted-foreground">
+            Loading webhook viewer...
+          </p>
         </div>
       </div>
     )
@@ -127,9 +143,19 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
         {/* Header */}
         <div className="p-4 border-b border-border bg-background">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-lg font-semibold text-foreground">Webhook Viewer</h1>
-            <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} className="h-8 w-8">
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <h1 className="text-lg font-semibold text-foreground">
+              Webhook Viewer
+            </h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-8 w-8"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
             </Button>
           </div>
 
@@ -137,8 +163,12 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
           <Card className="p-3 mb-3 bg-muted">
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">Webhook URL:</p>
-                <p className="text-xs font-mono truncate text-foreground">{webhookUrl}</p>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Webhook URL:
+                </p>
+                <p className="text-xs font-mono truncate text-foreground">
+                  {webhookUrl}
+                </p>
               </div>
               <Button
                 variant="ghost"
@@ -172,23 +202,28 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
           <div className="p-2 space-y-1">
             {filteredWebhooks.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm">
-                {searchQuery ? "No webhooks match your search" : "No webhooks received yet"}
+                {searchQuery
+                  ? "No webhooks match your search"
+                  : "No webhooks received yet"}
               </div>
             ) : (
               filteredWebhooks.map((webhook) => (
                 <button
                   key={webhook.id}
                   onClick={() => setSelectedWebhook(webhook)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${selectedWebhook?.id === webhook.id
-                    ? "bg-primary/10 border border-primary/20"
-                    : "hover:bg-muted border border-transparent"
-                    }`}
+                  className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    selectedWebhook?.id === webhook.id
+                      ? "bg-primary/10 border border-primary/20"
+                      : "hover:bg-muted border border-transparent"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <Badge variant="secondary" className="font-mono text-xs">
                       {webhook.webhook_type}
                     </Badge>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatDate(webhook.created_at)}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {formatDate(webhook.created_at)}
+                    </span>
                   </div>
                 </button>
               ))
@@ -206,15 +241,24 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-semibold text-foreground">{selectedWebhook.webhook_type}</h2>
+                    <h2 className="text-2xl font-semibold text-foreground">
+                      {selectedWebhook.webhook_type}
+                    </h2>
                     <Badge variant="outline" className="font-mono text-xs">
                       {selectedWebhook.id}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">Received {formatDate(selectedWebhook.created_at)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Received {formatDate(selectedWebhook.created_at)}
+                  </p>
                 </div>
                 <Button
-                  onClick={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 2), selectedWebhook.id)}
+                  onClick={() =>
+                    handleCopy(
+                      JSON.stringify(selectedWebhook.payload, null, 2),
+                      selectedWebhook.id
+                    )
+                  }
                   variant="outline"
                   size="sm"
                 >
@@ -235,9 +279,16 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
 
             {/* JSON Display */}
             <ScrollArea className="flex-1 p-6">
-              <Accordion type="multiple" defaultValue={["payload", "headers"]} className="space-y-4">
+              <Accordion
+                type="multiple"
+                defaultValue={["payload", "headers"]}
+                className="space-y-4"
+              >
                 {/* Payload */}
-                <AccordionItem value="payload" className="border border-border rounded-lg overflow-hidden">
+                <AccordionItem
+                  value="payload"
+                  className="border border-border rounded-lg overflow-hidden"
+                >
                   <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3 px-4 bg-muted/40 hover:bg-muted/60">
                     <div className="flex items-center gap-2">
                       <span>Payload</span>
@@ -256,12 +307,16 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
                 </AccordionItem>
 
                 {/* Headers */}
-                <AccordionItem value="headers" className="border border-border rounded-lg overflow-hidden">
+                <AccordionItem
+                  value="headers"
+                  className="border border-border rounded-lg overflow-hidden"
+                >
                   <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3 px-4 bg-muted/40 hover:bg-muted/60">
                     <div className="flex items-center gap-2">
                       <span>Headers</span>
                       <Badge variant="secondary" className="text-xs">
-                        {Object.keys(selectedWebhook.headers || {}).length} fields
+                        {Object.keys(selectedWebhook.headers || {}).length}{" "}
+                        fields
                       </Badge>
                     </div>
                   </AccordionTrigger>
@@ -282,9 +337,12 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">No webhook selected</h3>
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No webhook selected
+              </h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Select a webhook from the sidebar to view its details, or send a POST request to the webhook URL above.
+                Select a webhook from the sidebar to view its details, or send a
+                POST request to the webhook URL above.
               </p>
             </div>
           </div>
