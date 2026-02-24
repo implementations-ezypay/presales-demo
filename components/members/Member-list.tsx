@@ -18,30 +18,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/ui/spinner"
 import { getBranchName } from "@/lib/branches"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
-import { listCustomerOptions } from "@/lib/query-options/customer"
+import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query"
+import {
+  listCustomerOptions,
+  listSingleCustomerOptions,
+} from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
+import { useBranch } from "../utils"
+import { useMember } from "./utils"
 
-export default function MemberList({
-  filteredMembers,
-}: {
-  filteredMembers: Customer[] | undefined
-}) {
+export default function MemberList() {
   const router = useRouter()
-  const [branch, setBranch] = useState<string | null>(null)
+  const branch = useBranch()
+  const { filteredMembers } = useMember()
+  const queryClient = useQueryClient()
 
   const { isPending }: UseQueryResult<{ data: Customer[] }> = useQuery(
     listCustomerOptions(branch)
   )
 
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
+  const redirectToMemberDetailPage = (customer: Customer) => {
+    queryClient.setQueryData(
+      listSingleCustomerOptions(customer.id, branch).queryKey,
+      customer
+    )
+    queryClient.invalidateQueries(
+      listSingleCustomerOptions(customer.id, branch)
+    )
+    router.push(`/members/${customer.id}`)
+  }
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-x-auto">
@@ -83,7 +91,7 @@ export default function MemberList({
                 tabIndex={0}
                 role="link"
                 aria-label={`View ${member.firstName} ${member.lastName} profile`}
-                onClick={() => router.push(`/members/${member.id}`)}
+                onClick={() => redirectToMemberDetailPage(member)}
               >
                 <TableCell className="font-medium">{member.number}</TableCell>
 
@@ -113,19 +121,14 @@ export default function MemberList({
                     {member.metadata?.status}
                   </Badge>
                 </TableCell>
-
                 <TableCell>{member.metadata?.plan}</TableCell>
-
                 <TableCell>{member.metadata?.startDate}</TableCell>
-
                 <TableCell>{member.metadata?.dueDate}</TableCell>
-
                 <TableCell>
                   {member.metadata?.originalBranch
                     ? getBranchName(member.metadata?.originalBranch)
                     : "-"}
                 </TableCell>
-
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -10,21 +10,12 @@ import {
 } from "@/components/ui/select"
 import { Search } from "lucide-react"
 import { MembershipStatus } from "@/lib/types/membership"
-import { ChangeEventHandler } from "react"
+import { useMember } from "./utils"
 
-interface MemberFilterProps {
-  searchQuery: string
-  statusFilter: MembershipStatus
-  onSearchChange: ChangeEventHandler<HTMLInputElement>
-  onStatusFilterChange: (value: MembershipStatus) => void
-}
+export default function MemberFilter() {
+  const { searchQuery, setSearchQuery, statusFilter, setStatusFilter } =
+    useMember()
 
-export default function MemberFilter({
-  searchQuery,
-  statusFilter,
-  onSearchChange,
-  onStatusFilterChange,
-}: MemberFilterProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
       <div className="relative flex-1">
@@ -34,10 +25,15 @@ export default function MemberFilter({
           placeholder="Search by name or email..."
           className="pl-9"
           value={searchQuery}
-          onChange={onSearchChange}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+      <Select
+        value={statusFilter}
+        onValueChange={(value: MembershipStatus) =>
+          setStatusFilter(value as unknown as MembershipStatus)
+        }
+      >
         <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Filter by status" />
         </SelectTrigger>
