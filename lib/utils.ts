@@ -102,7 +102,8 @@ export function getCustomerIdFromPath(path?: string): string | null {
 //   return memberDataState
 // }
 
-export const getStatusBadgeVariant = (status: string) => {
+export const getStatusBadgeVariant = (status: string | undefined) => {
+  if (!status) return "default"
   if (status.toLowerCase() === "paid") return "default"
   if (
     status.toLowerCase().includes("refund") ||

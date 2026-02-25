@@ -98,7 +98,6 @@ export async function getCustomer(
   customerId: string | null,
   branch: string
 ): Promise<Customer> {
-  console.log(branch, customerId)
   const { merchantId } = await getBranchCredentials(branch)
   try {
     if (!customerId) {

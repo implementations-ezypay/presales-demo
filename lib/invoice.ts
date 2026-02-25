@@ -58,6 +58,48 @@ export async function listInvoice(
   }
 }
 
+export async function listOneInvocie(
+  invoiceId: string,
+  branch: string
+): Promise<Invoice> {
+  const { merchantId } = await getBranchCredentials(branch)
+  try {
+    // Get token directly from utility function instead of HTTP request
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
+    if (!token) {
+      console.error("No access_token from token utility", tokenData)
+      throw new Error(`List Invoice failed: No access_token from token utility`)
+    }
+
+    const url = `${apiEndpoint}/${invoiceId}`
+    const response: AxiosResponse<Invoice> = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+      },
+    })
+
+    return response.data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("List invoice error:", err.response?.data || err.message)
+      throw new Error(`List invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("List invoice error:", err)
+      throw err
+    }
+
+    console.error("List invoice error:", err)
+    throw new Error(`List invoice failed: unknown error`, {
+      cause: err,
+    })
+  }
+}
+
 export async function listInvoiceByCustomer(
   customerId: string,
   branch: string

@@ -23,6 +23,7 @@ export type Invoice = {
 }
 
 type InvoiceItem = {
+  id: string
   description: string
   amount: Amount
   type?: string

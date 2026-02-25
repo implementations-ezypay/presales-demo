@@ -9,6 +9,7 @@ import {
   writeOffInvoice,
   recordExternalInvoice,
   refundInvoice,
+  listOneInvocie,
 } from "../invoice"
 import { CheckoutInvoiceCreation, InvoiceCreation } from "../types/invoice"
 
@@ -21,6 +22,18 @@ export const listSingleInvoiceOptions = (
     queryFn: () => listInvoiceByCustomer(customerId!, branch!),
     refetchOnWindowFocus: false,
     enabled: !!branch && !!customerId,
+  })
+}
+
+export const listOneInvoiceOptions = (
+  invoiceId: string | null,
+  branch: string | null
+) => {
+  return queryOptions({
+    queryKey: ["listOneInvoice", invoiceId, branch],
+    queryFn: () => listOneInvocie(invoiceId!, branch!),
+    refetchOnWindowFocus: false,
+    enabled: !!branch && !!invoiceId,
   })
 }
 

@@ -133,7 +133,6 @@ export function CreateInvoiceDialog({
   const createCheckoutMutation = useMutation({
     ...createCheckoutOptions(branch),
     onSuccess: (data) => {
-      console.log(data)
       const { checkoutUrl } = data
       try {
         if (typeof checkoutUrl !== "string")
@@ -336,7 +335,6 @@ export function CreateInvoiceDialog({
             listInvoiceOptions(branch).queryKey,
             // @ts-expect-error: Invoice type does not fully type for API response
             (data) => {
-              console.log("In update cache. Data: ", data)
               if (!data) return { data: [responseBody] }
               const invoices = data.data
               // @ts-expect-error: Invoice type does not fully type for API response
@@ -349,7 +347,6 @@ export function CreateInvoiceDialog({
             listSingleInvoiceOptions(customerId, branch).queryKey,
             // @ts-expect-error: Invoice type does not fully type for API response
             (data) => {
-              console.log("In update cache. Data: ", data)
               if (!data) return { data: [responseBody] }
               const invoices = data.data
               // @ts-expect-error: Invoice type does not fully type for API response

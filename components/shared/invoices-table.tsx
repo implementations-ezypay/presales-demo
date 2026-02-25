@@ -1,5 +1,7 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -7,8 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -17,43 +26,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
+import { listCustomerOptions } from "@/lib/query-options/customer"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Search, Plus } from "lucide-react"
-import { useState, useEffect } from "react"
-import { InvoiceDetailDialog } from "./invoice-detail-dialog"
-import { CreateInvoiceDialog } from "./create-invoice-dialog"
-import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
-import { Spinner } from "../ui/spinner"
+  listInvoiceOptions,
+  listOneInvoiceOptions,
+  listSingleInvoiceOptions,
+} from "@/lib/query-options/invoice"
+import { Customer } from "@/lib/types/customer"
+import { Invoice } from "@/lib/types/invoice"
 import {
   formatPaymentMethodDisplay,
   getCustomerIdFromPath,
   getPaymentMethodType,
   getStatusBadgeVariant,
 } from "@/lib/utils"
-import { useQuery, UseQueryResult } from "@tanstack/react-query"
-import {
-  listInvoiceOptions,
-  listSingleInvoiceOptions,
-} from "@/lib/query-options/invoice"
-import { Invoice } from "@/lib/types/invoice"
-import { Customer } from "@/lib/types/customer"
-import { listCustomerOptions } from "@/lib/query-options/customer"
+import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query"
+import { Plus, Search } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { MouseEvent, useEffect, useState } from "react"
+import { Spinner } from "../ui/spinner"
+import { CreateInvoiceDialog } from "./create-invoice-dialog"
 
 export function InvoicesTable({ variant = "billing" }) {
   const customerId = getCustomerIdFromPath()
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
-  const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [branch, setBranch] = useState("")
+  const router = useRouter()
+  const queryClient = useQueryClient()
 
   let invoices: Invoice[] | undefined = undefined
   let customerData: Customer | undefined = undefined
@@ -115,47 +116,15 @@ export function InvoicesTable({ variant = "billing" }) {
     return matchesStatus && matchesSearch
   })
 
-  const handleInvoiceClick = (invoice: Invoice) => {
-    if (!invoice.id) {
-      console.error("Invalid invoice data (missing id):", invoice)
-      return
-    }
-    setSelectedInvoice(invoice)
-    setIsDetailOpen(true)
+  const handleInvoiceClick = (e: MouseEvent, invoice: Invoice) => {
+    e.preventDefault()
+    queryClient.setQueryData(
+      listOneInvoiceOptions(invoice.id, branch).queryKey,
+      invoice
+    )
+    queryClient.invalidateQueries(listOneInvoiceOptions(invoice.id, branch))
+    router.push(`/billing/${invoice.id}`)
   }
-
-  // const formatPaymentMethodDisplay = (paymentMethodData: PaymentMethod) => {
-  //   switch (paymentMethodData.type) {
-  //     case "CARD":
-  //       return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
-  //     case "BANK":
-  //       return `**** ${paymentMethodData.bank?.last4}`
-  //     case "QRPAYMENT":
-  //       return paymentMethodData.qrPayment?.type
-  //     case "WALLET":
-  //       return paymentMethodData.wallet?.accountId
-  //     case "PAYTO":
-  //       return (
-  //         paymentMethodData.payTo?.aliasId ??
-  //         paymentMethodData.payTo?.bBanAccountNo
-  //       )
-  //   }
-  // }
-
-  // const getPaymentMethodType = (paymentMethodData: PaymentMethod) => {
-  //   switch (paymentMethodData.type) {
-  //     case "CARD":
-  //       return paymentMethodData.card?.origin ?? paymentMethodData.card?.type
-  //     case "BANK":
-  //       return "Bank"
-  //     case "QRPAYMENT":
-  //       return paymentMethodData.qrPayment?.qrType
-  //     case "WALLET":
-  //       return paymentMethodData.wallet?.walletType
-  //     case "PAYTO":
-  //       return "PayTo"
-  //   }
-  // }
 
   return (
     <>
@@ -243,7 +212,7 @@ export function InvoicesTable({ variant = "billing" }) {
                     <TableRow
                       key={invoice.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleInvoiceClick(invoice)}
+                      onClick={(e) => handleInvoiceClick(e, invoice)}
                     >
                       <TableCell className="font-medium text-sm">
                         {invoice.documentNumber}
@@ -296,14 +265,6 @@ export function InvoicesTable({ variant = "billing" }) {
           </div>
         </CardContent>
       </Card>
-
-      {isDetailOpen && selectedInvoice && (
-        <InvoiceDetailDialog
-          invoiceProp={selectedInvoice}
-          open={isDetailOpen}
-          onOpenChange={setIsDetailOpen}
-        />
-      )}
 
       <CreateInvoiceDialog
         open={isCreateOpen}
