@@ -35,6 +35,15 @@ export function PaymentMethodSelection({
       ...getCustomerPaymentMethodsOptions(customerId, branch),
     })
 
+  useEffect(
+    () =>
+      onMethodSelect(
+        data?.data.filter((method) => method.primary)[0].paymentMethodToken ||
+          ""
+      ),
+    [data]
+  )
+
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-6">
@@ -59,21 +68,9 @@ export function PaymentMethodSelection({
     return 0
   })
 
-  useEffect(
-    () =>
-      onMethodSelect(
-        selectedMethodId ||
-          customerPaymentMethods?.at(0)?.paymentMethodToken ||
-          ""
-      ),
-    [customerPaymentMethods]
-  )
-
   return (
     <RadioGroup
-      value={
-        selectedMethodId || customerPaymentMethods?.at(0)?.paymentMethodToken
-      }
+      value={selectedMethodId}
       onValueChange={(value) => onMethodSelect?.(value)}
     >
       <div className="space-y-2">
