@@ -34,45 +34,8 @@ import { Trash2, Plus, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { AutoBillingSettings } from "@/components/settings/auto-billing-settings"
 import { logApiCall } from "@/lib/api-logger"
-
-type DeviceStatus = "active" | "inactive" | "pending"
-
-interface Device {
-  id: string
-  name: string
-  deviceId: string
-  code: string
-  status: DeviceStatus
-  lastSeen: string
-}
-
-// Mock registered devices
-const initialDevices: Device[] = [
-  {
-    id: "1",
-    name: "Front Desk Terminal",
-    deviceId: "TERM-001",
-    code: "123456",
-    status: "active",
-    lastSeen: "2024-10-17 09:30 AM",
-  },
-  {
-    id: "2",
-    name: "Reception Terminal",
-    deviceId: "TERM-002",
-    code: "789012",
-    status: "active",
-    lastSeen: "2024-10-17 09:25 AM",
-  },
-  {
-    id: "3",
-    name: "Gym Floor Terminal",
-    deviceId: "TERM-003",
-    code: "345678",
-    status: "inactive",
-    lastSeen: "2024-10-15 03:45 PM",
-  },
-]
+import { terminalDevices } from "@/lib/terminal-devices"
+import { Device, DeviceStatus } from "@/lib/types/terminal-devices"
 
 export default function SettingsPage() {
   const [ezypayUsername, setEzypayUsername] = useState("EzypayDemoAccount")
@@ -80,7 +43,7 @@ export default function SettingsPage() {
   const [ezypayMerchantId, setEzypayMerchantId] = useState(
     "5ee1dffe-70ab-43a9-bc1c-d8b7bd66586d"
   )
-  const [devices, setDevices] = useState<Device[]>(initialDevices)
+  const [devices, setDevices] = useState<Device[]>(terminalDevices)
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false)
   const [isRegistrationCodeOpen, setIsRegistrationCodeOpen] = useState(false)
   const [registrationCode, setRegistrationCode] = useState("")

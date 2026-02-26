@@ -9,17 +9,18 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Mail } from "lucide-react"
-import { useState, useEffect, useRef, MouseEvent } from "react"
-import { toast } from "sonner"
+import { useBranch } from "@/components/utils"
 import { logApiCall } from "@/lib/api-logger"
 import { getBranchCountry } from "@/lib/branches"
-import { useMutation } from "@tanstack/react-query"
 import {
   getTokenOptions,
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
-import { useNewMemberContext } from "./utils"
+import { useMutation } from "@tanstack/react-query"
+import { ArrowBigRight, Mail } from "lucide-react"
+import Link from "next/link"
+import { MouseEvent, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT
 const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT
@@ -35,7 +36,7 @@ export default function PaymentCapturePage({
 }: PaymentCapturePageProps) {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null)
   const [country, setCountry] = useState("")
-  const { branch } = useNewMemberContext()
+  const branch = useBranch()
 
   // Track selected values from Select components separately for easier UI updates
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -148,14 +149,27 @@ export default function PaymentCapturePage({
           Add payment method for recurring billing
         </CardDescription>
 
-        <Button
-          variant="outline"
-          onClick={handleEmailCustomer}
-          className="gap-2 bg-transparent"
-        >
-          <Mail className="h-4 w-4" />
-          Email Customer
-        </Button>
+        <div className="grid grid-cols-2">
+          <Button
+            variant="outline"
+            onClick={handleEmailCustomer}
+            className="gap-2 bg-transparent"
+          >
+            <Mail className="h-4 w-4" />
+            Email Customer
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 bg-transparent"
+            type="button"
+            asChild
+          >
+            <Link href={`/members/${customerId}`}>
+              <ArrowBigRight className="h-4 w-4" />
+              Go to Customer Profile
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {getTokenMutation.isPending ? (

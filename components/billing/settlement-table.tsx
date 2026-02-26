@@ -63,8 +63,6 @@ export function SettlementTable() {
     },
   })
 
-  console.log(filteredSettlements)
-
   const handleDownloadDocument = async (
     settlementId: string,
     docType: documentType

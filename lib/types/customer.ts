@@ -37,6 +37,7 @@ export type CreateCustomerForm = {
   plan?: MembershipPlan
   status?: MembershipStatus
   existingCustomerNumber?: string
+  phone?: string
 }
 
 export type MembershipPlan =

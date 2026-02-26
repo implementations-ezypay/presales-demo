@@ -100,7 +100,6 @@ export function AddPaymentMethodDialog({
       }
       if (!listenerResponse.data) return
       const { paymentMethodToken } = listenerResponse.data
-      console.log(paymentMethodToken, country, customerId)
 
       if (country === "PH" && paymentMethodToken) {
         linkPaymentMethodMutation.mutate({ customerId, paymentMethodToken })

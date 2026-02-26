@@ -9,7 +9,16 @@ export default function Provider({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            throwOnError: true,
+          },
+        },
+      })
+  )
   const [branch, setBranch] = useState<string>("main")
 
   if (typeof window !== "undefined" && process.env.NODE_ENV !== "production")

@@ -1,4 +1,4 @@
-export const plans = [
+export const plans: PlanType[] = [
   {
     id: "1",
     name: "Basic",
@@ -63,3 +63,14 @@ export const plans = [
     isPopular: false,
   },
 ]
+
+type PlanType = {
+  id: string
+  name: string
+  price?: number
+  duration?: string
+  description?: string
+  features?: string[]
+  activeMembers?: number
+  isPopular?: boolean
+}

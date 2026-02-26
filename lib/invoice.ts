@@ -10,12 +10,15 @@ import {
   CheckoutResponse,
   Invoice,
   InvoiceCreation,
+  TerminalInvoiceCreation,
   Transaction,
 } from "./types/invoice"
+import { compareDesc } from "date-fns"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/invoices`
 const checkoutEndpoint = `${process.env.API_ENDPOINT}/v2/billing/checkout`
 const transactionEndpoint = `${process.env.API_ENDPOINT}/v2/billing/transactions`
+const terminalEndpoint = `${process.env.API_ENDPOINT}/v2/billing/terminal`
 
 export async function listInvoice(
   branch: string
@@ -31,12 +34,78 @@ export async function listInvoice(
     }
 
     const url = `${apiEndpoint}?limit=50`
-    const response = await axios.get(url, {
+    const terminalUrl = `${terminalEndpoint}/invoices?limit=50`
+    const [response, terminalResponse] = await Promise.all([
+      axios.get<{ data: Invoice[] }>(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+        },
+      }),
+      axios.get<{ data: Invoice[] }>(terminalUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+        },
+      }),
+    ])
+
+    const combinedResponseData = response.data.data.concat(
+      terminalResponse.data.data
+    )
+
+    combinedResponseData.sort((a, b) => compareDesc(a.createdOn, b.createdOn))
+
+    return { data: combinedResponseData }
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("List invoice error:", err.response?.data || err.message)
+      throw new Error(`List invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("List invoice error:", err)
+      throw err
+    }
+
+    console.error("List invoice error:", err)
+    throw new Error(`List invoice failed: unknown error`, {
+      cause: err,
+    })
+  }
+}
+
+export async function listOneInvocie(
+  invoiceId: string,
+  branch: string
+): Promise<Invoice> {
+  const { merchantId } = await getBranchCredentials(branch)
+  try {
+    // Get token directly from utility function instead of HTTP request
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
+    if (!token) {
+      console.error("No access_token from token utility", tokenData)
+      throw new Error(`List Invoice failed: No access_token from token utility`)
+    }
+
+    const url = `${apiEndpoint}/${invoiceId}`
+    const terminalUrl = `${terminalEndpoint}/invoices/${invoiceId}`
+    const invoices = axios.get<Invoice>(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
     })
+    const terminalInvoices = axios.get<Invoice>(terminalUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+      },
+    })
+
+    const response = await Promise.any([invoices, terminalInvoices])
 
     return response.data
   } catch (err: unknown) {
@@ -79,14 +148,34 @@ export async function listInvoiceByCustomer(
     }
 
     const url = `${apiEndpoint}?customerId=${customerId}&limit=30`
-    const response: AxiosResponse<{ data: Invoice[] }> = await axios.get(url, {
+    const terminalUrl = `${terminalEndpoint}/invoices?customerId=${customerId}&limit=30`
+
+    const invoices = axios.get<{ data: Invoice[] }>(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
       },
     })
 
-    return response.data
+    const terminalInvoices = axios.get<{ data: Invoice[] }>(terminalUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+      },
+    })
+
+    const [response, terminalResponse] = await Promise.all([
+      invoices,
+      terminalInvoices,
+    ])
+
+    const combinedResponseData = response.data.data.concat(
+      terminalResponse.data.data
+    )
+
+    combinedResponseData.sort((a, b) => compareDesc(a.createdOn, b.createdOn))
+
+    return { data: combinedResponseData }
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       console.error(
@@ -440,6 +529,68 @@ export async function createInvoice(
     }
     console.error("Create Invoice failed error:", err)
     throw new Error(`Create invoice failed: Unknown error`, { cause: err })
+  }
+}
+
+export async function createTerminalInvoice(
+  invoiceData: TerminalInvoiceCreation,
+  branch: string
+): Promise<Invoice> {
+  const { merchantId } = await getBranchCredentials(branch)
+  try {
+    if (!invoiceData) {
+      throw new Error("No invoice Data")
+    }
+
+    // Get token directly from utility function instead of HTTP request
+    const tokenData = await getEzypayToken(branch)
+    const token = tokenData.access_token
+    if (!token) {
+      console.error("No access_token from token utility", tokenData)
+      throw new Error(
+        `Create invoice failed: No access_token from token utility`
+      )
+    }
+
+    const requestBody: TerminalInvoiceCreation = {
+      ...invoiceData,
+      externalInvoiceId: randomUUID(),
+    }
+
+    const response: AxiosResponse<Invoice> = await axios.post(
+      `${terminalEndpoint}/invoices`,
+      requestBody,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          merchant: merchantId,
+          "Content-type": "application/json",
+        },
+      }
+    )
+
+    const data = response.data
+    await logApiCall("POST", apiEndpoint, data, response.status, requestBody)
+
+    return data
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "Create Terminal Invoice failed:",
+        err.response?.data || err.message
+      )
+      throw new Error(`Create terminal invoice failed: ${err.message}`, {
+        cause: err,
+      })
+    }
+    if (err instanceof Error) {
+      console.error("Create Terminal Invoice failed error:", err)
+      throw err
+    }
+    console.error("Create Terminal Invoice failed error:", err)
+    throw new Error(`Create Terminal invoice failed: Unknown error`, {
+      cause: err,
+    })
   }
 }
 

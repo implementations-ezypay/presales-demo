@@ -1,18 +1,10 @@
 "use client"
 
-import { useState, useEffect, MouseEvent } from "react"
-import { Trash2, Star, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
+import { Star, Trash2 } from "lucide-react"
+import { MouseEvent, useEffect, useState } from "react"
 
-import {
-  cn,
-  formatPaymentMethodDisplay,
-  getPaymentMethodType,
-} from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -30,38 +23,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
-import { PaymentMethod } from "@/lib/types/payment-method"
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  UseQueryResult,
-} from "@tanstack/react-query"
 import {
   deletePaymentMethodOptions,
   getCustomerPaymentMethodsOptions,
   replacePaymentMethodOptions,
   updatePayToStatusOptions,
 } from "@/lib/query-options/payment-method"
+import { PaymentMethod } from "@/lib/types/payment-method"
+import { formatPaymentMethodDisplay, getPaymentMethodType } from "@/lib/utils"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query"
 
-interface PaymentMethodsListProps {
-  customerId: string
-  variant?: "display" | "selection"
-  selectedMethodId?: string | null
-  onMethodSelect?: (methodId: string) => void
-  showInvalid?: boolean
-  refreshTrigger?: number
-}
-
-export function PaymentMethodsList({
-  customerId,
-  variant = "display",
-  selectedMethodId,
-  onMethodSelect,
-  showInvalid = false,
-}: PaymentMethodsListProps) {
+export function PaymentMethodsList({ customerId }: { customerId: string }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [methodToDelete, setMethodToDelete] = useState<PaymentMethod | null>(
     null
@@ -70,7 +48,6 @@ export function PaymentMethodsList({
   const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
     null
   )
-  const [actionError, setActionError] = useState<string | null>(null)
   const [branch, setBranch] = useState("")
   const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
   const [methodToActivate, setMethodToActivate] =
@@ -179,7 +156,6 @@ export function PaymentMethodsList({
     e.stopPropagation()
     setMethodToActivate(method)
     setActivatePayToDialogOpen(true)
-    setActionError(null)
   }
 
   const handlePayToAgreement = async (
@@ -193,80 +169,6 @@ export function PaymentMethodsList({
       paymentMethodToken: methodToActivate.paymentMethodToken,
       action,
     })
-  }
-
-  if (variant === "selection") {
-    return (
-      <RadioGroup
-        value={selectedMethodId || ""}
-        onValueChange={(value) => onMethodSelect?.(value)}
-      >
-        <div className="space-y-2">
-          {customerPaymentMethods?.map((method) => {
-            const isInvalid = !method.valid
-            const isDisabled = isInvalid && !showInvalid
-
-            return (
-              <div
-                key={method.paymentMethodToken}
-                className={cn(
-                  "flex items-center space-x-3 rounded-lg border p-3",
-                  isInvalid && "opacity-50 bg-muted",
-                  !isDisabled && "cursor-pointer hover:bg-accent"
-                )}
-              >
-                <RadioGroupItem
-                  value={method.paymentMethodToken}
-                  id={method.paymentMethodToken}
-                  disabled={isDisabled}
-                />
-                <Label
-                  htmlFor={method.paymentMethodToken}
-                  className={cn(
-                    "flex flex-1 items-center justify-between w-full",
-                    isDisabled && "cursor-not-allowed"
-                  )}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onMethodSelect?.(method.paymentMethodToken)
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <PaymentMethodIcon
-                      type={getPaymentMethodType(method)}
-                      className="h-4 w-8"
-                    />
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatPaymentMethodDisplay(method)?.replace(
-                          /amex|visa|mastercard/i,
-                          ""
-                        )}{" "}
-                        {method.card
-                          ? `${method.card?.expiryMonth}/${method.card?.expiryYear}`
-                          : ""}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    {method.primary && (
-                      <Badge variant="default" className="text-xs">
-                        Default
-                      </Badge>
-                    )}
-                    {isInvalid && (
-                      <Badge variant="destructive" className="text-xs">
-                        Invalid
-                      </Badge>
-                    )}
-                  </div>
-                </Label>
-              </div>
-            )
-          })}
-        </div>
-      </RadioGroup>
-    )
   }
 
   return (
@@ -413,13 +315,6 @@ export function PaymentMethodsList({
             </div>
           )}
 
-          {actionError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{actionError}</AlertDescription>
-            </Alert>
-          )}
-
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
@@ -481,12 +376,6 @@ export function PaymentMethodsList({
               </div>
             )}
           </AlertDialogHeader>
-          {actionError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{actionError}</AlertDescription>
-            </Alert>
-          )}
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={replacePaymentMethodMutation.isPending}
@@ -524,12 +413,6 @@ export function PaymentMethodsList({
               </div>
             )}
           </AlertDialogHeader>
-          {actionError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{actionError}</AlertDescription>
-            </Alert>
-          )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletePaymentMethodMutation.isPending}>
               Cancel

@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { CreditCard, Building2 } from "lucide-react"
+import { CreditCard, Building2, Smartphone } from "lucide-react"
 import { useTheme } from "next-themes"
 import { StyleHTMLAttributes } from "react"
 
@@ -11,7 +11,7 @@ interface PaymentMethodIconProps {
 
 export function PaymentMethodIcon({
   type,
-  className = "h-6 w-16",
+  className = "h-6 w-8 flex items-center justify-center",
   style = {},
 }: PaymentMethodIconProps) {
   const { theme } = useTheme()
@@ -101,8 +101,8 @@ export function PaymentMethodIcon({
       <Image
         src={payToSrc}
         alt="PayTo"
-        width={60}
-        height={60}
+        width={40}
+        height={40}
         className={className}
         style={{ objectFit: "contain", ...style }}
       />
@@ -143,6 +143,10 @@ export function PaymentMethodIcon({
     normalizedType.includes("bpay")
   ) {
     return <Building2 className={className} />
+  }
+
+  if (normalizedType.includes("tap")) {
+    return <Smartphone className={className} />
   }
 
   // Default credit card icon

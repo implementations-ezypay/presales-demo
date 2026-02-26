@@ -1,5 +1,13 @@
 "use client"
 
+import { AddPaymentMethodDialog } from "@/components/members/[id]/add-payment-method-dialog"
+import { AttendanceLog } from "@/components/members/[id]/attendance-log"
+import MembershipStatus from "@/components/members/[id]/membership-status"
+import PersonalInformation from "@/components/members/[id]/personal-information"
+import { TransferCustomerDialog } from "@/components/members/[id]/transfer-customer-dialog"
+import { InvoicesTable } from "@/components/shared/invoices-table"
+import { PaymentMethodsList } from "@/components/shared/payment-methods-list"
+import { UpcomingInvoicesTable } from "@/components/shared/upcoming-invoices-table"
 import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,49 +17,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Edit } from "lucide-react"
-import Link from "next/link"
-import { AddPaymentMethodDialog } from "@/components/members/[id]/add-payment-method-dialog"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { PaymentMethodsList } from "@/components/shared/payment-methods-list"
-import { useState, useEffect, MouseEvent } from "react"
-import { Spinner } from "@/components/ui/spinner"
-import { getCustomerIdFromPath } from "@/lib/utils"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useBranch } from "@/components/utils"
 import { getBranchCountry, getBranchName } from "@/lib/branches"
+import { listSingleCustomerOptions } from "@/lib/query-options/customer"
+import {
+  createPromptPayOptions,
+  getCustomerPaymentMethodsOptions,
+} from "@/lib/query-options/payment-method"
+import { Customer } from "@/lib/types/customer"
 import {
   useMutation,
   useQuery,
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query"
-import { listSingleCustomerOptions } from "@/lib/query-options/customer"
-import { Customer } from "@/lib/types/customer"
-import { UpcomingInvoicesTable } from "@/components/shared/upcoming-invoices-table"
-import { AttendanceLog } from "@/components/members/[id]/attendance-log"
-import PersonalInformation from "@/components/members/[id]/personal-information"
-import MembershipStatus from "@/components/members/[id]/membership-status"
-import { InvoicesTable } from "@/components/shared/invoices-table"
-import { TransferCustomerDialog } from "@/components/members/[id]/transfer-customer-dialog"
-import {
-  createPromptPayOptions,
-  getCustomerPaymentMethodsOptions,
-} from "@/lib/query-options/payment-method"
+import { Edit } from "lucide-react"
+import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { MouseEvent, useEffect, useState } from "react"
 
 export default function MemberProfilePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const customerId = getCustomerIdFromPath()
-  const [paymentMethodsRefreshTrigger, setPaymentMethodsRefreshTrigger] =
-    useState(0)
+  const customerId = usePathname().split("/").at(-1) || ""
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false)
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -62,13 +60,19 @@ export default function MemberProfilePage() {
     }
   }, [searchParams, router])
 
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
+  const {
+    data: singleMemberData,
+    isPending,
+    isError,
+    error,
+  }: UseQueryResult<Customer> = useQuery(
+    listSingleCustomerOptions(customerId, branch)
+  )
 
-  const { data: singleMemberData, isPending }: UseQueryResult<Customer> =
-    useQuery(listSingleCustomerOptions(customerId, branch))
+  if (isError) {
+    console.error(error)
+    throw error
+  }
 
   const createPromptPayMutation = useMutation({
     ...createPromptPayOptions(branch),
@@ -84,9 +88,6 @@ export default function MemberProfilePage() {
 
   const handleAddPaymentOpenChange = (open: boolean) => {
     setAddPaymentDialogOpen(open)
-    if (!open) {
-      setPaymentMethodsRefreshTrigger((prev) => prev + 1)
-    }
   }
 
   const addPromptPay = async (e: MouseEvent) => {
@@ -166,13 +167,7 @@ export default function MemberProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {customerId && (
-                  <PaymentMethodsList
-                    customerId={customerId}
-                    variant="display"
-                    refreshTrigger={paymentMethodsRefreshTrigger}
-                  />
-                )}
+                {customerId && <PaymentMethodsList customerId={customerId} />}
 
                 <TooltipProvider>
                   <Tooltip>

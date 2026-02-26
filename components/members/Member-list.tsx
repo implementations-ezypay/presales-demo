@@ -29,6 +29,7 @@ import {
 import { Customer } from "@/lib/types/customer"
 import { useBranch } from "../utils"
 import { useMember } from "./utils"
+import { plans } from "@/lib/plan"
 
 export default function MemberList() {
   const router = useRouter()
@@ -121,7 +122,10 @@ export default function MemberList() {
                     {member.metadata?.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{member.metadata?.plan}</TableCell>
+                <TableCell>
+                  {plans.find((plan) => plan.id === member.metadata?.plan)
+                    ?.name || member.metadata?.plan}
+                </TableCell>
                 <TableCell>{member.metadata?.startDate}</TableCell>
                 <TableCell>{member.metadata?.dueDate}</TableCell>
                 <TableCell>
