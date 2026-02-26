@@ -23,7 +23,6 @@ import {
 import { Label } from "@/components/ui/label"
 import { BRANCHES } from "@/lib/branches"
 import Link from "next/link"
-import { getCustomerIdFromPath } from "@/lib/utils"
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
 import {
   createCustomerOptions,
@@ -35,6 +34,7 @@ import {
   getCustomerPaymentMethodsOptions,
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
+import { usePathname } from "next/navigation"
 
 export function TransferCustomerDialog() {
   const [open, setOpen] = useState(false)
@@ -42,7 +42,7 @@ export function TransferCustomerDialog() {
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
   const [branch, setBranch] = useState("")
   const [country, setCountry] = useState("")
-  const customerId = getCustomerIdFromPath()
+  const customerId = usePathname().split("/").at(-1) || ""
 
   const availableBranches = BRANCHES.filter(
     (b) => b.id !== branch && b.country === country

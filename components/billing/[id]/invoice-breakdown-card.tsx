@@ -37,12 +37,18 @@ export default function InvoiceBreakDownCard() {
       ) : (
         <ScrollArea>
           <CardContent className="space-y-3 md:space-y-4 max-h-[300px]">
-            {invoice.items.map((item) => (
+            {invoice.items.toReversed().map((item) => (
               <div className="flex items-center gap-3" key={item.id}>
                 <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className=" font-medium">{item.description}</p>
-                  <p className=" text-muted-foreground truncate">
+                  <p
+                    className={`${item.type?.match(/fee/i) ? "font-medium" : "font-bold"}`}
+                  >
+                    {item.description}
+                  </p>
+                  <p
+                    className={`${item.type?.match(/fee/i) ? "text-muted-foreground" : "text-foreground font-bold"}`}
+                  >
                     {parseCurrency(item.amount.value)}
                   </p>
                 </div>

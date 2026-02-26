@@ -1,7 +1,6 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -36,22 +35,20 @@ import { Customer } from "@/lib/types/customer"
 import { Invoice } from "@/lib/types/invoice"
 import {
   formatPaymentMethodDisplay,
-  getCustomerIdFromPath,
   getPaymentMethodType,
   getStatusBadgeVariant,
 } from "@/lib/utils"
 import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query"
-import { Plus, Search } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Search } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
 import { MouseEvent, useEffect, useState } from "react"
 import { Spinner } from "../ui/spinner"
 import { CreateInvoiceDialog } from "./create-invoice-dialog"
 
 export function InvoicesTable({ variant = "billing" }) {
-  const customerId = getCustomerIdFromPath()
+  const customerId = usePathname().split("/").at(-1) || ""
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [branch, setBranch] = useState("")
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -137,13 +134,7 @@ export function InvoicesTable({ variant = "billing" }) {
                 Generate, send, and manage member invoices
               </CardDescription>
             </div>
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Invoice
-            </Button>
+            <CreateInvoiceDialog customerId={customerData?.id || null} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -265,12 +256,6 @@ export function InvoicesTable({ variant = "billing" }) {
           </div>
         </CardContent>
       </Card>
-
-      <CreateInvoiceDialog
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
-        customerId={customerData?.id ? customerData.id : null}
-      />
     </>
   )
 }

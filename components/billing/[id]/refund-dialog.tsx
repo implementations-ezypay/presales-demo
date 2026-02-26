@@ -124,12 +124,12 @@ export function RefundDialog() {
                 : "Partial Refund"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Amount to refund:
+              Amount to refund:&nbsp;
               {refundAmount.trim() === ""
                 ? parseCurrency(
                     invoice?.amount.value - invoice?.totalRefunded.value
                   )
-                : (Number.parseFloat(refundAmount) || 0).toFixed(2)}
+                : parseCurrency(refundAmount)}
             </p>
           </div>
         </div>

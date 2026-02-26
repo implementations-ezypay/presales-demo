@@ -43,7 +43,7 @@ export const MemberShipDetailsCard = () => {
             </SelectTrigger>
             <SelectContent>
               {plans.map((plan) => (
-                <SelectItem key={plan.id} value={plan.name.toLowerCase()}>
+                <SelectItem key={plan.id} value={plan.id.toLowerCase()}>
                   {plan.name} - ${plan.price}/{plan.duration}
                 </SelectItem>
               ))}

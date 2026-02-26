@@ -10,8 +10,13 @@ import {
   recordExternalInvoice,
   refundInvoice,
   listOneInvocie,
+  createTerminalInvoice,
 } from "../invoice"
-import { CheckoutInvoiceCreation, InvoiceCreation } from "../types/invoice"
+import {
+  CheckoutInvoiceCreation,
+  InvoiceCreation,
+  TerminalInvoiceCreation,
+} from "../types/invoice"
 
 export const listSingleInvoiceOptions = (
   customerId: string | null,
@@ -63,6 +68,15 @@ export const createInvoiceOptions = (branch: string) => {
     mutationKey: ["createInvoice", branch],
     mutationFn: (data: { invoiceData: InvoiceCreation }) => {
       return createInvoice(data.invoiceData, branch!)
+    },
+  })
+}
+
+export const createTerminalInvoiceOptions = (branch: string) => {
+  return mutationOptions({
+    mutationKey: ["createTerminalInvoice", branch],
+    mutationFn: (data: { invoiceData: TerminalInvoiceCreation }) => {
+      return createTerminalInvoice(data.invoiceData, branch)
     },
   })
 }

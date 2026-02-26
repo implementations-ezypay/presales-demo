@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { PaymentMethodSelection } from "@/components/shared/payment-method-selection"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -9,9 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { RefreshCw } from "lucide-react"
 import {
   listInvoiceOptions,
   listOneInvoiceOptions,
@@ -19,11 +18,12 @@ import {
   listTransactionOptions,
   retryInvoiceOptions,
 } from "@/lib/query-options/invoice"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useBranch } from "../../utils"
-import { usePathname } from "next/navigation"
 import { DialogTrigger } from "@radix-ui/react-dialog"
-import { PaymentMethodsList } from "../../shared/payment-methods-list"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { RefreshCw } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useBranch } from "../../utils"
 
 export function RetryDialog() {
   const [selectedMethodId, setSelectedMethodId] = useState("")
@@ -32,12 +32,9 @@ export function RetryDialog() {
   const branch = useBranch()
   const queryClient = useQueryClient()
 
-  const { data: invoice, isSuccess } = useQuery(
-    listOneInvoiceOptions(invoiceId, branch)
-  )
+  const { data: invoice } = useQuery(listOneInvoiceOptions(invoiceId, branch))
 
-  if (isSuccess && !selectedMethodId)
-    setSelectedMethodId(invoice.paymentMethodToken)
+  useEffect(() => setSelectedMethodId(invoice?.paymentMethodToken), [invoice])
 
   const retryInvoiceMutation = useMutation({
     ...retryInvoiceOptions(branch),
@@ -88,9 +85,8 @@ export function RetryDialog() {
             <Label htmlFor="refundAmount">
               Select Payment Method for Retry
             </Label>
-            <PaymentMethodsList
+            <PaymentMethodSelection
               customerId={invoice.customerId}
-              variant="selection"
               selectedMethodId={selectedMethodId}
               onMethodSelect={setSelectedMethodId}
             />

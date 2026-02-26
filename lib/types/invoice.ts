@@ -20,6 +20,8 @@ export type Invoice = {
   failedPaymentReason?: { code: string; description: string }
   paymentProviderResponse?: { code: string; description: string }
   scheduledPaymentDate?: string
+  terminalId?: string
+  createdOn: string
 }
 
 type InvoiceItem = {
@@ -47,11 +49,16 @@ export type Transaction = {
 
 export type InvoiceCreation = {
   customerId: string
-  items: InvoiceItem[]
+  items: Omit<InvoiceItem, "id">[]
   paymentMethodToken: string
   externalInvoiceId?: string
   processingModel?: string
 }
+
+export type TerminalInvoiceCreation = Omit<
+  InvoiceCreation,
+  "paymentMethodToken"
+> & { terminalId: string }
 
 export type CheckoutInvoiceCreation = {
   customerId: string

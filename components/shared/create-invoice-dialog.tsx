@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -9,9 +8,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -19,72 +20,81 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useToast } from "@/hooks/use-toast"
-import { TapToPayAnimation } from "./tap-to-pay-animation"
 import { Spinner } from "@/components/ui/spinner"
-import { PaymentMethodsList } from "./payment-methods-list"
-import Link from "next/link"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { logApiCall } from "@/lib/api-logger"
-import { PromptPayQrCode } from "./promptpay-qrcode"
+import { useToast } from "@/hooks/use-toast"
 import { getBranchCurrency } from "@/lib/branches"
+import { listCustomerOptions } from "@/lib/query-options/customer"
+import {
+  createCheckoutOptions,
+  createInvoiceOptions,
+  createTerminalInvoiceOptions,
+  listInvoiceOptions,
+  listSingleInvoiceOptions,
+} from "@/lib/query-options/invoice"
+import { terminalDevices } from "@/lib/terminal-devices"
+import { Customer } from "@/lib/types/customer"
+import {
+  CheckoutInvoiceCreation,
+  InvoiceCreation,
+  TerminalInvoiceCreation,
+} from "@/lib/types/invoice"
 import {
   useMutation,
   useQuery,
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query"
-import { listCustomerOptions } from "@/lib/query-options/customer"
-import { Customer } from "@/lib/types/customer"
-import {
-  createCheckoutOptions,
-  createInvoiceOptions,
-  listInvoiceOptions,
-  listSingleInvoiceOptions,
-} from "@/lib/query-options/invoice"
-import { CheckoutInvoiceCreation, InvoiceCreation } from "@/lib/types/invoice"
-import { v4 } from "uuid"
+import { Plus } from "lucide-react"
+import Link from "next/link"
+import { useState } from "react"
+import { Badge } from "../ui/badge"
+import { useBranch } from "../utils"
+import { PaymentMethodSelection } from "./payment-method-selection"
+import { PromptPayQrCode } from "./promptpay-qrcode"
+import { TapToPayAnimation } from "./tap-to-pay-animation"
 
 interface CreateInvoiceDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
   customerId?: string | null
 }
 
+type InvoiceCreateFormType = {
+  memberId: string
+  amount: string
+  description: string
+  paymentMethod: CreateInvoicePaymentType
+  terminalId?: string
+  paymentMethodId?: string
+  accountingCode?: string
+}
+
+const defaultFormData: InvoiceCreateFormType = {
+  memberId: "",
+  amount: "",
+  description: "",
+  paymentMethod: "ondemand" as CreateInvoicePaymentType,
+  paymentMethodId: "",
+}
+
+const defaultInvoiceDescription: string = "Monthly Membership Fee"
+
 type CreateInvoicePaymentType = "ondemand" | "tap-to-pay" | "checkout"
 
-export function CreateInvoiceDialog({
-  open,
-  onOpenChange,
-  customerId,
-}: CreateInvoiceDialogProps) {
+export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
   const [showTapAnimation, setShowTapAnimation] = useState(false)
   const [qrString, setQrString] = useState("")
+  const [open, setOpen] = useState(false)
   const { toast } = useToast()
-  const [formData, setFormData] = useState({
-    memberId: "",
-    amount: "",
-    description: "",
-    paymentMethod: "ondemand" as CreateInvoicePaymentType,
-    terminalId: "",
-    paymentMethodId: "",
-    accountingCode: "",
-  })
-  const [branch, setBranch] = useState("")
+  const [formData, setFormData] =
+    useState<InvoiceCreateFormType>(defaultFormData)
   const queryClient = useQueryClient()
-  let customerName: string = ""
-
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
+  const branch = useBranch()
 
   const {
     data: fullCustomerData,
@@ -96,7 +106,6 @@ export function CreateInvoiceDialog({
 
   if (isSuccess && customerId) {
     const customer = fullCustomerData.data.find((c) => c.id === customerId)
-    customerName = `${customer?.firstName} ${customer?.lastName}`
     if (customerId !== formData.memberId && customer) {
       setFormData((prev) => ({ ...prev, memberId: customer.id }))
     }
@@ -120,7 +129,28 @@ export function CreateInvoiceDialog({
         await new Promise((resolve) => setTimeout(resolve, 5000))
         setQrString("")
       }
-      onOpenChange(false)
+      setOpen(false)
+
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      queryClient.invalidateQueries(
+        listSingleInvoiceOptions(data.customerId, branch)
+      )
+      queryClient.invalidateQueries(listInvoiceOptions(branch))
+    },
+  })
+
+  const createTerminalInvoiceMutation = useMutation({
+    ...createTerminalInvoiceOptions(branch),
+    onSuccess: async (data) => {
+      setFormData({
+        memberId: customerId || "",
+        amount: "",
+        description: "",
+        paymentMethod: "ondemand",
+        terminalId: "",
+        paymentMethodId: "",
+        accountingCode: "",
+      })
 
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(
@@ -151,7 +181,7 @@ export function CreateInvoiceDialog({
           window.open(checkoutUrl, "_blank", "noopener,noreferrer")
         }
 
-        onOpenChange(false)
+        setOpen(false)
       } catch (err) {
         console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
         toast({
@@ -163,248 +193,99 @@ export function CreateInvoiceDialog({
     },
   })
 
-  const terminalDevices = [
-    {
-      id: "1",
-      name: "Front Desk Terminal",
-      deviceId: "TERM-001",
-      status: "active",
-    },
-    {
-      id: "2",
-      name: "Reception Terminal",
-      deviceId: "TERM-002",
-      status: "active",
-    },
-  ]
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (formData.paymentMethod === "tap-to-pay" && !formData.terminalId) {
-      toast({
-        title: "Terminal Required",
-        description: "Please select a terminal device for tap-to-pay.",
-        variant: "destructive",
-      })
-      return
-    }
+    const selectedTerminal = terminalDevices.find(
+      (t) => t.id === formData.terminalId
+    )
 
-    if (formData.paymentMethod === "ondemand" && !formData.paymentMethodId) {
-      toast({
-        title: "Payment Method Required",
-        description: "Please select a payment method for on-demand payment.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      const selectedTerminal = terminalDevices.find(
-        (t) => t.id === formData.terminalId
-      )
-
-      if (formData.paymentMethod === "tap-to-pay") {
-        console.log(
-          "[v0] Initiating tap-to-pay with terminal:",
-          selectedTerminal?.name
-        )
-
-        // Show tap-to-pay animation
-        setShowTapAnimation(true)
-
-        // Wait 5 seconds
-        await new Promise((resolve) => setTimeout(resolve, 5000))
-
-        // Hide animation
-        setShowTapAnimation(false)
-
-        console.log("[v0] Tap-to-pay completed successfully")
-        const url =
-          "https://api-sandbox.ezypay.com/v2/billing/terminal/invoices"
-        const requestBody = {
-          items: [
-            {
-              amount: {
-                currency: getBranchCurrency(branch),
-                value: formData.amount,
-              },
-              description: formData.description,
-            },
-          ],
-          customerId: formData.memberId,
-        }
-        const todayDate = new Date(Date.now()).toISOString().split("T")[0]
-        const responseBody = {
-          id: v4(),
-          creditNoteId: null,
-          documentNumber: "IN0000000000000998",
-          date: todayDate,
-          dueDate: todayDate,
-          scheduledPaymentDate: null,
-          status: "PAID",
-          memo: null,
-          items: [
-            {
-              description: formData.description,
-              amount: {
-                currency: "AUD",
-                value: formData.amount,
-                type: null,
-              },
-              tax: {
-                rate: 0,
-              },
-              id: "d71a77a1-bdda-488a-90b6-b1d9e3670b3f",
-              type: "on_demand_payment",
-              discounted: {
-                currency: "AUD",
-                value: 0,
-                type: null,
-              },
-              accountingCode: null,
-              reference: null,
-            },
-            {
-              description: "Transaction fee Terminal",
-              amount: {
-                currency: "AUD",
-                value: 2,
-                type: null,
-              },
-              tax: {
-                rate: 10,
-              },
-              id: "38946064-cc28-46b3-93f0-3f77b81ae1b1",
-              type: "transaction_fee",
-              discounted: {
-                currency: "AUD",
-                value: 0,
-                type: null,
-              },
-              accountingCode: null,
-              reference: null,
-            },
-          ],
-          amount: {
-            currency: "AUD",
-            value: formData.amount + 2,
-            type: null,
-          },
-          amountWithoutDiscount: {
-            currency: "AUD",
-            value: formData.amount + 2,
-            type: null,
-          },
-          totalDiscounted: {
-            currency: "AUD",
-            value: 0,
-            type: null,
-          },
-          totalRefunded: {
-            currency: "AUD",
-            value: 0,
-            type: null,
-          },
-          totalTax: {
-            currency: "AUD",
-            value: 0.45,
-            type: null,
-          },
-          customerId: formData.memberId,
-          subscriptionId: null,
-          checkoutId: null,
-          subscriptionName: null,
-          paymentMethodToken: null,
-          paymentMethodData: null,
-          autoPayment: false,
-          processingModel: "IN_PERSON_PAYMENT",
-          transactionSource: null,
-          createdOn: "2025-10-07T06:38:39.674",
-          payNowUrl: null,
-          channel: "MOBILE_POINT_OF_SALE",
-          checkoutResult: null,
-          customerFirstName: null,
-          customerLastName: null,
-          terminalId: "0dea8104-02cd-4931-bca0-ea34bb7eac8b",
-          invoiceCategory: "ONE_OFF",
-          invoiceSubCategory: "TERMINAL",
-        }
-        if (!customerId) {
-          queryClient.setQueryData(
-            listInvoiceOptions(branch).queryKey,
-            // @ts-expect-error: Invoice type does not fully type for API response
-            (data) => {
-              if (!data) return { data: [responseBody] }
-              const invoices = data.data
-              // @ts-expect-error: Invoice type does not fully type for API response
-              invoices?.unshift(responseBody)
-              return { ...data, data: invoices }
-            }
-          )
-        } else {
-          queryClient.setQueryData(
-            listSingleInvoiceOptions(customerId, branch).queryKey,
-            // @ts-expect-error: Invoice type does not fully type for API response
-            (data) => {
-              if (!data) return { data: [responseBody] }
-              const invoices = data.data
-              // @ts-expect-error: Invoice type does not fully type for API response
-              invoices?.unshift(responseBody)
-              return { ...data, data: invoices }
-            }
-          )
-        }
-        onOpenChange(false)
-        logApiCall("POST", url, responseBody, 200, requestBody)
-      }
-
-      if (formData.paymentMethod === "ondemand") {
-        const invoiceData: InvoiceCreation = {
-          customerId: formData.memberId,
-          items: [
-            {
-              description: formData.description || "Monthly Membership fee",
-              amount: {
-                currency: getBranchCurrency(branch),
-                value: parseFloat(formData.amount),
-              },
-              ...(formData.accountingCode && {
-                accountingCode: formData.accountingCode,
-              }),
-            },
-          ],
-          paymentMethodToken: formData.paymentMethodId,
-        }
-
-        createInvoiceMutation.mutate({ invoiceData })
-
+    if (formData.paymentMethod === "tap-to-pay") {
+      if (!formData.terminalId) {
         toast({
-          title: "Invoice Created",
-          description: "Invoice created successfully with on-demand payment.",
+          title: "Terminal Required",
+          description: "Please select a terminal device for tap-to-pay.",
+          variant: "destructive",
         })
+        return
       }
-
-      if (formData.paymentMethod === "checkout") {
-        const invoiceData: CheckoutInvoiceCreation = {
-          customerId: formData.memberId,
-          amount: {
-            currency: getBranchCurrency(branch),
-            value: parseFloat(formData.amount),
+      console.log(
+        "[v0] Initiating tap-to-pay with terminal:",
+        selectedTerminal?.name
+      )
+      const invoiceData: TerminalInvoiceCreation = {
+        items: [
+          {
+            amount: {
+              currency: getBranchCurrency(branch),
+              value: parseFloat(formData.amount),
+            },
+            description: formData.description || "In-person Payment",
           },
-          description: formData.description || "Monthly Memberhsip Fee",
-        }
-
-        createCheckoutMutation.mutate({ invoiceData })
+        ],
+        customerId: formData.memberId,
+        terminalId: formData.terminalId,
       }
-    } catch (error) {
-      console.error("[v0] Error creating invoice:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create invoice. Please try again.",
-        variant: "destructive",
-      })
+
+      createTerminalInvoiceMutation.mutate({ invoiceData })
+
+      // Show tap-to-pay animation
+      setShowTapAnimation(true)
+
+      // Wait 5 seconds
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+
+      // Hide animation
       setShowTapAnimation(false)
+
+      setOpen(false)
+    }
+
+    if (formData.paymentMethod === "ondemand") {
+      if (!formData.paymentMethodId) {
+        toast({
+          title: "Payment Method Required",
+          description: "Please select a payment method for on-demand payment.",
+          variant: "destructive",
+        })
+        return
+      }
+      const invoiceData: InvoiceCreation = {
+        customerId: formData.memberId,
+        items: [
+          {
+            description: formData.description || defaultInvoiceDescription,
+            amount: {
+              currency: getBranchCurrency(branch),
+              value: parseFloat(formData.amount),
+            },
+            ...(formData.accountingCode && {
+              accountingCode: formData.accountingCode,
+            }),
+          },
+        ],
+        paymentMethodToken: formData.paymentMethodId,
+      }
+
+      createInvoiceMutation.mutate({ invoiceData })
+
+      toast({
+        title: "Invoice Created",
+        description: "Invoice created successfully with on-demand payment.",
+      })
+    }
+
+    if (formData.paymentMethod === "checkout") {
+      const invoiceData: CheckoutInvoiceCreation = {
+        customerId: formData.memberId,
+        amount: {
+          currency: getBranchCurrency(branch),
+          value: parseFloat(formData.amount),
+        },
+        description: formData.description || defaultInvoiceDescription,
+      }
+
+      createCheckoutMutation.mutate({ invoiceData })
     }
   }
 
@@ -413,9 +294,15 @@ export function CreateInvoiceDialog({
       <TapToPayAnimation open={showTapAnimation} />
       <PromptPayQrCode qrString={qrString} />
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Invoice
+          </Button>
+        </DialogTrigger>
         <DialogContent className="w-[95vw] max-w-[1000px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="mb-4">
             <DialogTitle className="text-lg md:text-xl">
               Create New Invoice
             </DialogTitle>
@@ -456,54 +343,48 @@ export function CreateInvoiceDialog({
           </DialogHeader>
           <form className="mt-4 md:mt-9" onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
+              {/* Member selection */}
               <div className="space-y-2">
                 <Label htmlFor="member" className="text-sm">
                   Member
                 </Label>
-                {customerId ? (
-                  <Input
-                    id="member"
-                    value={customerName || ""}
-                    disabled
-                    className="bg-muted"
-                  />
-                ) : (
-                  <Select
-                    value={formData.memberId}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, memberId: value }))
-                    }
-                    required
-                    disabled={isPending}
-                  >
-                    <SelectTrigger id="member">
-                      <SelectValue
-                        placeholder={
-                          isPending ? "Loading customers..." : "Select a member"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {isPending ? (
-                        <div className="flex justify-center py-4">
-                          <Spinner className="h-6 w-6" />
-                        </div>
-                      ) : fullCustomerData?.data?.length === 0 ? (
-                        <div className="py-4 text-center text-sm text-muted-foreground">
-                          No customers found
-                        </div>
-                      ) : (
-                        fullCustomerData?.data.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.firstName} {customer.lastName}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
+
+                <Select
+                  value={formData.memberId}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, memberId: value }))
+                  }
+                  required
+                  disabled={isPending || Boolean(customerId)}
+                >
+                  <SelectTrigger id="member">
+                    <SelectValue
+                      placeholder={
+                        isPending ? "Loading members..." : "Select a member"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {isPending ? (
+                      <div className="flex justify-center py-4">
+                        <Spinner className="h-6 w-6" />
+                      </div>
+                    ) : fullCustomerData?.data?.length === 0 ? (
+                      <div className="py-4 text-center text-sm text-muted-foreground">
+                        No customers found
+                      </div>
+                    ) : (
+                      fullCustomerData?.data.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.firstName} {customer.lastName}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* Amount Label */}
               <div className="space-y-2">
                 <Label htmlFor="amount" className="text-sm">
                   Amount
@@ -521,13 +402,14 @@ export function CreateInvoiceDialog({
                 />
               </div>
 
+              {/* Description Label */}
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm">
                   Description (Optional)
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Monthly membership fee"
+                  placeholder={defaultInvoiceDescription}
                   value={formData.description}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -539,6 +421,7 @@ export function CreateInvoiceDialog({
                 />
               </div>
 
+              {/* Payment Channel Radio Group */}
               <div className="space-y-3">
                 <Label className="text-sm">Payment Channel</Label>
                 <RadioGroup
@@ -582,13 +465,13 @@ export function CreateInvoiceDialog({
                 </RadioGroup>
               </div>
 
+              {/* On Demand payment Method List */}
               {formData.paymentMethod === "ondemand" && formData.memberId && (
                 <>
                   <div className="space-y-2 pt-2 border-t">
                     <Label>Select Payment Method</Label>
-                    <PaymentMethodsList
+                    <PaymentMethodSelection
                       customerId={formData.memberId}
-                      variant="selection"
                       selectedMethodId={formData.paymentMethodId}
                       onMethodSelect={(methodId) =>
                         setFormData((prev) => ({
@@ -622,6 +505,7 @@ export function CreateInvoiceDialog({
                 </>
               )}
 
+              {/* Terminal Devices selection */}
               {formData.paymentMethod === "tap-to-pay" && (
                 <div className="space-y-2 pt-2 border-t">
                   <Label htmlFor="terminal">Select Terminal Device</Label>
@@ -637,8 +521,21 @@ export function CreateInvoiceDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {terminalDevices.map((device) => (
-                        <SelectItem key={device.id} value={device.id}>
-                          {device.name} ({device.deviceId})
+                        <SelectItem
+                          key={device.id}
+                          value={device.id}
+                          disabled={device.status == "inactive"}
+                        >
+                          <p className="w-40">{device.name}</p>
+                          <Badge
+                            variant={
+                              device.status == "inactive"
+                                ? "destructive"
+                                : "default"
+                            }
+                          >
+                            {device.status}
+                          </Badge>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -654,7 +551,7 @@ export function CreateInvoiceDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => setOpen(false)}
                 disabled={createInvoiceMutation.isPending}
                 className="w-full sm:w-auto"
               >

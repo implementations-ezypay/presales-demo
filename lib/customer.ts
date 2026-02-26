@@ -72,7 +72,7 @@ export async function listCustomer(
 
     const url = customerNumber
       ? `${apiEndpoint}?customerNumber=${customerNumber}`
-      : `${apiEndpoint}?limit=30`
+      : `${apiEndpoint}?limit=100`
     const { data }: { data: { data: Customer[] } } = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -126,9 +126,12 @@ export async function getCustomer(
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       console.error("List customer error:", err.response?.data || err.message)
-      throw new Error(`List customer failed: ${err.message}`, {
-        cause: err,
-      })
+      throw new Error(
+        `List customer failed: ${JSON.stringify(err.response?.data) || err.message}`,
+        {
+          cause: err,
+        }
+      )
     }
     if (err instanceof Error) {
       console.error("List customer error:", err)
@@ -175,9 +178,12 @@ export async function getCustomerPaymentMethods(
         "List customer payment method error:",
         err.response?.data || err.message
       )
-      throw new Error(`List customer payment method error: ${err.message}`, {
-        cause: err,
-      })
+      throw new Error(
+        `List customer payment method error: ${JSON.stringify(err.response?.data) || err.message}`,
+        {
+          cause: err,
+        }
+      )
     }
     if (err instanceof Error) {
       console.error("List customer payment method error:", err)

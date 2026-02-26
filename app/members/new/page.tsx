@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query"
 import { createCustomerOptions } from "@/lib/query-options/customer"
 import PersonalInformationCard from "@/components/members/new/personal-information-card"
 import { MemberShipDetailsCard } from "@/components/members/new/membership-details-card"
-import { CreateCustomerForm } from "@/lib/types/customer"
+import { CreateCustomer, CreateCustomerForm } from "@/lib/types/customer"
 import PaymentCapturePage from "@/components/members/new/payment-capture-page"
 import {
   CreateCustomerPageDescription,
@@ -17,12 +17,14 @@ import {
   CancelButton,
   CreateMemberButton,
 } from "@/components/members/new/buttons"
+import { format } from "date-fns"
+import { calculateNewDueDateFromPlan, defaultDateFormat } from "@/lib/utils"
 
 const defaultformData: CreateCustomerForm = {
   firstName: "",
   lastName: "",
   email: "",
-  startDate: "2020-01-01",
+  startDate: format(new Date(), defaultDateFormat),
   plan: "trial",
   status: "trial",
 }
@@ -71,13 +73,27 @@ export default function NewMemberPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    const customerData = {
+    const newStartDate =
+      formData.startDate || format(new Date(), defaultDateFormat)
+    const newDueDate: string = calculateNewDueDateFromPlan(
+      formData.plan,
+      newStartDate
+    )
+
+    const customerData: CreateCustomer = {
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       address: { address1: formData.address },
       mobilePhone: formData.emergencyContact,
       dateOfBirth: formData.dateOfBirth,
+      homePhone: formData.phone,
+      metadata: {
+        plan: formData.plan,
+        status: formData.status || "Trial",
+        startDate: formData.startDate || format(new Date(), defaultDateFormat),
+        dueDate: newDueDate,
+      },
     }
     createCustomerMutation.mutate({ customerData })
   }

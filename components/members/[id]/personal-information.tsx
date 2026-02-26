@@ -1,19 +1,16 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
 import { Mail, Phone, Calendar, PersonStanding } from "lucide-react"
-
 import { useState, useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
-import { getCustomerIdFromPath } from "@/lib/utils"
-
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import { listSingleCustomerOptions } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
+import { usePathname } from "next/navigation"
 
 export default function PersonalInformation() {
-  const customerId = getCustomerIdFromPath()
+  const customerId = usePathname().split("/").at(-1) || ""
   const [branch, setBranch] = useState("")
 
   useEffect(() => {

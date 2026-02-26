@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { PaymentMethod } from "./types/payment-method"
+import { add, format } from "date-fns"
+import { plans } from "./plan"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -115,16 +117,21 @@ export const getStatusBadgeVariant = (status: string | undefined) => {
   return "destructive"
 }
 
-export const parseCurrency = (amount: number) => {
+export const parseCurrency = (amount: number | string) => {
+  if (typeof amount === "string") {
+    if (isNaN(parseFloat(amount))) return amount
+  }
   return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
 }
 
 export const formatPaymentMethodDisplay = (
   paymentMethodData: PaymentMethod | null
 ): string | undefined => {
-  if (!paymentMethodData) return "Tap To Pay"
+  if (!paymentMethodData) return undefined
 
   switch (paymentMethodData.type) {
+    case "TERMINAL":
+      return `Tap to Pay **** ${paymentMethodData.card?.last4}`
     case "CARD":
       return `${paymentMethodData.card?.type} **** ${paymentMethodData.card?.last4}`
     case "BANK":
@@ -138,6 +145,8 @@ export const formatPaymentMethodDisplay = (
         paymentMethodData.payTo?.aliasId ??
         paymentMethodData.payTo?.bBanAccountNo
       )
+    default:
+      return undefined
   }
 }
 
@@ -147,6 +156,8 @@ export const getPaymentMethodType = (
 ) => {
   if (!paymentMethodData) return "taptopay"
   switch (paymentMethodData?.type) {
+    case "TERMINAL":
+      return "tap-to-pay"
     case "CARD":
       if (!variant)
         return paymentMethodData?.card?.origin ?? paymentMethodData?.card?.type
@@ -159,5 +170,32 @@ export const getPaymentMethodType = (
       return paymentMethodData?.wallet?.walletType
     case "PAYTO":
       return "PayTo"
+    default:
+      return undefined
+  }
+}
+
+export const defaultDateFormat = "yyyy-MM-dd"
+
+export const calculateNewDueDateFromPlan = (planId?: string, date?: string) => {
+  const found = plans.find((plan) => plan.id === planId)
+  const startDate = date || format(new Date(), defaultDateFormat)
+
+  if (!found)
+    return format(add(new Date(startDate), { days: 7 }), defaultDateFormat)
+  const { duration } = found
+
+  const d = duration?.toLowerCase()
+  switch (d) {
+    case "weekly":
+      return format(add(new Date(startDate), { days: 7 }), defaultDateFormat)
+    case "fortnightly":
+      return format(add(new Date(startDate), { weeks: 2 }), defaultDateFormat)
+    case "monthly":
+      return format(add(new Date(startDate), { months: 1 }), defaultDateFormat)
+    case "yearly":
+      return format(add(new Date(startDate), { years: 1 }), defaultDateFormat)
+    default:
+      return format(add(new Date(startDate), { days: 7 }), defaultDateFormat)
   }
 }

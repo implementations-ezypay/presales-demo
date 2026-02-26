@@ -66,7 +66,7 @@ export default function PlansPage() {
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold">${plan.price}</span>
                       <span className="text-muted-foreground">
-                        /{plan.duration.toLowerCase()}
+                        /{plan.duration?.toLowerCase()}
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">
@@ -74,7 +74,7 @@ export default function PlansPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    {plan.features.map((feature, index) => (
+                    {plan.features?.map((feature, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                         <span className="text-sm">{feature}</span>
