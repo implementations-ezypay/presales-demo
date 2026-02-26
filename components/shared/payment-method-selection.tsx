@@ -15,11 +15,12 @@ import {
 } from "@/lib/utils"
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import { useBranch } from "../utils"
+import { useEffect } from "react"
 
 interface PaymentMethodsSelectionProps {
   customerId: string
   selectedMethodId?: string | null
-  onMethodSelect?: (methodId: string) => void
+  onMethodSelect: (methodId: string) => void
 }
 
 export function PaymentMethodSelection({
@@ -57,6 +58,16 @@ export function PaymentMethodSelection({
     if (!a.valid && b.valid) return 1
     return 0
   })
+
+  useEffect(
+    () =>
+      onMethodSelect(
+        selectedMethodId ||
+          customerPaymentMethods?.at(0)?.paymentMethodToken ||
+          ""
+      ),
+    [customerPaymentMethods]
+  )
 
   return (
     <RadioGroup
