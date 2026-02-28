@@ -28,7 +28,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useToast } from "@/hooks/use-toast"
 import { getBranchCurrency } from "@/lib/branches"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 import {
@@ -54,6 +53,7 @@ import {
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { toast } from "sonner"
 import { Badge } from "../ui/badge"
 import { useBranch } from "../utils"
 import { PaymentMethodSelection } from "./payment-method-selection"
@@ -90,7 +90,6 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
   const [showTapAnimation, setShowTapAnimation] = useState(false)
   const [qrString, setQrString] = useState("")
   const [open, setOpen] = useState(false)
-  const { toast } = useToast()
   const [formData, setFormData] =
     useState<InvoiceCreateFormType>(defaultFormData)
   const queryClient = useQueryClient()
@@ -114,6 +113,7 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
   const createInvoiceMutation = useMutation({
     ...createInvoiceOptions(branch),
     onSuccess: async (data) => {
+      toast.success("Invoice successfully created")
       setFormData({
         memberId: customerId || "",
         amount: "",
@@ -171,10 +171,7 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
         new URL(checkoutUrl)
 
-        toast({
-          title: "Invoice Created",
-          description: "Opening checkout page...",
-        })
+        toast.success("Invoice created: Opening Checkout page...")
 
         // Open in a new tab/window; use noopener and noreferrer for security
         if (typeof window !== "undefined") {
@@ -184,11 +181,7 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
         setOpen(false)
       } catch (err) {
         console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
-        toast({
-          title: "Checkout Error",
-          description: "Failed to open checkout URL.",
-          variant: "destructive",
-        })
+        toast.error("Checkout error: Failed to oepn checkout Page.")
       }
     },
   })
@@ -202,11 +195,7 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
     if (formData.paymentMethod === "tap-to-pay") {
       if (!formData.terminalId) {
-        toast({
-          title: "Terminal Required",
-          description: "Please select a terminal device for tap-to-pay.",
-          variant: "destructive",
-        })
+        toast.error("Terminal devices required")
         return
       }
       console.log(
@@ -243,11 +232,9 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
     if (formData.paymentMethod === "ondemand") {
       if (!formData.paymentMethodId) {
-        toast({
-          title: "Payment Method Required",
-          description: "Please select a payment method for on-demand payment.",
-          variant: "destructive",
-        })
+        toast.error(
+          "Payment method required, please select a payment method before proceeding"
+        )
         return
       }
       const invoiceData: InvoiceCreation = {
@@ -268,11 +255,6 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
       }
 
       createInvoiceMutation.mutate({ invoiceData })
-
-      toast({
-        title: "Invoice Created",
-        description: "Invoice created successfully with on-demand payment.",
-      })
     }
 
     if (formData.paymentMethod === "checkout") {

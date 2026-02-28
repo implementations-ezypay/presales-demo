@@ -1,20 +1,7 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
-import {
-  listOneInvoiceOptions,
-  listTransactionOptions,
-} from "@/lib/query-options/invoice"
-import { useBranch } from "@/components/utils"
-import { CheckCircle, XCircle } from "lucide-react"
-import {
-  formatPaymentMethodDisplay,
-  getPaymentMethodType,
-  parseCurrency,
-} from "@/lib/utils"
-import { Spinner } from "@/components/ui/spinner"
 import { PaymentMethodIcon } from "@/components/ui/payment-method-icon"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -23,14 +10,49 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useBranch } from "@/components/utils"
+import {
+  listOneInvoiceOptions,
+  listTransactionOptions,
+} from "@/lib/query-options/invoice"
+import {
+  formatPaymentMethodDisplay,
+  getPaymentMethodType,
+  parseCurrency,
+} from "@/lib/utils"
+import { useQuery } from "@tanstack/react-query"
+import { CheckCircle, XCircle } from "lucide-react"
+import { usePathname } from "next/navigation"
+
+const TableRowSkeleton = () => (
+  <TableRow>
+    <TableCell>
+      <Skeleton className="w-25 h-2" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="w-15 h-2" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="w-45 h-2" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="w-15 h-2" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="w-15 h-2" />
+    </TableCell>
+  </TableRow>
+)
 
 export default function TransactionTable() {
   const invoiceId = usePathname().split("/")[2]
   const branch = useBranch()
 
-  const { data: invoice } = useQuery(listOneInvoiceOptions(invoiceId, branch))
+  const { data: invoice, isSuccess: isInvoiceSuccess } = useQuery(
+    listOneInvoiceOptions(invoiceId, branch)
+  )
 
-  const { data: transactionData, isPending: isTransactionPending } = useQuery(
+  const { data: transactionData, isSuccess: isTransactionSuccess } = useQuery(
     listTransactionOptions(invoice?.id, branch)
   )
 
@@ -46,16 +68,7 @@ export default function TransactionTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {isTransactionPending ? (
-          <TableRow>
-            <TableCell colSpan={7} className="pt-2 text-center">
-              <div className="flex items-center justify-center">
-                <Spinner className="h-6 w-6 mr-2" />
-                <span>Loading History...</span>
-              </div>
-            </TableCell>
-          </TableRow>
-        ) : (
+        {isTransactionSuccess && isInvoiceSuccess ? (
           transactionData?.data.map((transaction) => (
             <TableRow key={transaction.id}>
               <TableCell>{transaction.createdOn.split("T")[0]}</TableCell>
@@ -99,6 +112,8 @@ export default function TransactionTable() {
               </TableCell>
             </TableRow>
           ))
+        ) : (
+          <TableRowSkeleton />
         )}
       </TableBody>
     </Table>
