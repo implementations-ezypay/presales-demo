@@ -1,7 +1,7 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Spinner } from "@/components/ui/spinner"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Star, Trash2 } from "lucide-react"
 import { MouseEvent, useEffect, useState } from "react"
 
@@ -59,7 +59,7 @@ export function PaymentMethodsList({ customerId }: { customerId: string }) {
     setBranch(selectedBranch)
   }, [])
 
-  const { data, isPending }: UseQueryResult<{ data: PaymentMethod[] }> =
+  const { data, isSuccess }: UseQueryResult<{ data: PaymentMethod[] }> =
     useQuery({
       ...getCustomerPaymentMethodsOptions(customerId, branch),
     })
@@ -94,10 +94,24 @@ export function PaymentMethodsList({ customerId }: { customerId: string }) {
     },
   })
 
-  if (isPending) {
+  const PaymentMethodItemSkeleton = () => (
+    <div className="flex items-center justify-between rounded-lg border border-border p-2">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-4 w-4 rounded" />
+        <div className="space-y-1">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-2 w-40" />
+        </div>
+      </div>
+      <Skeleton className="h-8 w-16" />
+    </div>
+  )
+
+  if (!isSuccess) {
     return (
-      <div className="flex items-center justify-center py-6">
-        <Spinner className="h-6 w-6" />
+      <div className="min-h-9 overflow-auto space-y-2">
+        <PaymentMethodItemSkeleton />
+        <PaymentMethodItemSkeleton />
       </div>
     )
   }

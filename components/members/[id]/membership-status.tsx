@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useBranch } from "@/components/utils"
 import { plans } from "@/lib/plan"
 import { listSingleCustomerOptions } from "@/lib/query-options/customer"
@@ -11,11 +11,18 @@ import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import RenewMembershipDialog from "./renew-membership-dialog"
 import { usePathname } from "next/navigation"
 
+const MembershipFieldSkeleton = () => (
+  <div>
+    <Skeleton className="h-3 w-16 mb-2" />
+    <Skeleton className="h-6 w-24" />
+  </div>
+)
+
 export default function MembershipStatus() {
   const customerId = usePathname().split("/").at(-1) || ""
   const branch = useBranch()
 
-  const { data: singleMemberData, isPending }: UseQueryResult<Customer> =
+  const { data: singleMemberData, isSuccess }: UseQueryResult<Customer> =
     useQuery(listSingleCustomerOptions(customerId, branch))
 
   return (
@@ -26,11 +33,7 @@ export default function MembershipStatus() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2">
-        {isPending ? (
-          <div className="flex items-center justify-center py-6">
-            <Spinner className="h-6 w-6" />
-          </div>
-        ) : (
+        {isSuccess && singleMemberData ? (
           <>
             <div>
               <p className="text-sm font-medium">Status</p>
@@ -67,6 +70,13 @@ export default function MembershipStatus() {
                 {singleMemberData?.metadata?.dueDate}
               </p>
             </div>
+          </>
+        ) : (
+          <>
+            <MembershipFieldSkeleton />
+            <MembershipFieldSkeleton />
+            <MembershipFieldSkeleton />
+            <MembershipFieldSkeleton />
           </>
         )}
       </CardContent>
