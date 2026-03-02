@@ -33,7 +33,7 @@ export default function PersonalInformation() {
           <Spinner className="h-6 w-6" />
         </div>
       ) : (
-        <CardContent className="space-y-3 md:space-y-4">
+        <CardContent className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2">
           <div className="flex items-center gap-3 ">
             <PersonStanding className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
@@ -56,8 +56,8 @@ export default function PersonalInformation() {
             <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium">Phone</p>
-              <p className="text-sm text-muted-foreground">
-                {singleMemberData?.mobilePhone}
+              <p className="text-sm text-muted-foreground min-h-5">
+                {singleMemberData?.mobilePhone || ""}
               </p>
             </div>
           </div>
@@ -65,22 +65,28 @@ export default function PersonalInformation() {
             <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium">Date of Birth</p>
-              <p className="text-sm text-muted-foreground">
-                {singleMemberData?.dateOfBirth}
+              <p className="text-sm text-muted-foreground min-h-5">
+                {singleMemberData?.dateOfBirth || ""}
               </p>
             </div>
           </div>
-          <div>
-            <p className="text-sm font-medium">Address</p>
-            <p className="text-sm text-muted-foreground break-words">
-              {Object.values(singleMemberData?.address || {}).join(" \n")}
-            </p>
+          <div className="flex items-center gap-3">
+            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Address</p>
+              <p className="text-sm text-muted-foreground break-words min-h-5">
+                {Object.values(singleMemberData?.address || {}).join(" \n")}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium">Emergency Contact</p>
-            <p className="text-sm text-muted-foreground break-words">
-              {singleMemberData?.homePhone}
-            </p>
+          <div className="flex items-center gap-3">
+            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Emergency Contact</p>
+              <p className="text-sm text-muted-foreground break-words min-h-5">
+                {singleMemberData?.homePhone}
+              </p>
+            </div>
           </div>
         </CardContent>
       )}

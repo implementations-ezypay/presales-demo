@@ -25,7 +25,7 @@ export default function MembershipStatus() {
           Membership Status
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2">
         {isPending ? (
           <div className="flex items-center justify-center py-6">
             <Spinner className="h-6 w-6" />
@@ -69,6 +69,8 @@ export default function MembershipStatus() {
             </div>
           </>
         )}
+      </CardContent>
+      <CardContent>
         <RenewMembershipDialog></RenewMembershipDialog>
       </CardContent>
     </Card>

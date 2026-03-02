@@ -62,6 +62,7 @@ import { TapToPayAnimation } from "./tap-to-pay-animation"
 
 interface CreateInvoiceDialogProps {
   customerId?: string | null
+  isInvoiceLoadingSuccess?: boolean
 }
 
 type InvoiceCreateFormType = {
@@ -86,7 +87,10 @@ const defaultInvoiceDescription: string = "Monthly Membership Fee"
 
 type CreateInvoicePaymentType = "ondemand" | "tap-to-pay" | "checkout"
 
-export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
+export function CreateInvoiceDialog({
+  customerId,
+  isInvoiceLoadingSuccess,
+}: CreateInvoiceDialogProps) {
   const [showTapAnimation, setShowTapAnimation] = useState(false)
   const [qrString, setQrString] = useState("")
   const [open, setOpen] = useState(false)
@@ -278,7 +282,11 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
+          <Button
+            onClick={() => setOpen(true)}
+            className="w-full sm:w-auto"
+            disabled={!isInvoiceLoadingSuccess}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Create Invoice
           </Button>

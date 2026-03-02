@@ -142,7 +142,7 @@ export default function MemberProfilePage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:gap-6 lg:grid-cols-3 min-h-[400px]">
+          <div className="grid gap-4 md:gap-6 lg:grid-cols-3 min-h-[300px]">
             <PersonalInformation />
 
             <MembershipStatus />

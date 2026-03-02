@@ -164,7 +164,10 @@ export function InvoicesTable({ variant = "billing" }) {
                 Generate, send, and manage member invoices
               </CardDescription>
             </div>
-            <CreateInvoiceDialog customerId={customerData?.id || null} />
+            <CreateInvoiceDialog
+              customerId={customerData?.id || null}
+              isInvoiceLoadingSuccess={isSuccess}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -21,7 +21,7 @@ export default function FailedPaymentReasonCard() {
     <Card
       className={
         invoice?.failedPaymentReason
-          ? "border border-orange-500/50 bg-orange-50 dark:bg-orange-950/20 p-4"
+          ? "border border-orange-500/50 bg-orange-50 dark:bg-orange-950/20"
           : ""
       }
     >
@@ -61,11 +61,11 @@ export default function FailedPaymentReasonCard() {
         ))
       ) : (
         <CardContent className="space-y-3 md:space-y-4">
-          <div className="flex items-center gap-6">
-            <CircleX className="h-4 w-4 flex-shrink-0 text-destructive" />
+          <div className="flex items-left gap-6">
+            <Skeleton className="h-4 w-4  rounded-full" />
             <div className="min-w-0 w-full">
-              <Skeleton className="h-4 w-48 mb-2" />
-              <Skeleton className="h-3 w-64" />
+              <Skeleton className="h-4 w-48 my-2" />
+              <Skeleton className="h-2 w-64 my-2" />
             </div>
           </div>
         </CardContent>

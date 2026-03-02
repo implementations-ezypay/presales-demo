@@ -14,8 +14,8 @@ const BreakdownItemSkeleton = () => (
   <div className="flex items-center gap-3">
     <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
     <div className="min-w-0 w-full">
-      <Skeleton className="h-4 w-48 mb-2" />
-      <Skeleton className="h-3 w-32" />
+      <Skeleton className="h-4 w-48 my-2" />
+      <Skeleton className="h-2 w-32 my-2" />
     </div>
   </div>
 )
@@ -37,7 +37,7 @@ export default function InvoiceBreakDownCard() {
             {isSuccess && invoice ? (
               <p className="text-muted-foreground">{`Total Amount: ${parseCurrency(invoice.amount.value - invoice.totalRefunded.value)}`}</p>
             ) : (
-              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-2 w-40" />
             )}
           </div>
         </CardTitle>
@@ -77,7 +77,6 @@ export default function InvoiceBreakDownCard() {
             </>
           ) : (
             <>
-              <BreakdownItemSkeleton />
               <BreakdownItemSkeleton />
               <BreakdownItemSkeleton />
             </>
