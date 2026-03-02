@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
 import { MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Spinner } from "@/components/ui/spinner"
 import { getBranchName } from "@/lib/branches"
 import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query"
 import {
@@ -31,13 +31,48 @@ import { useBranch } from "../utils"
 import { useMember } from "./utils"
 import { plans } from "@/lib/plan"
 
+const MemberRowSkeleton = () => (
+  <TableRow>
+    <TableCell>
+      <Skeleton className="h-4 w-24" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-32" />
+    </TableCell>
+    <TableCell>
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-36" />
+      </div>
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-6 w-20" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-24" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-24" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-24" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-32" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-10 w-10 rounded" />
+    </TableCell>
+  </TableRow>
+)
+
 export default function MemberList() {
   const router = useRouter()
   const branch = useBranch()
   const { filteredMembers } = useMember()
   const queryClient = useQueryClient()
 
-  const { isPending }: UseQueryResult<{ data: Customer[] }> = useQuery(
+  const { isSuccess }: UseQueryResult<{ data: Customer[] }> = useQuery(
     listCustomerOptions(branch)
   )
 
@@ -69,15 +104,12 @@ export default function MemberList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isPending ? (
-            <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
-                <div className="flex items-center justify-center">
-                  <Spinner className="h-6 w-6 mr-2" />
-                  <span>Loading members...</span>
-                </div>
-              </TableCell>
-            </TableRow>
+          {!isSuccess ? (
+            <>
+              <MemberRowSkeleton />
+              <MemberRowSkeleton />
+              <MemberRowSkeleton />
+            </>
           ) : filteredMembers?.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="h-24 text-center">
