@@ -1,14 +1,14 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { usePathname } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
-import { listOneInvoiceOptions } from "@/lib/query-options/invoice"
-import { useBranch } from "@/components/utils"
-import { DollarSign } from "lucide-react"
-import { parseCurrency } from "@/lib/utils"
-import { Spinner } from "@/components/ui/spinner"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Spinner } from "@/components/ui/spinner"
+import { useBranch } from "@/components/utils"
+import { listOneInvoiceOptions } from "@/lib/query-options/invoice"
+import { parseCurrency } from "@/lib/utils"
+import { useQuery } from "@tanstack/react-query"
+import { DollarSign } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 export default function InvoiceBreakDownCard() {
   const invoiceId = usePathname().split("/")[2]

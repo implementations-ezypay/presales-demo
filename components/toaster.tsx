@@ -9,9 +9,10 @@ export function Toaster() {
   return (
     <SonnerToaster
       theme={resolvedTheme as ToasterProps["theme"]}
-      position="top-center"
       richColors={true}
+      position="top-center"
       visibleToasts={5}
+      closeButton={true}
     />
   )
 }
