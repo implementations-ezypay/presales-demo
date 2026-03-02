@@ -25,6 +25,8 @@ import {
   getCustomerPaymentMethodsOptions,
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
+import { useBranch } from "@/components/utils"
+import { useErrorToast } from "@/lib/utils"
 
 interface AddPaymentMethodDialogProps {
   customerId: string
@@ -47,7 +49,7 @@ export function AddPaymentMethodDialog({
   const [isLoading, setIsLoading] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const iframeOriginRef = useRef<string | null>(null)
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
   const [country, setCountry] = useState("")
   const queryClient = useQueryClient()
 
@@ -70,10 +72,8 @@ export function AddPaymentMethodDialog({
   }, [open])
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-    setCountry(getBranchCountry(selectedBranch))
-  }, [])
+    setCountry(getBranchCountry(branch))
+  }, [branch])
 
   const linkPaymentMethodMutation = useMutation({
     ...linkPaymentMethodOptions(branch),
@@ -84,10 +84,7 @@ export function AddPaymentMethodDialog({
       )
     },
     onError: (error) => {
-      toast.error(
-        `Failed to link payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { duration: 30000 }
-      )
+      useErrorToast(`Failed to link payment method.`, error)
       console.error("[v0] Link payment method error:", error)
     },
   })
@@ -119,7 +116,6 @@ export function AddPaymentMethodDialog({
   }, [country, branch, customerId])
 
   const loadIframeUrl = async () => {
-    setIsLoading(true)
     try {
       const tokenRes = await getEzypayToken(branch)
       const token = tokenRes.access_token
@@ -148,10 +144,10 @@ export function AddPaymentMethodDialog({
       }
     } catch (error) {
       console.error("[v0] Error loading iframe URL:", error)
-      toast.error("Failed to load payment form")
+      if (error instanceof Error) {
+        useErrorToast("Failed to load payment form", error)
+      }
       setOpen(false)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -181,7 +177,6 @@ export function AddPaymentMethodDialog({
       if (!iframeWindow) {
         console.error("[postMessage] iframe window not accessible")
         toast.error("Payment form not ready")
-        setIsLoading(false)
         return
       }
 

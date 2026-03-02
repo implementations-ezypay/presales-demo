@@ -1,9 +1,10 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { PaymentMethod } from "./types/payment-method"
-import { add, format } from "date-fns"
-import { plans } from "./plan"
 import axios from "axios"
+import { clsx, type ClassValue } from "clsx"
+import { add, format } from "date-fns"
+import { twMerge } from "tailwind-merge"
+import { plans } from "./plan"
+import { PaymentMethod } from "./types/payment-method"
+import { toast } from "sonner"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -136,9 +137,13 @@ export const processError =
   (err: unknown): never => {
     if (axios.isAxiosError(err)) {
       const errMessage = err.response?.data || err.message
+      const causeStr =
+        typeof errMessage === "string" ? errMessage : JSON.stringify(errMessage)
 
       console.error(`${context} error:`, err.response?.data || err.message)
-      throw new Error(`${context} failed: ${errMessage}`, { cause: err })
+      throw new Error(`${context} failed: API request failed. ${causeStr}`, {
+        cause: errMessage,
+      })
     }
 
     if (err instanceof Error) {
@@ -147,5 +152,16 @@ export const processError =
     }
 
     console.error(`${context} error:`, err)
-    throw new Error(`${context} failed: Unknown error`, { cause: err })
+    const causeStr = typeof err === "string" ? err : JSON.stringify(err)
+    throw new Error(`${context} failed: Unknown error. ${causeStr}`, {
+      cause: err,
+    })
   }
+
+export const useErrorToast = (message: string, error: Error) => {
+  toast.error(message, {
+    description: error.message,
+    duration: 30000,
+  })
+  console.error(message, error)
+}

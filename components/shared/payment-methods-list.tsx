@@ -32,13 +32,19 @@ import {
   updatePayToStatusOptions,
 } from "@/lib/query-options/payment-method"
 import { PaymentMethod } from "@/lib/types/payment-method"
-import { formatPaymentMethodDisplay, getPaymentMethodType } from "@/lib/utils"
+import {
+  formatPaymentMethodDisplay,
+  getPaymentMethodType,
+  useErrorToast,
+} from "@/lib/utils"
 import {
   useMutation,
   useQuery,
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query"
+import { Spinner } from "../ui/spinner"
+import { useBranch } from "../utils"
 
 export function PaymentMethodsList({ customerId }: { customerId: string }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -49,86 +55,78 @@ export function PaymentMethodsList({ customerId }: { customerId: string }) {
   const [methodToReplace, setMethodToReplace] = useState<PaymentMethod | null>(
     null
   )
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
   const [activatePayToDialogOpen, setActivatePayToDialogOpen] = useState(false)
   const [methodToActivate, setMethodToActivate] =
     useState<PaymentMethod | null>(null)
   const queryClient = useQueryClient()
 
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
+  const {
+    data,
+    isSuccess,
+    isError,
+    error,
+  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
+    getCustomerPaymentMethodsOptions(customerId, branch)
+  )
 
-  const { data, isSuccess }: UseQueryResult<{ data: PaymentMethod[] }> =
-    useQuery({
-      ...getCustomerPaymentMethodsOptions(customerId, branch),
-    })
+  if (isError) {
+    useErrorToast("Failed to get customer payment methods", error)
+  }
 
   const replacePaymentMethodMutation = useMutation({
     ...replacePaymentMethodOptions(customerId, branch),
     onSuccess: () => {
-      toast.success("Payment method replaced successfully", { duration: 30000 })
+      toast.success("Payment method replaced successfully")
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
       setReplaceDialogOpen(false)
     },
     onError: (error) => {
-      toast.error(
-        `Failed to replace payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { duration: 30000 }
-      )
-      console.error("[v0] Replace payment method error:", error)
+      useErrorToast("Failed to replace customer payment methods", error)
     },
   })
 
   const deletePaymentMethodMutation = useMutation({
     ...deletePaymentMethodOptions(customerId, branch),
     onSuccess: () => {
-      toast.success("Payment method deleted successfully", { duration: 30000 })
+      toast.success("Payment method deleted successfully")
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
       setDeleteDialogOpen(false)
     },
     onError: (error) => {
-      toast.error(
-        `Failed to delete payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { duration: 30000 }
-      )
-      console.error("[v0] Delete payment method error:", error)
+      useErrorToast("Failed to delete payment method", error)
     },
   })
 
   const updatePayToStatusMutation = useMutation({
     ...updatePayToStatusOptions(branch),
     onSuccess: () => {
-      toast.success("Pay-to status updated successfully", { duration: 30000 })
+      toast.success("Pay-to status updated successfully")
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
       setActivatePayToDialogOpen(false)
     },
     onError: (error) => {
-      toast.error(
-        `Failed to update pay-to status: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { duration: 30000 }
-      )
-      console.error("[v0] Update pay-to status error:", error)
+      useErrorToast(`Failed to update pay-to status`, error)
     },
   })
 
   const PaymentMethodItemSkeleton = () => (
     <div className="flex items-center justify-between rounded-lg border border-border p-2">
       <div className="flex items-center gap-2">
-        <Skeleton className="h-4 w-4 rounded" />
+        <div className="min-w-16 flex items-center justify-center">
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
         <div className="space-y-1">
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-2 w-40" />
+          <Skeleton className="h-3 w-32 mt-1.5" />
+          <Skeleton className="h-2 w-40 mb-1.5" />
         </div>
       </div>
-      <Skeleton className="h-8 w-16" />
     </div>
   )
 

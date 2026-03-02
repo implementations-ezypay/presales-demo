@@ -11,13 +11,6 @@ import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import RenewMembershipDialog from "./renew-membership-dialog"
 import { usePathname } from "next/navigation"
 
-const MembershipFieldSkeleton = () => (
-  <div>
-    <Skeleton className="h-3 w-16 mb-2" />
-    <Skeleton className="h-6 w-24" />
-  </div>
-)
-
 export default function MembershipStatus() {
   const customerId = usePathname().split("/").at(-1) || ""
   const branch = useBranch()
@@ -33,10 +26,10 @@ export default function MembershipStatus() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2">
-        {isSuccess && singleMemberData ? (
-          <>
-            <div>
-              <p className="text-sm font-medium">Status</p>
+        <>
+          <div>
+            <p className="font-medium">Status</p>
+            {isSuccess && singleMemberData ? (
               <Badge
                 className="mt-1"
                 variant={
@@ -49,39 +42,60 @@ export default function MembershipStatus() {
               >
                 {singleMemberData?.metadata?.status}
               </Badge>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Current Plan</p>
-              <p className="text-sm text-muted-foreground">
+            ) : (
+              <>
+                <Skeleton className="h-2 w-10 my-2" />
+              </>
+            )}
+          </div>
+          <div>
+            <p className="font-medium">Current Plan</p>
+            {isSuccess && singleMemberData ? (
+              <p className="text-muted-foreground">
                 {plans?.find(
                   (plan) => plan.id === singleMemberData?.metadata?.plan
                 )?.name || singleMemberData?.metadata?.plan}
               </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Join Date</p>
-              <p className="text-sm text-muted-foreground">
+            ) : (
+              <>
+                <Skeleton className="h-2 w-20 my-2" />
+              </>
+            )}
+          </div>
+          <div>
+            <p className="font-medium">Join Date</p>
+            {isSuccess && singleMemberData ? (
+              <p className="text-muted-foreground">
                 {singleMemberData?.metadata?.startDate}
               </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Expiry Date</p>
-              <p className="text-sm text-muted-foreground">
+            ) : (
+              <>
+                <Skeleton className="h-2 w-20 my-2" />
+              </>
+            )}
+          </div>
+          <div>
+            <p className="font-medium">Expiry Date</p>
+            {isSuccess && singleMemberData ? (
+              <p className="text-muted-foreground">
                 {singleMemberData?.metadata?.dueDate}
               </p>
-            </div>
-          </>
+            ) : (
+              <>
+                <Skeleton className="h-2 w-20 my-2" />
+              </>
+            )}
+          </div>
+        </>
+      </CardContent>
+      <CardContent className="flex items-center justify-center">
+        {isSuccess && singleMemberData ? (
+          <RenewMembershipDialog></RenewMembershipDialog>
         ) : (
           <>
-            <MembershipFieldSkeleton />
-            <MembershipFieldSkeleton />
-            <MembershipFieldSkeleton />
-            <MembershipFieldSkeleton />
+            <Skeleton className="h-2 w-full my-2" />
           </>
         )}
-      </CardContent>
-      <CardContent>
-        <RenewMembershipDialog></RenewMembershipDialog>
       </CardContent>
     </Card>
   )

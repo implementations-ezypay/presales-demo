@@ -33,6 +33,7 @@ import {
   getCustomerPaymentMethodsOptions,
 } from "@/lib/query-options/payment-method"
 import { Customer } from "@/lib/types/customer"
+import { useErrorToast } from "@/lib/utils"
 import {
   useMutation,
   useQuery,
@@ -71,7 +72,7 @@ export default function MemberProfilePage() {
 
   if (isError) {
     console.error(error)
-    throw error
+    useErrorToast(`Failed to load the customer.`, error)
   }
 
   const createPromptPayMutation = useMutation({
@@ -82,7 +83,8 @@ export default function MemberProfilePage() {
       )
     },
     onError: (error) => {
-      console.log(error)
+      console.error(error)
+      useErrorToast(`Failed to create PromptPay token.`, error)
     },
   })
 
@@ -102,21 +104,20 @@ export default function MemberProfilePage() {
         <div className="space-y-4 md:space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-h-15">
             {/* Page Title */}
-            {isSuccess && singleMemberData ? (
-              <div>
+            <div>
+              {isSuccess && singleMemberData ? (
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance min-w-56">
                   {`${singleMemberData?.firstName} ${singleMemberData?.lastName}`}
                 </h1>
-                <p className="text-sm md:text-base text-muted-foreground">
-                  Member profile and activity
-                </p>
-              </div>
-            ) : (
-              <div>
-                <Skeleton className="h-9 w-56 mb-2" />
-                <Skeleton className="h-4 w-48" />
-              </div>
-            )}
+              ) : (
+                <div>
+                  <Skeleton className="h-3 w-56 my-3" />
+                </div>
+              )}
+              <p className="text-sm md:text-base text-muted-foreground">
+                Member profile and activity
+              </p>
+            </div>
             {singleMemberData?.metadata?.originalBranch && (
               <div>
                 <p className="text-sm md:text-base text-muted-foreground min-w-56">

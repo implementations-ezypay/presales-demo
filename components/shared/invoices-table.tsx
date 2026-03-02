@@ -37,6 +37,7 @@ import {
   formatPaymentMethodDisplay,
   getPaymentMethodType,
   getStatusBadgeVariant,
+  useErrorToast,
 } from "@/lib/utils"
 import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query"
 import { Search } from "lucide-react"
@@ -93,13 +94,17 @@ export function InvoicesTable({ variant = "billing" }) {
 
   let customerInvoiceData: { data: Invoice[] } | undefined,
     isPending: boolean,
-    isSuccess: boolean
+    isSuccess: boolean,
+    isError: boolean,
+    error: Error | null
 
   if (variant === "billing") {
     const {
       data,
       isPending: isQueryPending,
       isSuccess: isQuerySuccess,
+      isError: isQueryError,
+      error: queryError,
     }: UseQueryResult<{ data: Invoice[] }> = useQuery(
       listInvoiceOptions(branch)
     )
@@ -107,22 +112,32 @@ export function InvoicesTable({ variant = "billing" }) {
     customerInvoiceData = data
     isPending = isQueryPending
     isSuccess = isQuerySuccess
+    isError = isQueryError
+    error = queryError
   } else {
     const {
       data,
       isPending: isQueryPending,
       isSuccess: isQuerySuccess,
+      isError: isQueryError,
+      error: queryError,
     }: UseQueryResult<{ data: Invoice[] }> = useQuery(
       listSingleInvoiceOptions(customerId, branch)
     )
     customerInvoiceData = data
     isPending = isQueryPending
     isSuccess = isQuerySuccess
+    isError = isQueryError
+    error = queryError
 
     const { data: fullCustomerData }: UseQueryResult<{ data: Customer[] }> =
       useQuery(listCustomerOptions(branch))
 
     customerData = fullCustomerData?.data.find((c) => c.id === customerId)
+  }
+
+  if (isError && error) {
+    useErrorToast("Failed to retrieve the invoices", error)
   }
 
   if (isSuccess) invoices = customerInvoiceData?.data

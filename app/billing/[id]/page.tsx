@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useBranch } from "@/components/utils"
 import { listOneInvoiceOptions } from "@/lib/query-options/invoice"
-import { formatPaymentMethodDisplay } from "@/lib/utils"
+import { formatPaymentMethodDisplay, useErrorToast } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { MailIcon, RefreshCw } from "lucide-react"
 import { usePathname } from "next/navigation"
@@ -33,11 +33,7 @@ export default function BillingDetailsPage() {
   } = useQuery(listOneInvoiceOptions(invoiceId, branch))
 
   if (isError) {
-    console.error(error)
-    toast.error(`Failed to load the invoice. ${error.message}.`, {
-      description: `Cause of error: ${JSON.stringify(error.cause || "Unknown", null, 4)}`,
-      duration: 30000,
-    })
+    useErrorToast("Failed to load the invoice", error)
   }
 
   const handlePayNow = async () => {
