@@ -1,10 +1,11 @@
 "use server"
 
-import axios, { AxiosResponse } from "axios"
-import { getEzypayToken } from "./ezypay-token"
+import axios from "axios"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
+import { getEzypayToken } from "./ezypay-token"
 import { PaymentMethod } from "./types/payment-method"
+import { processError } from "./utils"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`
 const mandateEndpoint = `${process.env.API_ENDPOINT}/v2/npp/mandate/status`
@@ -25,15 +26,9 @@ export async function replacePaymentMethod(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Replace Payment Method failed: No access_token from token utility`
-      )
-    }
 
     const url = `${apiEndpoint}/${customerId}/paymentmethods/${paymentMethodToken}/new`
-    const response: AxiosResponse<PaymentMethod> = await axios.put(
+    const response = await axios.put<PaymentMethod>(
       url,
       { newPaymentMethodToken },
       {
@@ -45,29 +40,13 @@ export async function replacePaymentMethod(
       }
     )
 
-    await logApiCall("PUT", url, response.data, response.status, {
+    logApiCall("PUT", url, response.data, response.status, {
       newPaymentMethodToken,
     })
 
     return response.data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "Replace Payment Method failed:",
-        err.response?.data || err.message
-      )
-      throw new Error(`Replace Payment Method failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Replace Payment Method failed error:", err)
-      throw err
-    }
-    console.error("Replace Payment Method failed error:", err)
-    throw new Error(`Replace Payment Method failed: unknown error`, {
-      cause: err,
-    })
+    return processError("Replace Payment Method")(err)
   }
 }
 
@@ -85,15 +64,9 @@ export async function deletePaymentMethod(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Delete Payment Method failed: No access_token from token utility`
-      )
-    }
 
     const url = `${apiEndpoint}/${customerId}/paymentmethods/${paymentMethod}`
-    const response: AxiosResponse<PaymentMethod> = await axios.delete(url, {
+    const response = await axios.delete<PaymentMethod>(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
@@ -101,27 +74,11 @@ export async function deletePaymentMethod(
     })
 
     const data = response.data
-    await logApiCall("DELETE", url, data, response.status)
+    logApiCall("DELETE", url, data, response.status)
 
     return data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "Delete Payment Method failed:",
-        err.response?.data || err.message
-      )
-      throw new Error(`Delete Payment Method failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Delete Payment Method failed error:", err)
-      throw err
-    }
-    console.error("Delete Payment Method failed error:", err)
-    throw new Error(`Delete Payment Method failed: unknown error`, {
-      cause: err,
-    })
+    return processError("Delete Payment Method")(err)
   }
 }
 
@@ -139,15 +96,9 @@ export async function linkPaymentMethod(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Link Payment Method failed: No access_token from token utility`
-      )
-    }
 
     const url = `${apiEndpoint}/${customerId}/paymentmethods`
-    const response: AxiosResponse<PaymentMethod> = await axios.post(
+    const response = await axios.post<PaymentMethod>(
       url,
       { paymentMethodToken: paymentMethod },
       {
@@ -160,29 +111,13 @@ export async function linkPaymentMethod(
     )
 
     const data = response.data
-    await logApiCall("POST", url, data, response.status, {
+    logApiCall("POST", url, data, response.status, {
       paymentMethodToken: paymentMethod,
     })
 
     return data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "Link Payment Method failed:",
-        err.response?.data || err.message
-      )
-      throw new Error(`Link Payment Method failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Link Payment Method failed error:", err)
-      throw err
-    }
-    console.error("Link Payment Method failed error:", err)
-    throw new Error(`Link Payment Method failed: unknown error`, {
-      cause: err,
-    })
+    return processError("Link Payment Method")(err)
   }
 }
 
@@ -200,12 +135,6 @@ export async function activatePayTo(
     // Get token directly from utility function
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Activate PayTo failed: No access_token from token utility`
-      )
-    }
 
     const body = new URLSearchParams()
 
@@ -224,27 +153,11 @@ export async function activatePayTo(
       },
     })
 
-    await logApiCall("POST", url, "", response.status, Object.fromEntries(body))
+    logApiCall("POST", url, "", response.status, Object.fromEntries(body))
 
     return ""
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "Update PayTo Agreement failed:",
-        err.response?.data || err.message
-      )
-      throw new Error(`Update PayTo Agreement failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Update PayTo Agreement failed error:", err)
-      throw err
-    }
-    console.error("Update PayTo Agreement error:", err)
-    throw new Error(`Update PayTo Agreement: unknown error`, {
-      cause: err,
-    })
+    return processError("Activate PayTo")(err)
   }
 }
 
@@ -261,12 +174,6 @@ export async function createPromptPay(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Create PromptPay Token failed: No access_token from token utility`
-      )
-    }
 
     const body = {
       accountHolderName: "customer",
@@ -277,7 +184,7 @@ export async function createPromptPay(
     }
 
     const url = `${vaultEndpoint}/paymentmethodtokens/qrpayment`
-    const response: AxiosResponse<PaymentMethod> = await axios.post(url, body, {
+    const response = await axios.post<PaymentMethod>(url, body, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
@@ -286,26 +193,10 @@ export async function createPromptPay(
     })
 
     const data = response.data
-    await logApiCall("POST", url, data, response.status, body)
+    logApiCall("POST", url, data, response.status, body)
 
     return data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "Create PromptPay failed:",
-        err.response?.data || err.message
-      )
-      throw new Error(`Create PromptPay failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Create PromptPay failed error:", err)
-      throw err
-    }
-    console.error("Create PromptPay failed error:", err)
-    throw new Error(`Create PromptPay failed: unknown error`, {
-      cause: err,
-    })
+    return processError("Create PromptPay")(err)
   }
 }

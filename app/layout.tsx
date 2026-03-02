@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import "./globals.css"
 import Provider from "./Provider"
+import { Toaster } from "@/components/toaster"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -41,6 +42,7 @@ export default function RootLayout({
               <div className="flex h-screen w-full">
                 <AppSidebar />
                 <main className="flex-1 overflow-auto">{children}</main>
+                <Toaster />
               </div>
             </SidebarProvider>
             <ApiLoggerViewer />

@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge"
 import { PaymentMethod } from "./types/payment-method"
 import { add, format } from "date-fns"
 import { plans } from "./plan"
+import axios from "axios"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -33,76 +34,6 @@ export function getCustomerIdFromPath(path?: string): string | null {
 
   return segments[segments.length - 1] ?? null
 }
-
-// export function normalisedEzypayCustomer(customer) {
-//   let memberDataState = {}
-
-//   try {
-//     if (!customer.id) {
-//       throw new Error("Customer not found during normalising.")
-//     }
-
-//     const customerName = `${customer.firstName} ${customer.lastName}`
-
-//     memberDataState = {
-//       id: customer.id,
-//       name: customerName,
-//       email: customer.email,
-//       phone: customer.mobilePhone,
-//       number: customer.number,
-//       address: Object.values(customer.address).join(" "),
-//       dateOfBirth: customer.dateofBirth,
-//       emergencyContact: customer.homePhone,
-//       status: customer.metadata?.status ?? "trial",
-//       plan: customer.metadata?.plan ?? "Trial",
-//       joinDate:
-//         customer.metadata?.joinDate ?? new Date().toISOString().split("T")[0],
-//       expiryDate:
-//         customer.metadata?.expiryDate ??
-//         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-//           .toISOString()
-//           .split("T")[0],
-//       invoices: [],
-//       attendanceLogs: [
-//         { id: "1", date: "2024-10-14", time: "06:30 AM", class: "Yoga" },
-//         { id: "2", date: "2024-10-13", time: "05:00 PM", class: "CrossFit" },
-//         { id: "3", date: "2024-10-12", time: "07:00 AM", class: "Spinning" },
-//         { id: "4", date: "2024-10-11", time: "06:30 AM", class: "Yoga" },
-//       ],
-//       paymentMethods: [],
-//       originalBranch: customer.metadata?.originalBranch,
-//     }
-//   } catch (error) {
-//     console.error(error)
-//   }
-
-//   return memberDataState
-// }
-
-// export async function normalisedEzypayInvoice(customerId, branch) {
-//   let memberDataState = {}
-
-//   try {
-//     const customer = await getCustomer(customerId, branch)
-
-//     if (!customer.id) {
-//       throw new Error("Customer not found")
-//     }
-
-//     memberDataState = normalisedEzypayCustomer(customer)
-
-//     const invoices = await listInvoiceByCustomer(
-//       memberDataState.id,
-//       memberDataState.name,
-//       branch
-//     )
-//     memberDataState.invoices = invoices
-//   } catch (error) {
-//     console.error(error)
-//   }
-
-//   return memberDataState
-// }
 
 export const getStatusBadgeVariant = (status: string | undefined) => {
   if (!status) return "default"
@@ -199,3 +130,22 @@ export const calculateNewDueDateFromPlan = (planId?: string, date?: string) => {
       return format(add(new Date(startDate), { days: 7 }), defaultDateFormat)
   }
 }
+
+export const processError =
+  (context: string) =>
+  (err: unknown): never => {
+    if (axios.isAxiosError(err)) {
+      const errMessage = err.response?.data || err.message
+
+      console.error(`${context} error:`, err.response?.data || err.message)
+      throw new Error(`${context} failed: ${errMessage}`, { cause: err })
+    }
+
+    if (err instanceof Error) {
+      console.error(`${context} error:`, err)
+      throw err
+    }
+
+    console.error(`${context} error:`, err)
+    throw new Error(`${context} failed: Unknown error`, { cause: err })
+  }
