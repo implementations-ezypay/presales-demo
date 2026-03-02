@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select"
+import { toast } from "sonner"
 
 export function TrackExternalPaymentDialog() {
   const [externalPaymentMethod, setExternalPaymentMethod] = useState<string>("")
@@ -43,6 +44,9 @@ export function TrackExternalPaymentDialog() {
   const recordExternalInvoiceMutation = useMutation({
     ...recordExternalInvoiceOptions(branch),
     onSuccess: (data) => {
+      toast.success("External payment recorded successfully", {
+        duration: 30000,
+      })
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
@@ -50,6 +54,13 @@ export function TrackExternalPaymentDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpenChange(false)
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to record external payment: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] External payment error:", error)
     },
   })
 

@@ -117,7 +117,7 @@ export function CreateInvoiceDialog({
   const createInvoiceMutation = useMutation({
     ...createInvoiceOptions(branch),
     onSuccess: async (data) => {
-      toast.success("Invoice successfully created")
+      toast.success("Invoice successfully created", { duration: 30000 })
       setFormData({
         memberId: customerId || "",
         amount: "",
@@ -141,11 +141,21 @@ export function CreateInvoiceDialog({
       )
       queryClient.invalidateQueries(listInvoiceOptions(branch))
     },
+    onError: (error) => {
+      toast.error(
+        `Failed to create invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Create invoice error:", error)
+    },
   })
 
   const createTerminalInvoiceMutation = useMutation({
     ...createTerminalInvoiceOptions(branch),
     onSuccess: async (data) => {
+      toast.success("Terminal invoice created successfully", {
+        duration: 30000,
+      })
       setFormData({
         memberId: customerId || "",
         amount: "",
@@ -162,6 +172,13 @@ export function CreateInvoiceDialog({
       )
       queryClient.invalidateQueries(listInvoiceOptions(branch))
     },
+    onError: (error) => {
+      toast.error(
+        `Failed to create terminal invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Terminal invoice error:", error)
+    },
   })
 
   const createCheckoutMutation = useMutation({
@@ -175,7 +192,9 @@ export function CreateInvoiceDialog({
 
         new URL(checkoutUrl)
 
-        toast.success("Invoice created: Opening Checkout page...")
+        toast.success("Invoice created: Opening Checkout page...", {
+          duration: 30000,
+        })
 
         // Open in a new tab/window; use noopener and noreferrer for security
         if (typeof window !== "undefined") {
@@ -185,8 +204,18 @@ export function CreateInvoiceDialog({
         setOpen(false)
       } catch (err) {
         console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
-        toast.error("Checkout error: Failed to oepn checkout Page.")
+        toast.error(
+          "Checkout error: Failed to open checkout Page. Check console for details.",
+          { duration: 30000 }
+        )
       }
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to create checkout: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Checkout creation error:", error)
     },
   })
 

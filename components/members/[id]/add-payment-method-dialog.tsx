@@ -78,9 +78,17 @@ export function AddPaymentMethodDialog({
   const linkPaymentMethodMutation = useMutation({
     ...linkPaymentMethodOptions(branch),
     onSuccess: () => {
+      toast.success("Payment method linked successfully", { duration: 30000 })
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to link payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Link payment method error:", error)
     },
   })
 

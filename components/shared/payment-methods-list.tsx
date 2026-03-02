@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Star, Trash2 } from "lucide-react"
 import { MouseEvent, useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import {
   AlertDialog,
@@ -67,30 +68,54 @@ export function PaymentMethodsList({ customerId }: { customerId: string }) {
   const replacePaymentMethodMutation = useMutation({
     ...replacePaymentMethodOptions(customerId, branch),
     onSuccess: () => {
+      toast.success("Payment method replaced successfully", { duration: 30000 })
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
       setReplaceDialogOpen(false)
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to replace payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Replace payment method error:", error)
     },
   })
 
   const deletePaymentMethodMutation = useMutation({
     ...deletePaymentMethodOptions(customerId, branch),
     onSuccess: () => {
+      toast.success("Payment method deleted successfully", { duration: 30000 })
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
       setDeleteDialogOpen(false)
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to delete payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Delete payment method error:", error)
     },
   })
 
   const updatePayToStatusMutation = useMutation({
     ...updatePayToStatusOptions(branch),
     onSuccess: () => {
+      toast.success("Pay-to status updated successfully", { duration: 30000 })
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
       setActivatePayToDialogOpen(false)
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to update pay-to status: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Update pay-to status error:", error)
     },
   })
 

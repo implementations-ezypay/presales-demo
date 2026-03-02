@@ -35,6 +35,7 @@ import {
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
 import { usePathname } from "next/navigation"
+import { toast } from "sonner"
 
 export function TransferCustomerDialog() {
   const [open, setOpen] = useState(false)
@@ -63,11 +64,19 @@ export function TransferCustomerDialog() {
 
   const linkPaymentMethodMutation = useMutation({
     ...linkPaymentMethodOptions(selectedBranch),
+    onError: (error) => {
+      toast.error(
+        `Failed to link payment method: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Link payment method error:", error)
+    },
   })
 
   const createCustomerMutation = useMutation({
     ...createCustomerOptions(selectedBranch),
     onSuccess: (data) => {
+      toast.success("Customer transferred successfully", { duration: 30000 })
       const { id: customerId } = data
       currentPaymentMethod?.data.forEach(async (paymentMethod) => {
         const { paymentMethodToken } = paymentMethod
@@ -78,6 +87,13 @@ export function TransferCustomerDialog() {
       setOpen(false)
       setSelectedBranch("")
       setTransferPaymentMethods(true)
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to transfer customer: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Transfer customer error:", error)
     },
   })
 

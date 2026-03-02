@@ -24,6 +24,7 @@ import { RefreshCw } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useBranch } from "../../utils"
+import { toast } from "sonner"
 
 export function RetryDialog() {
   const [selectedMethodId, setSelectedMethodId] = useState("")
@@ -39,6 +40,7 @@ export function RetryDialog() {
   const retryInvoiceMutation = useMutation({
     ...retryInvoiceOptions(branch),
     onSuccess: async (data) => {
+      toast.success("Invoice retry initiated successfully", { duration: 30000 })
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
@@ -49,7 +51,11 @@ export function RetryDialog() {
       setOpenChange(false)
     },
     onError: (error) => {
-      console.log(error)
+      toast.error(
+        `Failed to retry invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Retry error:", error)
     },
   })
 

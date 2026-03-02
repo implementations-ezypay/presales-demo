@@ -25,6 +25,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useBranch } from "../../utils"
 import { usePathname } from "next/navigation"
 import { parseCurrency } from "@/lib/utils"
+import { toast } from "sonner"
 
 export function RefundDialog() {
   const [refundAmount, setRefundAmount] = useState("")
@@ -42,6 +43,7 @@ export function RefundDialog() {
   const refundInvoiceMutation = useMutation({
     ...refundInvoiceOptions(branch),
     onSuccess: async (data) => {
+      toast.success("Invoice refunded successfully", { duration: 30000 })
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
@@ -52,7 +54,11 @@ export function RefundDialog() {
       setOpen(false)
     },
     onError: (error) => {
-      console.log(error)
+      toast.error(
+        `Failed to refund invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Refund error:", error)
     },
   })
 
