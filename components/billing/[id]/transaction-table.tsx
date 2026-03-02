@@ -113,7 +113,11 @@ export default function TransactionTable() {
             </TableRow>
           ))
         ) : (
-          <TableRowSkeleton />
+          <>
+            <TableRowSkeleton />
+            <TableRowSkeleton />
+            <TableRowSkeleton />
+          </>
         )}
       </TableBody>
     </Table>
