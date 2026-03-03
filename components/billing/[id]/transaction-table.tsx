@@ -21,7 +21,7 @@ import {
   parseCurrency,
 } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
-import { CheckCircle, XCircle } from "lucide-react"
+import { CheckCircle, CircleEllipsis, XCircle } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 const TableRowSkeleton = () => (
@@ -97,6 +97,8 @@ export default function TransactionTable() {
                   {transaction.status.toLowerCase() === "success" ||
                   transaction.status.toLowerCase() === "settled" ? (
                     <CheckCircle className="h-4 w-4 text-accent" />
+                  ) : transaction.status.toLowerCase() === "processing" ? (
+                    <CircleEllipsis className="h-4 w-4 text-muted-foreground" />
                   ) : (
                     <XCircle className="h-4 w-4 text-destructive" />
                   )}
