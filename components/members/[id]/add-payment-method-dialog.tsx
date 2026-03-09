@@ -92,7 +92,6 @@ export function AddPaymentMethodDialog({
     const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
       let listenerResponse = e.data
-      console.log(listenerResponse)
       if (typeof listenerResponse === "string") {
         listenerResponse = JSON.parse(listenerResponse)
       }
