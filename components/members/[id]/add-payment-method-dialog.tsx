@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef, MouseEvent } from "react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -12,21 +12,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Mail } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
-import { toast } from "sonner"
-import { getEzypayToken } from "@/lib/ezypay-token"
-import Link from "next/link"
+import { useBranch } from "@/components/utils"
 import { logApiCall } from "@/lib/api-logger"
-import { Button } from "@/components/ui/button"
 import { getBranchCountry } from "@/lib/branches"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getCustomerPaymentMethodsOptions,
+  getTokenOptions,
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
-import { useBranch } from "@/components/utils"
 import { useErrorToast } from "@/lib/utils"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Mail } from "lucide-react"
+import Link from "next/link"
+import { MouseEvent, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 interface AddPaymentMethodDialogProps {
   customerId: string
@@ -46,7 +46,6 @@ export function AddPaymentMethodDialog({
 }: AddPaymentMethodDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const [iframeUrl, setIframeUrl] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const iframeOriginRef = useRef<string | null>(null)
   const branch = useBranch()
@@ -88,6 +87,38 @@ export function AddPaymentMethodDialog({
     },
   })
 
+  const getEzypayTokenMutation = useMutation({
+    ...getTokenOptions(branch),
+    onSuccess: (data) => {
+      const token = data.access_token
+      const pcpUrl =
+        country === "PH"
+          ? `${process.env.NEXT_PUBLIC_HPP_ENDPOINT}/paymentmethod/embed?token=${token}&countryCode=${country}`
+          : `${process.env.NEXT_PUBLIC_PCP_ENDPOINT}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true&customerId=${customerId}`
+      setIframeUrl(pcpUrl)
+      logApiCall(
+        "GET",
+        pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
+        "Payment Capture Page UI",
+        200
+      )
+
+      try {
+        const url = new URL(pcpUrl)
+        iframeOriginRef.current = url.origin
+      } catch (_e) {
+        iframeOriginRef.current = null
+      }
+    },
+    onError: (error) => {
+      console.error("[v0] Error loading iframe URL:", error)
+      if (error instanceof Error) {
+        useErrorToast("Failed to load payment form", error)
+      }
+      setOpen(false)
+    },
+  })
+
   useEffect(() => {
     const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
@@ -102,6 +133,12 @@ export function AddPaymentMethodDialog({
           listenerResponse
         )
         toast.success("Payment Method added successfully")
+        queryClient.invalidateQueries(
+          getCustomerPaymentMethodsOptions(customerId, branch)
+        )
+
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        if (!open) setOpen(false)
       }
       if (!listenerResponse.data) return
       const { paymentMethodToken } = listenerResponse.data
@@ -116,39 +153,7 @@ export function AddPaymentMethodDialog({
   }, [country, branch, customerId])
 
   const loadIframeUrl = async () => {
-    try {
-      const tokenRes = await getEzypayToken(branch)
-      const token = tokenRes.access_token
-
-      if (!token) {
-        throw new Error(`Token endpoint failed`)
-      }
-
-      const pcpUrl =
-        country === "PH"
-          ? `${process.env.NEXT_PUBLIC_HPP_ENDPOINT}/paymentmethod/embed?token=${token}&countryCode=${country}`
-          : `${process.env.NEXT_PUBLIC_PCP_ENDPOINT}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true&customerId=${customerId}`
-      setIframeUrl(pcpUrl)
-      await logApiCall(
-        "GET",
-        pcpUrl.replace(/token=[^&]*&/i, `token={truncated}&`),
-        "Payment Capture Page UI",
-        200
-      )
-
-      try {
-        const url = new URL(pcpUrl)
-        iframeOriginRef.current = url.origin
-      } catch (_e) {
-        iframeOriginRef.current = null
-      }
-    } catch (error) {
-      console.error("[v0] Error loading iframe URL:", error)
-      if (error instanceof Error) {
-        useErrorToast("Failed to load payment form", error)
-      }
-      setOpen(false)
-    }
+    getEzypayTokenMutation.mutate({})
   }
 
   const handleEmailCustomer = () => {
@@ -218,7 +223,7 @@ export function AddPaymentMethodDialog({
         </DialogDescription>
       </DialogHeader>
       <div className="flex-1 p-4 mt-10">
-        {isLoading ? (
+        {getEzypayTokenMutation.isPending ? (
           <div className="flex items-center justify-center">
             <Spinner className="h-8 w-8" />
           </div>

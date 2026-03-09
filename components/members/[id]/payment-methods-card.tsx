@@ -1,7 +1,7 @@
 "use client"
 
 import { AddPaymentMethodDialog } from "@/components/members/[id]/add-payment-method-dialog"
-import { PaymentMethodsList } from "@/components/shared/payment-methods-list"
+import { PaymentMethodsList } from "@/components/members/[id]/payment-methods-list"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -81,9 +81,6 @@ export default function PaymentMethodsCard() {
 
   const handleAddPaymentOpenChange = (open: boolean) => {
     setAddPaymentDialogOpen(open)
-    queryClient.invalidateQueries(
-      getCustomerPaymentMethodsOptions(customerId, branch)
-    )
   }
 
   const addPromptPay = async (e: MouseEvent) => {

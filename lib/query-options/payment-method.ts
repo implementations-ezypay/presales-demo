@@ -72,7 +72,7 @@ export const updatePayToStatusOptions = (branch: string) => {
 export const getTokenOptions = (branch: string) => {
   return mutationOptions({
     mutationKey: ["getToken", branch],
-    mutationFn: (_data: { customerId?: string }) => {
+    mutationFn: (_data?: { customerId?: string }) => {
       return getEzypayToken(branch)
     },
   })

@@ -43,8 +43,8 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query"
-import { Spinner } from "../ui/spinner"
-import { useBranch } from "../utils"
+import { Spinner } from "../../ui/spinner"
+import { useBranch } from "../../utils"
 
 export function PaymentMethodsList({ customerId }: { customerId: string }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
