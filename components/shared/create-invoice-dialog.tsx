@@ -580,7 +580,10 @@ export function CreateInvoiceDialog({
                       disabled={createInvoiceMutation.isPending || isPending}
                       className="w-full sm:w-auto"
                     >
-                      {createInvoiceMutation.isPending
+                      {createInvoiceMutation.isPending ||
+                      createCheckoutMutation.isPending ||
+                      createInvoiceMutation.isPending ||
+                      createTerminalInvoiceMutation.isPending
                         ? "Creating..."
                         : "Create"}
                     </Button>

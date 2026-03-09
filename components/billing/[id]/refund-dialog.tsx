@@ -39,7 +39,6 @@ export function RefundDialog() {
   const refundInvoiceMutation = useMutation({
     ...refundInvoiceOptions(branch),
     onSuccess: async (data) => {
-      toast.success("Invoice refunded successfully", { duration: 30000 })
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
