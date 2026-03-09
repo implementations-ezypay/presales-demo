@@ -37,39 +37,74 @@ import {
   formatPaymentMethodDisplay,
   getPaymentMethodType,
   getStatusBadgeVariant,
+  useErrorToast,
 } from "@/lib/utils"
 import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query"
 import { Search } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
-import { MouseEvent, useEffect, useState } from "react"
-import { Spinner } from "../ui/spinner"
+import { MouseEvent, useState } from "react"
+import { Skeleton } from "../ui/skeleton"
+import { useBranch } from "../utils"
 import { CreateInvoiceDialog } from "./create-invoice-dialog"
+
+const SkeletonTableRow = ({ variant }: { variant: string }) => (
+  <TableRow>
+    <TableCell className="min-w-[120px]">
+      <Skeleton className="w-35 h-2" />
+    </TableCell>
+    {variant == "billing" ? (
+      <TableCell className="min-w-[150px]">
+        <Skeleton className="w-25 h-2" />
+      </TableCell>
+    ) : (
+      ""
+    )}
+    <TableCell className="min-w-[100px]">
+      <Skeleton className="w-15 h-2" />
+    </TableCell>
+    <TableCell className="min-w-[150px]">
+      <Skeleton className="w-45 h-2" />
+    </TableCell>
+    <TableCell className="min-w-[100px]">
+      <Skeleton className="w-15 h-2" />
+    </TableCell>
+    <TableCell className="min-w-[110px]">
+      <Skeleton className="w-25 h-2" />
+    </TableCell>
+  </TableRow>
+)
+const EmptyTable = () => (
+  <TableRow>
+    <TableCell colSpan={7} className="h-18 text-center">
+      <p>No invoice to show</p>
+    </TableCell>
+  </TableRow>
+)
 
 export function InvoicesTable({ variant = "billing" }) {
   const customerId = usePathname().split("/").at(-1) || ""
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
   const router = useRouter()
   const queryClient = useQueryClient()
 
   let invoices: Invoice[] | undefined = undefined
   let customerData: Customer | undefined = undefined
 
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
-
   let customerInvoiceData: { data: Invoice[] } | undefined,
     isPending: boolean,
-    isSuccess: boolean
+    isSuccess: boolean,
+    isError: boolean,
+    error: Error | null
 
   if (variant === "billing") {
     const {
       data,
       isPending: isQueryPending,
       isSuccess: isQuerySuccess,
+      isError: isQueryError,
+      error: queryError,
     }: UseQueryResult<{ data: Invoice[] }> = useQuery(
       listInvoiceOptions(branch)
     )
@@ -77,22 +112,32 @@ export function InvoicesTable({ variant = "billing" }) {
     customerInvoiceData = data
     isPending = isQueryPending
     isSuccess = isQuerySuccess
+    isError = isQueryError
+    error = queryError
   } else {
     const {
       data,
       isPending: isQueryPending,
       isSuccess: isQuerySuccess,
+      isError: isQueryError,
+      error: queryError,
     }: UseQueryResult<{ data: Invoice[] }> = useQuery(
       listSingleInvoiceOptions(customerId, branch)
     )
     customerInvoiceData = data
     isPending = isQueryPending
     isSuccess = isQuerySuccess
+    isError = isQueryError
+    error = queryError
 
     const { data: fullCustomerData }: UseQueryResult<{ data: Customer[] }> =
       useQuery(listCustomerOptions(branch))
 
     customerData = fullCustomerData?.data.find((c) => c.id === customerId)
+  }
+
+  if (isError && error) {
+    useErrorToast("Failed to retrieve the invoices", error)
   }
 
   if (isSuccess) invoices = customerInvoiceData?.data
@@ -134,7 +179,10 @@ export function InvoicesTable({ variant = "billing" }) {
                 Generate, send, and manage member invoices
               </CardDescription>
             </div>
-            <CreateInvoiceDialog customerId={customerData?.id || null} />
+            <CreateInvoiceDialog
+              customerId={customerData?.id || null}
+              isInvoiceLoadingSuccess={isSuccess}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -184,20 +232,9 @@ export function InvoicesTable({ variant = "billing" }) {
               </TableHeader>
               <TableBody>
                 {isPending ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-18 text-center">
-                      <div className="flex items-center justify-center">
-                        <Spinner className="h-6 w-6 mr-2" />
-                        <span>Loading Invoices...</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <SkeletonTableRow variant={variant} />
                 ) : filteredInvoices?.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-18 text-center">
-                      <p>No invoice to show</p>
-                    </TableCell>
-                  </TableRow>
+                  <EmptyTable />
                 ) : (
                   filteredInvoices?.map((invoice) => (
                     <TableRow

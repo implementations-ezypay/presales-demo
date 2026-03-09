@@ -35,12 +35,15 @@ import {
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
 import { usePathname } from "next/navigation"
+import { toast } from "sonner"
+import { useBranch } from "@/components/utils"
+import { useErrorToast } from "@/lib/utils"
 
 export function TransferCustomerDialog() {
   const [open, setOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("")
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
   const [country, setCountry] = useState("")
   const customerId = usePathname().split("/").at(-1) || ""
 
@@ -55,6 +58,7 @@ export function TransferCustomerDialog() {
   }: UseQueryResult<Customer> = useQuery(
     listSingleCustomerOptions(customerId, branch)
   )
+
   const {
     data: currentPaymentMethod,
   }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
@@ -63,6 +67,13 @@ export function TransferCustomerDialog() {
 
   const linkPaymentMethodMutation = useMutation({
     ...linkPaymentMethodOptions(selectedBranch),
+    onSuccess: () => {
+      toast.success("Successfully transfer existing payment method")
+    },
+    onError: (error) => {
+      useErrorToast("Failed to link payment method", error)
+      console.error("[v0] Link payment method error:", error)
+    },
   })
 
   const createCustomerMutation = useMutation({
@@ -78,6 +89,11 @@ export function TransferCustomerDialog() {
       setOpen(false)
       setSelectedBranch("")
       setTransferPaymentMethods(true)
+      toast.success("Customer transferred successfully")
+    },
+    onError: (error) => {
+      useErrorToast("Failed to transfer customer", error)
+      console.error("[v0] Transfer customer error:", error)
     },
   })
 
@@ -93,9 +109,6 @@ export function TransferCustomerDialog() {
   }
 
   useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-
     const selectedCountry = localStorage.getItem("selectedCountry") || "AU"
     setCountry(selectedCountry)
   }, [])

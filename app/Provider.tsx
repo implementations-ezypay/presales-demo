@@ -14,7 +14,7 @@ export default function Provider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            throwOnError: true,
+            throwOnError: false,
           },
         },
       })

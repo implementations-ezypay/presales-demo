@@ -70,6 +70,7 @@ export default function PaymentCapturePage({
     ...getTokenOptions(branch),
     onSuccess: (data, input) => {
       const token = data.access_token
+      if (!input) return
       const { customerId } = input
       const pcpUrl =
         country === "PH"
@@ -91,6 +92,11 @@ export default function PaymentCapturePage({
       } catch (_e) {
         iframeOriginRef.current = null
       }
+    },
+    onError: () => {
+      toast.error(
+        "Error in getting Ezypay token. Unable to generate the payment capture page."
+      )
     },
   })
 

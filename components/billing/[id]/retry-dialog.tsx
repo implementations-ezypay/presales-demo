@@ -24,6 +24,7 @@ import { RefreshCw } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useBranch } from "../../utils"
+import { toast } from "sonner"
 
 export function RetryDialog() {
   const [selectedMethodId, setSelectedMethodId] = useState("")
@@ -34,7 +35,7 @@ export function RetryDialog() {
 
   const { data: invoice } = useQuery(listOneInvoiceOptions(invoiceId, branch))
 
-  useEffect(() => setSelectedMethodId(invoice?.paymentMethodToken), [invoice])
+  useEffect(() => setSelectedMethodId(invoice!.paymentMethodToken), [invoice])
 
   const retryInvoiceMutation = useMutation({
     ...retryInvoiceOptions(branch),
@@ -47,9 +48,14 @@ export function RetryDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpenChange(false)
+      toast.success("Invoice retry initiated successfully")
     },
     onError: (error) => {
-      console.log(error)
+      toast.error(
+        `Failed to retry invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Retry error:", error)
     },
   })
 
@@ -86,7 +92,7 @@ export function RetryDialog() {
               Select Payment Method for Retry
             </Label>
             <PaymentMethodSelection
-              customerId={invoice.customerId}
+              customerId={invoice!.customerId}
               selectedMethodId={selectedMethodId}
               onMethodSelect={setSelectedMethodId}
             />

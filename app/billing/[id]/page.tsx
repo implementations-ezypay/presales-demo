@@ -15,10 +15,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useBranch } from "@/components/utils"
 import { listOneInvoiceOptions } from "@/lib/query-options/invoice"
-import { formatPaymentMethodDisplay } from "@/lib/utils"
+import { formatPaymentMethodDisplay, useErrorToast } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { MailIcon, RefreshCw } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { toast } from "sonner"
 
 export default function BillingDetailsPage() {
   const invoiceId = usePathname().split("/")[2]
@@ -26,9 +27,14 @@ export default function BillingDetailsPage() {
 
   const {
     data: invoice,
-    isPending,
+    isSuccess,
     isError,
+    error,
   } = useQuery(listOneInvoiceOptions(invoiceId, branch))
+
+  if (isError) {
+    useErrorToast("Failed to load the invoice", error)
+  }
 
   const handlePayNow = async () => {
     if (!invoice?.payNowUrl) {
@@ -46,6 +52,9 @@ export default function BillingDetailsPage() {
       }
     } catch (err) {
       console.error("[v0] Failed to open Pay Now URL", err, invoice?.payNowUrl)
+      toast.error("Failed to open Pay Now URL", {
+        description: `${err instanceof Error ? err.message : "Unknown error"} for ${invoice.payNowUrl}`,
+      })
     }
   }
 
@@ -64,6 +73,9 @@ export default function BillingDetailsPage() {
       window.open(emailPreviewLink, "_blank")
     } catch (err) {
       console.error("[v0] Failed to open email URL", err, invoice?.payNowUrl)
+      toast.error("Failed to open URL", {
+        description: `${err instanceof Error ? err.message : "Unknown error"}`,
+      })
     }
   }
 
@@ -76,26 +88,26 @@ export default function BillingDetailsPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center-safe min-h-15">
             {/* Invoice Title */}
             <div className="flex gap-6">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
-                  {isPending || isError ? (
-                    <Skeleton className="w-72 h-3 bg-foreground mb-3"></Skeleton>
-                  ) : (
-                    invoice?.documentNumber
-                  )}
-                </h1>
+              <div className="min-w-80">
+                {isSuccess ? (
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
+                    {invoice?.documentNumber}
+                  </h1>
+                ) : (
+                  <Skeleton className="w-72 h-3 my-3"></Skeleton>
+                )}
                 <p className=" md:text-base text-muted-foreground">
                   Managing your invoice
                 </p>
               </div>
               <div className="items-center flex justify-center">
-                {isPending || isError ? (
-                  <Skeleton className="w-15 h-3 bg-foreground"></Skeleton>
-                ) : (
+                {isSuccess ? (
                   <StatusBadge
                     status={invoice.status}
                     className="text-lg px-4"
                   />
+                ) : (
+                  <Skeleton className="w-18 h-3 my-2"></Skeleton>
                 )}
               </div>
             </div>

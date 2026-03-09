@@ -35,14 +35,15 @@ export function PaymentMethodSelection({
       ...getCustomerPaymentMethodsOptions(customerId, branch),
     })
 
-  useEffect(
-    () =>
-      onMethodSelect(
-        data?.data.filter((method) => method.primary)[0].paymentMethodToken ||
-          ""
-      ),
-    [data]
-  )
+  useEffect(() => {
+    const primaryPaymentMethod = data?.data.filter((method) => method.primary)
+    if (primaryPaymentMethod?.length === 0 || !primaryPaymentMethod) {
+      onMethodSelect("")
+      return
+    }
+
+    onMethodSelect(primaryPaymentMethod[0].paymentMethodToken || "")
+  }, [data])
 
   if (isPending) {
     return (

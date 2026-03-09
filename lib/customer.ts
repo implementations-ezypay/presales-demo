@@ -2,9 +2,10 @@
 import { getEzypayToken } from "./ezypay-token"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
-import axios, { AxiosResponse } from "axios"
+import axios from "axios"
 import { CreateCustomer, Customer } from "./types/customer"
 import { PaymentMethod } from "./types/payment-method"
+import { processError } from "./utils"
 
 const apiEndpoint = `${process.env.API_ENDPOINT}/v2/billing/customers`
 
@@ -17,24 +18,14 @@ export async function createCustomer(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Create customer failed: No access_token from token utility`
-      )
-    }
 
-    const response: AxiosResponse<Customer> = await axios.post(
-      apiEndpoint,
-      customerData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          merchant: merchantId,
-        },
-      }
-    )
+    const response = await axios.post<Customer>(apiEndpoint, customerData, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+      },
+    })
 
     logApiCall(
       "POST",
@@ -45,18 +36,7 @@ export async function createCustomer(
     )
     return response.data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error("Create customer error:", err.response?.data || err.message)
-      throw new Error(`Create customer failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Create customer error:", err)
-      throw err
-    }
-    console.error("Create customer error:", err)
-    throw new Error(`Create customer failed: Unknown error`, { cause: err })
+    return processError("Create Customer")(err)
   }
 }
 
@@ -72,8 +52,8 @@ export async function listCustomer(
 
     const url = customerNumber
       ? `${apiEndpoint}?customerNumber=${customerNumber}`
-      : `${apiEndpoint}?limit=100`
-    const { data }: { data: { data: Customer[] } } = await axios.get(url, {
+      : `${apiEndpoint}?limit=50`
+    const { data } = await axios.get<{ data: Customer[] }>(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
@@ -82,15 +62,7 @@ export async function listCustomer(
 
     return data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      throw new Error(`List Customer error: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      throw new Error(`List Customer error: ${err.message}`, { cause: err })
-    }
-    throw err
+    return processError("List All Customer")(err)
   }
 }
 
@@ -107,15 +79,9 @@ export async function getCustomer(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `List customer failed: No access_token from token utility`
-      )
-    }
 
     const url = `${apiEndpoint}/${customerId}`
-    const response: AxiosResponse<Customer> = await axios.get(url, {
+    const response = await axios.get<Customer>(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         merchant: merchantId,
@@ -124,21 +90,7 @@ export async function getCustomer(
 
     return response.data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error("List customer error:", err.response?.data || err.message)
-      throw new Error(
-        `List customer failed: ${JSON.stringify(err.response?.data) || err.message}`,
-        {
-          cause: err,
-        }
-      )
-    }
-    if (err instanceof Error) {
-      console.error("List customer error:", err)
-      throw err
-    }
-    console.error("List customer error:", err)
-    throw new Error(`List customer failed: Unknown error`, { cause: err })
+    return processError("Get Single Customer")(err)
   }
 }
 
@@ -155,44 +107,18 @@ export async function getCustomerPaymentMethods(
     // Get token directly from utility function instead of HTTP request
     const tokenData = await getEzypayToken(branch)
     const token = tokenData.access_token
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error("Unable to get access token")
-    }
 
     const url = `${apiEndpoint}/${customerId}/paymentmethods`
-    const response: AxiosResponse<{ data: PaymentMethod[] }> = await axios.get(
-      url,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          merchant: merchantId,
-        },
-      }
-    )
+    const response = await axios.get<{ data: PaymentMethod[] }>(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+      },
+    })
 
     return response.data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "List customer payment method error:",
-        err.response?.data || err.message
-      )
-      throw new Error(
-        `List customer payment method error: ${JSON.stringify(err.response?.data) || err.message}`,
-        {
-          cause: err,
-        }
-      )
-    }
-    if (err instanceof Error) {
-      console.error("List customer payment method error:", err)
-      throw err
-    }
-    console.error("List customer payment method error:", err)
-    throw new Error(`List customer payment method error: Unknown error`, {
-      cause: err,
-    })
+    return processError("Create Customer")(err)
   }
 }
 
@@ -207,25 +133,15 @@ export async function updateCustomer(
     const token = tokenData.access_token
     const { id, ...body } = customer
 
-    if (!token) {
-      console.error("No access_token from token utility", tokenData)
-      throw new Error(
-        `Create customer failed: No access_token from token utility`
-      )
-    }
-    const response: AxiosResponse<Customer> = await axios.put(
-      `${apiEndpoint}/${id}`,
-      body,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          merchant: merchantId,
-        },
-      }
-    )
+    const response = await axios.put<Customer>(`${apiEndpoint}/${id}`, body, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        merchant: merchantId,
+      },
+    })
 
-    await logApiCall(
+    logApiCall(
       "PUT",
       `${apiEndpoint}/${id}`,
       response.data,
@@ -234,17 +150,6 @@ export async function updateCustomer(
     )
     return response.data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error("Create customer error:", err.response?.data || err.message)
-      throw new Error(`Create customer failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Create customer error:", err)
-      throw err
-    }
-    console.error("Create customer error:", err)
-    throw new Error(`Create customer failed: Unknown error`, { cause: err })
+    return processError("Update Customer")(err)
   }
 }

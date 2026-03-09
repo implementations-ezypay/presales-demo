@@ -1,7 +1,5 @@
 "use client"
 
-import { Building2, Check } from "lucide-react"
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { toast } from "sonner"
 import { BRANCHES } from "@/lib/branches"
+import { Building2, Check } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function BranchSwitcher() {
   const [currentBranch, setCurrentBranch] = useState(BRANCHES[0])
@@ -38,7 +37,6 @@ export function BranchSwitcher() {
       localStorage.setItem("selectedBranch", branch.id)
       localStorage.setItem("selectedCountry", branch.country)
     }
-    toast.success(`Switched to ${branch.name}`)
     window.location.replace("/")
   }
 

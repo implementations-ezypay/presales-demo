@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Support other HTTP methods
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json(
     { message: "Webhook endpoint is active. Send POST requests here." },
     { status: 200 }

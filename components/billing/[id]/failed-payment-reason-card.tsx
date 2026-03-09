@@ -2,7 +2,7 @@
 
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useBranch } from "@/components/utils"
 import { listOneInvoiceOptions } from "@/lib/query-options/invoice"
 import { useQuery } from "@tanstack/react-query"
@@ -13,7 +13,7 @@ export default function FailedPaymentReasonCard() {
   const invoiceId = usePathname().split("/")[2]
   const branch = useBranch()
 
-  const { data: invoice, isPending } = useQuery(
+  const { data: invoice, isSuccess } = useQuery(
     listOneInvoiceOptions(invoiceId, branch)
   )
 
@@ -21,7 +21,7 @@ export default function FailedPaymentReasonCard() {
     <Card
       className={
         invoice?.failedPaymentReason
-          ? "border border-orange-500/50 bg-orange-50 dark:bg-orange-950/20 p-4"
+          ? "border border-orange-500/50 bg-orange-50 dark:bg-orange-950/20"
           : ""
       }
     >
@@ -32,11 +32,7 @@ export default function FailedPaymentReasonCard() {
           </div>
         </CardTitle>
       </CardHeader>
-      {isPending || !invoice ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner className="h-6 w-6" />
-        </div>
-      ) : (
+      {isSuccess && invoice ? (
         (invoice.failedPaymentReason && (
           <CardContent className="space-y-3 md:space-y-4">
             <div className="flex items-center gap-6">
@@ -63,6 +59,16 @@ export default function FailedPaymentReasonCard() {
             </div>
           </CardContent>
         ))
+      ) : (
+        <CardContent className="space-y-3 md:space-y-4">
+          <div className="flex items-left gap-6">
+            <Skeleton className="h-4 w-4  rounded-full" />
+            <div className="min-w-0 w-full">
+              <Skeleton className="h-4 w-48 my-2" />
+              <Skeleton className="h-2 w-64 my-2" />
+            </div>
+          </div>
+        </CardContent>
       )}
     </Card>
   )

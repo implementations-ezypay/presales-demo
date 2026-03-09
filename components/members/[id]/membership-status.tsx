@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useBranch } from "@/components/utils"
 import { plans } from "@/lib/plan"
 import { listSingleCustomerOptions } from "@/lib/query-options/customer"
@@ -15,7 +15,7 @@ export default function MembershipStatus() {
   const customerId = usePathname().split("/").at(-1) || ""
   const branch = useBranch()
 
-  const { data: singleMemberData, isPending }: UseQueryResult<Customer> =
+  const { data: singleMemberData, isSuccess }: UseQueryResult<Customer> =
     useQuery(listSingleCustomerOptions(customerId, branch))
 
   return (
@@ -25,52 +25,76 @@ export default function MembershipStatus() {
           Membership Status
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {isPending ? (
-          <div className="flex items-center justify-center py-6">
-            <Spinner className="h-6 w-6" />
-          </div>
-        ) : (
+      <div className="flex flex-col h-full justify-between">
+        <CardContent className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2">
           <>
             <div>
-              <p className="text-sm font-medium">Status</p>
-              <Badge
-                className="mt-1"
-                variant={
-                  singleMemberData?.metadata?.status === "active"
-                    ? "default"
-                    : singleMemberData?.metadata?.status === "trial"
-                      ? "secondary"
-                      : "destructive"
-                }
-              >
-                {singleMemberData?.metadata?.status}
-              </Badge>
+              <p className="font-medium">Status</p>
+              {isSuccess && singleMemberData ? (
+                <Badge
+                  className="mt-1"
+                  variant={
+                    singleMemberData?.metadata?.status === "active"
+                      ? "default"
+                      : singleMemberData?.metadata?.status === "trial"
+                        ? "secondary"
+                        : "destructive"
+                  }
+                >
+                  {singleMemberData?.metadata?.status}
+                </Badge>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-10 my-2" />
+                </>
+              )}
             </div>
             <div>
-              <p className="text-sm font-medium">Current Plan</p>
-              <p className="text-sm text-muted-foreground">
-                {plans?.find(
-                  (plan) => plan.id === singleMemberData?.metadata?.plan
-                )?.name || singleMemberData?.metadata?.plan}
-              </p>
+              <p className="font-medium">Current Plan</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground">
+                  {plans?.find(
+                    (plan) => plan.id === singleMemberData?.metadata?.plan
+                  )?.name || singleMemberData?.metadata?.plan}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
             </div>
             <div>
-              <p className="text-sm font-medium">Join Date</p>
-              <p className="text-sm text-muted-foreground">
-                {singleMemberData?.metadata?.startDate}
-              </p>
+              <p className="font-medium">Join Date</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground">
+                  {singleMemberData?.metadata?.startDate}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
             </div>
             <div>
-              <p className="text-sm font-medium">Expiry Date</p>
-              <p className="text-sm text-muted-foreground">
-                {singleMemberData?.metadata?.dueDate}
-              </p>
+              <p className="font-medium">Expiry Date</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground">
+                  {singleMemberData?.metadata?.dueDate}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
             </div>
           </>
-        )}
-        <RenewMembershipDialog></RenewMembershipDialog>
-      </CardContent>
+        </CardContent>
+        <CardContent className="flex items-center justify-center">
+          {isSuccess && singleMemberData && (
+            <RenewMembershipDialog></RenewMembershipDialog>
+          )}
+        </CardContent>
+      </div>
     </Card>
   )
 }

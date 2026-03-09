@@ -1,24 +1,19 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Mail, Phone, Calendar, PersonStanding } from "lucide-react"
-import { useState, useEffect } from "react"
-import { Spinner } from "@/components/ui/spinner"
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import { listSingleCustomerOptions } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
 import { usePathname } from "next/navigation"
+import { useBranch } from "@/components/utils"
 
 export default function PersonalInformation() {
   const customerId = usePathname().split("/").at(-1) || ""
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
 
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
-
-  const { data: singleMemberData, isPending }: UseQueryResult<Customer> =
+  const { data: singleMemberData, isSuccess }: UseQueryResult<Customer> =
     useQuery(listSingleCustomerOptions(customerId, branch))
 
   return (
@@ -28,62 +23,100 @@ export default function PersonalInformation() {
           Personal Information
         </CardTitle>
       </CardHeader>
-      {isPending ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner className="h-6 w-6" />
-        </div>
-      ) : (
-        <CardContent className="space-y-3 md:space-y-4">
-          <div className="flex items-center gap-3 ">
+      <CardContent className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2">
+        <>
+          <div className="flex items-center gap-3">
             <PersonStanding className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-medium">Customer Number</p>
-              <p className="text-sm text-muted-foreground truncate">
-                {singleMemberData?.number}
-              </p>
+              <p className="font-medium">Customer Number</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground truncate">
+                  {singleMemberData?.number}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-medium">Email</p>
-              <p className="text-sm text-muted-foreground truncate">
-                {singleMemberData?.email}
-              </p>
+              <p className="font-medium">Email</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground truncate">
+                  {singleMemberData?.email}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-30 my-2" />
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-medium">Phone</p>
-              <p className="text-sm text-muted-foreground">
-                {singleMemberData?.mobilePhone}
-              </p>
+              <p className="font-medium">Phone</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground min-h-5">
+                  {singleMemberData?.mobilePhone || ""}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-medium">Date of Birth</p>
-              <p className="text-sm text-muted-foreground">
-                {singleMemberData?.dateOfBirth}
-              </p>
+              <p className="font-medium">Date of Birth</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground min-h-5">
+                  {singleMemberData?.dateOfBirth || ""}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
             </div>
           </div>
-          <div>
-            <p className="text-sm font-medium">Address</p>
-            <p className="text-sm text-muted-foreground break-words">
-              {Object.values(singleMemberData?.address || {}).join(" \n")}
-            </p>
+          <div className="flex items-center gap-3">
+            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium">Address</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground break-words min-h-5">
+                  {Object.values(singleMemberData?.address || {}).join(" \n")}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-35 my-2" />
+                </>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium">Emergency Contact</p>
-            <p className="text-sm text-muted-foreground break-words">
-              {singleMemberData?.homePhone}
-            </p>
+          <div className="flex items-center gap-3">
+            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium">Emergency Contact</p>
+              {isSuccess && singleMemberData ? (
+                <p className="text-muted-foreground break-words min-h-5">
+                  {singleMemberData?.homePhone}
+                </p>
+              ) : (
+                <>
+                  <Skeleton className="h-2 w-20 my-2" />
+                </>
+              )}
+            </div>
           </div>
-        </CardContent>
-      )}
+        </>
+      </CardContent>
     </Card>
   )
 }

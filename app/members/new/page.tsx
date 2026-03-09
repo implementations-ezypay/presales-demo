@@ -1,24 +1,26 @@
 "use client"
 
-import { TopBar } from "@/components/top-bar"
-import { useState, useEffect, ChangeEvent, createContext } from "react"
-import { useMutation } from "@tanstack/react-query"
-import { createCustomerOptions } from "@/lib/query-options/customer"
-import PersonalInformationCard from "@/components/members/new/personal-information-card"
-import { MemberShipDetailsCard } from "@/components/members/new/membership-details-card"
-import { CreateCustomer, CreateCustomerForm } from "@/lib/types/customer"
-import PaymentCapturePage from "@/components/members/new/payment-capture-page"
-import {
-  CreateCustomerPageDescription,
-  PaymentCapturePageDescription,
-} from "@/components/members/new/description"
 import {
   BackButton,
   CancelButton,
   CreateMemberButton,
 } from "@/components/members/new/buttons"
-import { format } from "date-fns"
+import {
+  CreateCustomerPageDescription,
+  PaymentCapturePageDescription,
+} from "@/components/members/new/description"
+import { MemberShipDetailsCard } from "@/components/members/new/membership-details-card"
+import PaymentCapturePage from "@/components/members/new/payment-capture-page"
+import PersonalInformationCard from "@/components/members/new/personal-information-card"
+import { TopBar } from "@/components/top-bar"
+import { useBranch } from "@/components/utils"
+import { createCustomerOptions } from "@/lib/query-options/customer"
+import { CreateCustomer, CreateCustomerForm } from "@/lib/types/customer"
 import { calculateNewDueDateFromPlan, defaultDateFormat } from "@/lib/utils"
+import { useMutation } from "@tanstack/react-query"
+import { format } from "date-fns"
+import { ChangeEvent, createContext, useState } from "react"
+import { toast } from "sonner"
 
 const defaultformData: CreateCustomerForm = {
   firstName: "",
@@ -43,7 +45,7 @@ export const NewMemberContext = createContext<NewMemberContextType | undefined>(
 export default function NewMemberPage() {
   const [emailPreviewLink, setEmailPreviewLink] = useState("")
   const [formData, setFormData] = useState<CreateCustomerForm>(defaultformData)
-  const [branch, setBranch] = useState("")
+  const branch = useBranch()
 
   const createCustomerMutation = useMutation({
     ...createCustomerOptions(branch),
@@ -52,13 +54,9 @@ export default function NewMemberPage() {
       setEmailPreviewLink(
         `${window.location.origin}/email-preview?id=${data.id}&name=${formData.firstName} ${formData.lastName}`
       )
+      toast.success("Create Ezypay Customer successfully")
     },
   })
-
-  useEffect(() => {
-    const selectedBranch = localStorage.getItem("selectedBranch") || "main"
-    setBranch(selectedBranch)
-  }, [])
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const field = e.target.id

@@ -34,6 +34,7 @@ import {
 } from "@/lib/query-options/settlement"
 import { documentType, Settlement } from "@/lib/types/settlement"
 import { parseCurrency } from "@/lib/utils"
+import { toast } from "sonner"
 
 export function SettlementTable() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -60,6 +61,7 @@ export function SettlementTable() {
     onSuccess: (data) => {
       const downloadUrl = data
       window.open(downloadUrl, "_blank")
+      toast.success("Your document should be downloading automatically")
     },
   })
 

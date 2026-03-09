@@ -28,7 +28,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useToast } from "@/hooks/use-toast"
 import { getBranchCurrency } from "@/lib/branches"
 import { listCustomerOptions } from "@/lib/query-options/customer"
 import {
@@ -54,6 +53,7 @@ import {
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { toast } from "sonner"
 import { Badge } from "../ui/badge"
 import { useBranch } from "../utils"
 import { PaymentMethodSelection } from "./payment-method-selection"
@@ -62,6 +62,7 @@ import { TapToPayAnimation } from "./tap-to-pay-animation"
 
 interface CreateInvoiceDialogProps {
   customerId?: string | null
+  isInvoiceLoadingSuccess?: boolean
 }
 
 type InvoiceCreateFormType = {
@@ -86,11 +87,13 @@ const defaultInvoiceDescription: string = "Monthly Membership Fee"
 
 type CreateInvoicePaymentType = "ondemand" | "tap-to-pay" | "checkout"
 
-export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
+export function CreateInvoiceDialog({
+  customerId,
+  isInvoiceLoadingSuccess,
+}: CreateInvoiceDialogProps) {
   const [showTapAnimation, setShowTapAnimation] = useState(false)
   const [qrString, setQrString] = useState("")
   const [open, setOpen] = useState(false)
-  const { toast } = useToast()
   const [formData, setFormData] =
     useState<InvoiceCreateFormType>(defaultFormData)
   const queryClient = useQueryClient()
@@ -130,12 +133,20 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
         setQrString("")
       }
       setOpen(false)
+      toast.success("Invoice successfully created")
 
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
       )
       queryClient.invalidateQueries(listInvoiceOptions(branch))
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to create invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Create invoice error:", error)
     },
   })
 
@@ -152,11 +163,19 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
         accountingCode: "",
       })
 
+      toast.success("Terminal invoice created successfully")
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
       )
       queryClient.invalidateQueries(listInvoiceOptions(branch))
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to create terminal invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Terminal invoice error:", error)
     },
   })
 
@@ -171,10 +190,7 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
         new URL(checkoutUrl)
 
-        toast({
-          title: "Invoice Created",
-          description: "Opening checkout page...",
-        })
+        toast.success("Checkout invoice created: Opening Checkout page...")
 
         // Open in a new tab/window; use noopener and noreferrer for security
         if (typeof window !== "undefined") {
@@ -184,12 +200,18 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
         setOpen(false)
       } catch (err) {
         console.error("[v0] Invalid checkout URL:", err, checkoutUrl)
-        toast({
-          title: "Checkout Error",
-          description: "Failed to open checkout URL.",
-          variant: "destructive",
-        })
+        toast.error(
+          "Checkout error: Failed to open checkout Page. Check console for details.",
+          { duration: 30000 }
+        )
       }
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to create checkout: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Checkout creation error:", error)
     },
   })
 
@@ -202,11 +224,7 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
     if (formData.paymentMethod === "tap-to-pay") {
       if (!formData.terminalId) {
-        toast({
-          title: "Terminal Required",
-          description: "Please select a terminal device for tap-to-pay.",
-          variant: "destructive",
-        })
+        toast.error("Terminal devices required")
         return
       }
       console.log(
@@ -243,11 +261,9 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
     if (formData.paymentMethod === "ondemand") {
       if (!formData.paymentMethodId) {
-        toast({
-          title: "Payment Method Required",
-          description: "Please select a payment method for on-demand payment.",
-          variant: "destructive",
-        })
+        toast.error(
+          "Payment method required, please select a payment method before proceeding"
+        )
         return
       }
       const invoiceData: InvoiceCreation = {
@@ -268,11 +284,6 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
       }
 
       createInvoiceMutation.mutate({ invoiceData })
-
-      toast({
-        title: "Invoice Created",
-        description: "Invoice created successfully with on-demand payment.",
-      })
     }
 
     if (formData.paymentMethod === "checkout") {
@@ -296,7 +307,11 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
+          <Button
+            onClick={() => setOpen(true)}
+            className="w-full sm:w-auto"
+            disabled={!isInvoiceLoadingSuccess}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Create Invoice
           </Button>
@@ -565,7 +580,10 @@ export function CreateInvoiceDialog({ customerId }: CreateInvoiceDialogProps) {
                       disabled={createInvoiceMutation.isPending || isPending}
                       className="w-full sm:w-auto"
                     >
-                      {createInvoiceMutation.isPending
+                      {createInvoiceMutation.isPending ||
+                      createCheckoutMutation.isPending ||
+                      createInvoiceMutation.isPending ||
+                      createTerminalInvoiceMutation.isPending
                         ? "Creating..."
                         : "Create"}
                     </Button>

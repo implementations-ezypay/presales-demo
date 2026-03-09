@@ -2,6 +2,7 @@
 
 import { getBranchCredentials } from "./branch-config"
 import axios from "axios"
+import { processError } from "./utils"
 
 export async function getEzypayToken(
   branch: string
@@ -25,7 +26,7 @@ export async function getEzypayToken(
       password: password,
       scope: "integrator billing_profile create_payment_method offline_access",
     }
-    const { data }: { data: { access_token: string } } = await axios.post(
+    const { data } = await axios.post<{ access_token: string }>(
       tokenUrl,
       body,
       {
@@ -41,20 +42,6 @@ export async function getEzypayToken(
     }
     return data
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "Get Ezypay Token error:",
-        err.response?.data || err.message
-      )
-      throw new Error(`Get Ezypay Token failed: ${err.message}`, {
-        cause: err,
-      })
-    }
-    if (err instanceof Error) {
-      console.error("Get Ezypay Token error:", err)
-      throw err
-    }
-    console.error("Get Ezypay Token error:", err)
-    throw new Error(`Get Ezypay Token failed: Unknown error`, { cause: err })
+    return processError("Getting Ezypay token")(err)
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { DollarSign } from "lucide-react"
 import {
   listInvoiceOptions,
   listOneInvoiceOptions,
@@ -21,10 +19,13 @@ import {
   listTransactionOptions,
   refundInvoiceOptions,
 } from "@/lib/query-options/invoice"
+import { parseCurrency, useErrorToast } from "@/lib/utils"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useBranch } from "../../utils"
+import { DollarSign } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { parseCurrency } from "@/lib/utils"
+import { useState } from "react"
+import { toast } from "sonner"
+import { useBranch } from "../../utils"
 
 export function RefundDialog() {
   const [refundAmount, setRefundAmount] = useState("")
@@ -33,11 +34,7 @@ export function RefundDialog() {
   const branch = useBranch()
   const queryClient = useQueryClient()
 
-  const {
-    data: invoice,
-    isPending,
-    isError,
-  } = useQuery(listOneInvoiceOptions(invoiceId, branch))
+  const { data: invoice } = useQuery(listOneInvoiceOptions(invoiceId, branch))
 
   const refundInvoiceMutation = useMutation({
     ...refundInvoiceOptions(branch),
@@ -50,9 +47,10 @@ export function RefundDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpen(false)
+      toast.success("Successfully refunded the customer")
     },
     onError: (error) => {
-      console.log(error)
+      useErrorToast("Failed to refund invoice", error)
     },
   })
 
@@ -63,7 +61,7 @@ export function RefundDialog() {
 
     if (
       amount !== null &&
-      (isNaN(amount) || amount <= 0 || amount > invoice?.amount.value)
+      (isNaN(amount) || amount <= 0 || amount > invoice!.amount.value)
     ) {
       return
     }
@@ -102,24 +100,24 @@ export function RefundDialog() {
               <Input
                 id="refundAmount"
                 type="number"
-                placeholder={`${parseCurrency(invoice?.amount.value - invoice?.totalRefunded.value)} (Full refund)`}
+                placeholder={`${parseCurrency(invoice!.amount.value - invoice!.totalRefunded.value)} (Full refund)`}
                 value={refundAmount}
                 onChange={(e) => setRefundAmount(e.target.value)}
                 className="pl-9"
                 step="0.01"
                 min="0"
-                max={invoice?.amount.value}
+                max={invoice!.amount.value}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Invoice amount: {parseCurrency(invoice?.amount.value || 0)}
+              Invoice amount: {parseCurrency(invoice!.amount.value || 0)}
             </p>
           </div>
 
           <div className="rounded-lg border border-border bg-muted/50 p-3">
             <p className="text-sm font-medium">
               {refundAmount.trim() === "" ||
-              Number.parseFloat(refundAmount) === invoice?.amount.value
+              Number.parseFloat(refundAmount) === invoice!.amount.value
                 ? "Full Refund"
                 : "Partial Refund"}
             </p>
@@ -127,7 +125,7 @@ export function RefundDialog() {
               Amount to refund:&nbsp;
               {refundAmount.trim() === ""
                 ? parseCurrency(
-                    invoice?.amount.value - invoice?.totalRefunded.value
+                    invoice!.amount.value - invoice!.totalRefunded.value
                   )
                 : parseCurrency(refundAmount)}
             </p>

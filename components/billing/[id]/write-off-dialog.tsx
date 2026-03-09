@@ -22,6 +22,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useBranch } from "../../utils"
 import { usePathname } from "next/navigation"
 import { DialogTrigger } from "@radix-ui/react-dialog"
+import { toast } from "sonner"
 
 export function WriteOffDialog() {
   const [open, setOpen] = useState(false)
@@ -39,6 +40,14 @@ export function WriteOffDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpen(false)
+      toast.success("Invoice written off successfully")
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to write off invoice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { duration: 30000 }
+      )
+      console.error("[v0] Write-off error:", error)
     },
   })
 
