@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Star, Trash2 } from "lucide-react"
-import { MouseEvent, useEffect, useState } from "react"
+import { MouseEvent, useState } from "react"
 import { toast } from "sonner"
 
 import {

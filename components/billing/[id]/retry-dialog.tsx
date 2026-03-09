@@ -35,12 +35,11 @@ export function RetryDialog() {
 
   const { data: invoice } = useQuery(listOneInvoiceOptions(invoiceId, branch))
 
-  useEffect(() => setSelectedMethodId(invoice?.paymentMethodToken), [invoice])
+  useEffect(() => setSelectedMethodId(invoice!.paymentMethodToken), [invoice])
 
   const retryInvoiceMutation = useMutation({
     ...retryInvoiceOptions(branch),
     onSuccess: async (data) => {
-      toast.success("Invoice retry initiated successfully", { duration: 30000 })
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
@@ -49,6 +48,7 @@ export function RetryDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpenChange(false)
+      toast.success("Invoice retry initiated successfully")
     },
     onError: (error) => {
       toast.error(
@@ -92,7 +92,7 @@ export function RetryDialog() {
               Select Payment Method for Retry
             </Label>
             <PaymentMethodSelection
-              customerId={invoice.customerId}
+              customerId={invoice!.customerId}
               selectedMethodId={selectedMethodId}
               onMethodSelect={setSelectedMethodId}
             />

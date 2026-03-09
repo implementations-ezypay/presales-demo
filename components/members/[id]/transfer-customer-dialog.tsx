@@ -67,6 +67,9 @@ export function TransferCustomerDialog() {
 
   const linkPaymentMethodMutation = useMutation({
     ...linkPaymentMethodOptions(selectedBranch),
+    onSuccess: () => {
+      toast.success("Successfully transfer existing payment method")
+    },
     onError: (error) => {
       useErrorToast("Failed to link payment method", error)
       console.error("[v0] Link payment method error:", error)
@@ -76,7 +79,6 @@ export function TransferCustomerDialog() {
   const createCustomerMutation = useMutation({
     ...createCustomerOptions(selectedBranch),
     onSuccess: (data) => {
-      toast.success("Customer transferred successfully", { duration: 30000 })
       const { id: customerId } = data
       currentPaymentMethod?.data.forEach(async (paymentMethod) => {
         const { paymentMethodToken } = paymentMethod
@@ -87,6 +89,7 @@ export function TransferCustomerDialog() {
       setOpen(false)
       setSelectedBranch("")
       setTransferPaymentMethods(true)
+      toast.success("Customer transferred successfully")
     },
     onError: (error) => {
       useErrorToast("Failed to transfer customer", error)

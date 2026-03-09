@@ -33,7 +33,6 @@ export function WriteOffDialog() {
   const writeOffInvoiceMutation = useMutation({
     ...writeOffInvoiceOptions(branch),
     onSuccess: (data) => {
-      toast.success("Invoice written off successfully", { duration: 30000 })
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
@@ -41,6 +40,7 @@ export function WriteOffDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpen(false)
+      toast.success("Invoice written off successfully")
     },
     onError: (error) => {
       toast.error(

@@ -92,6 +92,11 @@ export default function PaymentCapturePage({
         iframeOriginRef.current = null
       }
     },
+    onError: () => {
+      toast.error(
+        "Error in getting Ezypay token. Unable to generate the payment capture page."
+      )
+    },
   })
 
   const linkPaymentMethodMutation = useMutation({

@@ -44,9 +44,6 @@ export function TrackExternalPaymentDialog() {
   const recordExternalInvoiceMutation = useMutation({
     ...recordExternalInvoiceOptions(branch),
     onSuccess: (data) => {
-      toast.success("External payment recorded successfully", {
-        duration: 30000,
-      })
       queryClient.invalidateQueries(listInvoiceOptions(branch))
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
@@ -54,6 +51,7 @@ export function TrackExternalPaymentDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpenChange(false)
+      toast.success("External payment recorded successfully")
     },
     onError: (error) => {
       toast.error(

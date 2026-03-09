@@ -48,6 +48,7 @@ export function RefundDialog() {
       queryClient.invalidateQueries(listTransactionOptions(invoiceId, branch))
       queryClient.invalidateQueries(listOneInvoiceOptions(invoiceId, branch))
       setOpen(false)
+      toast.success("Successfully refunded the customer")
     },
     onError: (error) => {
       useErrorToast("Failed to refund invoice", error)

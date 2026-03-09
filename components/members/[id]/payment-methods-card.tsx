@@ -34,6 +34,7 @@ import {
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { MouseEvent, useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function PaymentMethodsCard() {
   const searchParams = useSearchParams()
@@ -70,6 +71,7 @@ export default function PaymentMethodsCard() {
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
+      toast.success("Successfully create PromptPay token")
     },
     onError: (error) => {
       console.error(error)
@@ -79,6 +81,9 @@ export default function PaymentMethodsCard() {
 
   const handleAddPaymentOpenChange = (open: boolean) => {
     setAddPaymentDialogOpen(open)
+    queryClient.invalidateQueries(
+      getCustomerPaymentMethodsOptions(customerId, branch)
+    )
   }
 
   const addPromptPay = async (e: MouseEvent) => {

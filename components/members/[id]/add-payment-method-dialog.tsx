@@ -78,7 +78,6 @@ export function AddPaymentMethodDialog({
   const linkPaymentMethodMutation = useMutation({
     ...linkPaymentMethodOptions(branch),
     onSuccess: () => {
-      toast.success("Payment method linked successfully", { duration: 30000 })
       queryClient.invalidateQueries(
         getCustomerPaymentMethodsOptions(customerId, branch)
       )
@@ -93,6 +92,7 @@ export function AddPaymentMethodDialog({
     const handleMessage = async (e: MessageEvent) => {
       // Handle payment method added successfully
       let listenerResponse = e.data
+      console.log(listenerResponse)
       if (typeof listenerResponse === "string") {
         listenerResponse = JSON.parse(listenerResponse)
       }
@@ -102,6 +102,7 @@ export function AddPaymentMethodDialog({
           "Success message detected, linking token to customer",
           listenerResponse
         )
+        toast.success("Payment Method added successfully")
       }
       if (!listenerResponse.data) return
       const { paymentMethodToken } = listenerResponse.data

@@ -117,7 +117,6 @@ export function CreateInvoiceDialog({
   const createInvoiceMutation = useMutation({
     ...createInvoiceOptions(branch),
     onSuccess: async (data) => {
-      toast.success("Invoice successfully created", { duration: 30000 })
       setFormData({
         memberId: customerId || "",
         amount: "",
@@ -134,6 +133,7 @@ export function CreateInvoiceDialog({
         setQrString("")
       }
       setOpen(false)
+      toast.success("Invoice successfully created")
 
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(
@@ -153,9 +153,6 @@ export function CreateInvoiceDialog({
   const createTerminalInvoiceMutation = useMutation({
     ...createTerminalInvoiceOptions(branch),
     onSuccess: async (data) => {
-      toast.success("Terminal invoice created successfully", {
-        duration: 30000,
-      })
       setFormData({
         memberId: customerId || "",
         amount: "",
@@ -166,6 +163,7 @@ export function CreateInvoiceDialog({
         accountingCode: "",
       })
 
+      toast.success("Terminal invoice created successfully")
       await new Promise((resolve) => setTimeout(resolve, 2000))
       queryClient.invalidateQueries(
         listSingleInvoiceOptions(data.customerId, branch)
@@ -192,9 +190,7 @@ export function CreateInvoiceDialog({
 
         new URL(checkoutUrl)
 
-        toast.success("Invoice created: Opening Checkout page...", {
-          duration: 30000,
-        })
+        toast.success("Checkout invoice created: Opening Checkout page...")
 
         // Open in a new tab/window; use noopener and noreferrer for security
         if (typeof window !== "undefined") {
