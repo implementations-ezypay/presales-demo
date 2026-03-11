@@ -129,7 +129,7 @@ export function CreateInvoiceDialog({
 
       if (data.paymentMethodData.type === "QRPAYMENT") {
         setQrString(data.qrData?.qrString)
-        await new Promise((resolve) => setTimeout(resolve, 5000))
+        await new Promise((resolve) => setTimeout(resolve, 10000))
         setQrString("")
       }
       setOpen(false)
