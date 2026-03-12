@@ -26,6 +26,8 @@ import { useState } from "react"
 
 export default function NewPlanPage() {
   const [features, setFeatures] = useState([""])
+  const todayISO = new Date().toISOString().split("T")[0]
+  const [startDate, setStartDate] = useState(todayISO)
 
   const addFeature = () => {
     setFeatures([...features, ""])
@@ -108,6 +110,19 @@ export default function NewPlanPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    min={todayISO}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The date from which this plan becomes active. Must be today or a future date.
+                  </p>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div className="space-y-0.5">
