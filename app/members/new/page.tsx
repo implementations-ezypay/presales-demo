@@ -16,7 +16,11 @@ import { TopBar } from "@/components/top-bar"
 import { useBranch } from "@/components/utils"
 import { createCustomerOptions } from "@/lib/query-options/customer"
 import { CreateCustomer, CreateCustomerForm } from "@/lib/types/customer"
-import { calculateNewDueDateFromPlan, defaultDateFormat } from "@/lib/utils"
+import {
+  calculateNewDueDateFromPlan,
+  defaultDateFormat,
+  useErrorToast,
+} from "@/lib/utils"
 import { useMutation } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ChangeEvent, createContext, useState } from "react"
@@ -55,6 +59,9 @@ export default function NewMemberPage() {
         `${window.location.origin}/email-preview?id=${data.id}&name=${formData.firstName} ${formData.lastName}`
       )
       toast.success("Create Ezypay Customer successfully")
+    },
+    onError: (error) => {
+      useErrorToast("Failed to create customer", error)
     },
   })
 
@@ -118,11 +125,10 @@ export default function NewMemberPage() {
                 <p className="text-sm md:text-base text-muted-foreground">
                   Create a new member profile
                 </p>
-                {createCustomerMutation.isIdle && (
-                  <CreateCustomerPageDescription />
-                )}
-                {createCustomerMutation.isSuccess && (
+                {createCustomerMutation.isSuccess ? (
                   <PaymentCapturePageDescription />
+                ) : (
+                  <CreateCustomerPageDescription />
                 )}
               </div>
             </div>
