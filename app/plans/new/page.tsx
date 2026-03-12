@@ -31,6 +31,8 @@ export default function NewPlanPage() {
   const [billingType, setBillingType] = useState<"day_of_month" | "day_of_week">("day_of_month")
   const [billingDayOfMonth, setBillingDayOfMonth] = useState("1")
   const [billingDayOfWeek, setBillingDayOfWeek] = useState("monday")
+  const [firstBillingType, setFirstBillingType] = useState<"full" | "prorata" | "custom">("full")
+  const [firstBillingCustomAmount, setFirstBillingCustomAmount] = useState("")
 
   const addFeature = () => {
     setFeatures([...features, ""])
@@ -185,6 +187,42 @@ export default function NewPlanPage() {
                       The recurring day billing is charged each cycle.
                     </p>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>First Billing Amount</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={firstBillingType}
+                      onValueChange={(v) =>
+                        setFirstBillingType(v as "full" | "prorata" | "custom")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">Full amount</SelectItem>
+                        <SelectItem value="prorata">Pro-rata amount</SelectItem>
+                        <SelectItem value="custom">Custom amount</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {firstBillingType === "custom" && (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={firstBillingCustomAmount}
+                        onChange={(e) => setFirstBillingCustomAmount(e.target.value)}
+                        className="w-36 shrink-0"
+                      />
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {firstBillingType === "full" && "The first billing will charge the full plan amount."}
+                    {firstBillingType === "prorata" && "The first billing will be calculated proportionally based on the start date within the billing cycle."}
+                    {firstBillingType === "custom" && "Enter a specific amount to charge on the first billing."}
+                  </p>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div className="space-y-0.5">
