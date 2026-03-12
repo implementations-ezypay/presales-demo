@@ -81,12 +81,45 @@ export default function NewPlanPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="planName">Plan Name</Label>
-                  <Input
-                    id="planName"
-                    placeholder="e.g., Premium, Basic, Annual"
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="planName">Plan Name</Label>
+                    <Input
+                      id="planName"
+                      placeholder="e.g., Premium, Basic, Annual"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>First Billing Amount</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={firstBillingType}
+                        onValueChange={(v) =>
+                          setFirstBillingType(v as "full" | "prorata" | "custom")
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="full">Full amount</SelectItem>
+                          <SelectItem value="prorata">Pro-rata amount</SelectItem>
+                          <SelectItem value="custom">Custom amount</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {firstBillingType === "custom" && (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={firstBillingCustomAmount}
+                          onChange={(e) => setFirstBillingCustomAmount(e.target.value)}
+                          className="w-36 shrink-0"
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
@@ -190,42 +223,6 @@ export default function NewPlanPage() {
                       The recurring day billing is charged each cycle.
                     </p>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>First Billing Amount</Label>
-                  <div className="flex gap-2">
-                    <Select
-                      value={firstBillingType}
-                      onValueChange={(v) =>
-                        setFirstBillingType(v as "full" | "prorata" | "custom")
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="full">Full amount</SelectItem>
-                        <SelectItem value="prorata">Pro-rata amount</SelectItem>
-                        <SelectItem value="custom">Custom amount</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {firstBillingType === "custom" && (
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={firstBillingCustomAmount}
-                        onChange={(e) => setFirstBillingCustomAmount(e.target.value)}
-                        className="w-36 shrink-0"
-                      />
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {firstBillingType === "full" && "The first billing will charge the full plan amount."}
-                    {firstBillingType === "prorata" && "The first billing will be calculated proportionally based on the start date within the billing cycle."}
-                    {firstBillingType === "custom" && "Enter a specific amount to charge on the first billing."}
-                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Plan End</Label>
