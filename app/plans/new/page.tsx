@@ -28,6 +28,9 @@ export default function NewPlanPage() {
   const [features, setFeatures] = useState([""])
   const todayISO = new Date().toISOString().split("T")[0]
   const [startDate, setStartDate] = useState(todayISO)
+  const [billingType, setBillingType] = useState<"day_of_month" | "day_of_week">("day_of_month")
+  const [billingDayOfMonth, setBillingDayOfMonth] = useState("1")
+  const [billingDayOfWeek, setBillingDayOfWeek] = useState("monday")
 
   const addFeature = () => {
     setFeatures([...features, ""])
@@ -111,18 +114,77 @@ export default function NewPlanPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    min={todayISO}
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    The date from which this plan becomes active. Must be today or a future date.
-                  </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      min={todayISO}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Must be today or a future date.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Billing Date</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={billingType}
+                        onValueChange={(v) =>
+                          setBillingType(v as "day_of_month" | "day_of_week")
+                        }
+                      >
+                        <SelectTrigger className="w-[160px] shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="day_of_month">Day of month</SelectItem>
+                          <SelectItem value="day_of_week">Day of week</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {billingType === "day_of_month" ? (
+                        <Select
+                          value={billingDayOfMonth}
+                          onValueChange={setBillingDayOfMonth}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                              <SelectItem key={d} value={String(d)}>
+                                {d}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Select
+                          value={billingDayOfWeek}
+                          onValueChange={setBillingDayOfWeek}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monday">Monday</SelectItem>
+                            <SelectItem value="tuesday">Tuesday</SelectItem>
+                            <SelectItem value="wednesday">Wednesday</SelectItem>
+                            <SelectItem value="thursday">Thursday</SelectItem>
+                            <SelectItem value="friday">Friday</SelectItem>
+                            <SelectItem value="saturday">Saturday</SelectItem>
+                            <SelectItem value="sunday">Sunday</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      The recurring day billing is charged each cycle.
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div className="space-y-0.5">
