@@ -86,24 +86,25 @@ export default function NewPlanPage() {
                     rows={3}
                   />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="price">Price</Label>
                     <Input id="price" type="number" placeholder="99" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="duration">Duration</Label>
+                    <Label htmlFor="interval">Billing Interval</Label>
+                    <Input id="interval" type="number" placeholder="2" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Interval Unit</Label>
                     <Select>
-                      <SelectTrigger id="duration">
-                        <SelectValue placeholder="Select duration" />
+                      <SelectTrigger id="interval_unit">
+                        <SelectValue placeholder="Select interval" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                        <SelectItem value="annual">Annual</SelectItem>
-                        <SelectItem value="personal">
-                          Personal Training
-                        </SelectItem>
+                        <SelectItem value="day">Day</SelectItem>
+                        <SelectItem value="week">Week</SelectItem>
+                        <SelectItem value="month">Month</SelectItem>                        
                       </SelectContent>
                     </Select>
                   </div>
@@ -118,47 +119,7 @@ export default function NewPlanPage() {
                   <Switch id="popular" />
                 </div>
               </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Included Features</CardTitle>
-                <CardDescription>
-                  List all features and services included in this plan
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      placeholder="e.g., Unlimited group classes"
-                      value={feature}
-                      onChange={(e) => updateFeature(index, e.target.value)}
-                    />
-                    {features.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFeature(index)}
-                        className="shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addFeature}
-                  className="w-full bg-transparent"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Feature
-                </Button>
-              </CardContent>
-            </Card>
+            </Card>            
 
             <div className="flex justify-end gap-4">
               <Link href="/plans">
