@@ -33,6 +33,9 @@ export default function NewPlanPage() {
   const [billingDayOfWeek, setBillingDayOfWeek] = useState("monday")
   const [firstBillingType, setFirstBillingType] = useState<"full" | "prorata" | "custom">("full")
   const [firstBillingCustomAmount, setFirstBillingCustomAmount] = useState("")
+  const [planEndType, setPlanEndType] = useState<"ongoing" | "end_date" | "amount_collected">("ongoing")
+  const [planEndDate, setPlanEndDate] = useState("")
+  const [planEndAmount, setPlanEndAmount] = useState("")
 
   const addFeature = () => {
     setFeatures([...features, ""])
@@ -222,6 +225,51 @@ export default function NewPlanPage() {
                     {firstBillingType === "full" && "The first billing will charge the full plan amount."}
                     {firstBillingType === "prorata" && "The first billing will be calculated proportionally based on the start date within the billing cycle."}
                     {firstBillingType === "custom" && "Enter a specific amount to charge on the first billing."}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Plan End</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={planEndType}
+                      onValueChange={(v) =>
+                        setPlanEndType(v as "ongoing" | "end_date" | "amount_collected")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ongoing">Ongoing</SelectItem>
+                        <SelectItem value="end_date">Specific end date</SelectItem>
+                        <SelectItem value="amount_collected">After amount collected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {planEndType === "end_date" && (
+                      <Input
+                        type="date"
+                        min={startDate}
+                        value={planEndDate}
+                        onChange={(e) => setPlanEndDate(e.target.value)}
+                        className="w-40 shrink-0"
+                      />
+                    )}
+                    {planEndType === "amount_collected" && (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={planEndAmount}
+                        onChange={(e) => setPlanEndAmount(e.target.value)}
+                        className="w-36 shrink-0"
+                      />
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {planEndType === "ongoing" && "This plan will continue indefinitely until manually cancelled."}
+                    {planEndType === "end_date" && "This plan will automatically end on the specified date."}
+                    {planEndType === "amount_collected" && "This plan will end after the total specified amount has been collected."}
                   </p>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
