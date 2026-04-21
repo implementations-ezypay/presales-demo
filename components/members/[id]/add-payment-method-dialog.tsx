@@ -126,19 +126,18 @@ export function AddPaymentMethodDialog({
       if (typeof listenerResponse === "string") {
         listenerResponse = JSON.parse(listenerResponse)
       }
-
       if (listenerResponse.type === "success") {
-        console.log(
-          "Success message detected, linking token to customer",
-          listenerResponse
-        )
+        console.log("Successlly create payment method", listenerResponse)
         toast.success("Payment Method added successfully")
         queryClient.invalidateQueries(
           getCustomerPaymentMethodsOptions(customerId, branch)
         )
 
         await new Promise((resolve) => setTimeout(resolve, 2000))
-        if (!open) setOpen(false)
+        if (open) setOpen(false)
+      } else if (listenerResponse.type === "error") {
+        console.error("Failed to create payment method", listenerResponse)
+        useErrorToast("Failed to create payment method")
       }
       if (!listenerResponse.data) return
       const { paymentMethodToken } = listenerResponse.data
@@ -195,7 +194,6 @@ export function AddPaymentMethodDialog({
 
       // Send the message to the iframe
       iframeWindow.postMessage({ actionType: type }, targetOrigin)
-      console.log("[postMessage] Message sent successfully")
     } catch (error) {
       console.error("[submitHpp] Error sending postMessage:", error)
       toast.error("Failed to submit payment form")

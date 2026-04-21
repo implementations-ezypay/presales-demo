@@ -158,9 +158,9 @@ export const processError =
     })
   }
 
-export const useErrorToast = (message: string, error: Error) => {
+export const useErrorToast = (message: string, error?: Error) => {
   toast.error(message, {
-    description: error.message,
+    description: error?.message,
     duration: 30000,
   })
   console.error(message, error)

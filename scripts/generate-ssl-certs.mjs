@@ -22,7 +22,7 @@ const generate = async () => {
 }
 
 generate()
-  .then((cert) => {
+  .then((_cert) => {
     console.log("Certificate and key generated successfully!")
     process.exit(0)
   })
