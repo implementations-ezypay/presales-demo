@@ -22,20 +22,15 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { BRANCHES, canBranchTransferFunds } from "@/lib/branches"
+import { BRANCHES, canBranchTransferFunds, getBranchName } from "@/lib/branches"
 import Link from "next/link"
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
 import {
-  createCustomerOptions,
   listCustomerOptions,
   listSingleCustomerOptions,
 } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
-import { PaymentMethod } from "@/lib/types/payment-method"
-import {
-  getCustomerPaymentMethodsOptions,
-  linkPaymentMethodOptions,
-} from "@/lib/query-options/payment-method"
+import { createTransferRequestOptions } from "@/lib/query-options/transfer-customer"
 import { toast } from "sonner"
 import { useBranch } from "@/components/utils"
 import { useErrorToast } from "@/lib/utils"
@@ -83,37 +78,10 @@ export function TransferCustomerDashboardDialog() {
     listSingleCustomerOptions(selectedCustomerId || null, selectedBranch || null)
   )
 
-  const {
-    data: currentPaymentMethod,
-  }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
-    getCustomerPaymentMethodsOptions(selectedCustomerId, selectedBranch)
-  )
-
-  const linkPaymentMethodMutation = useMutation({
-    ...linkPaymentMethodOptions(branch),
+  const createTransferRequestMutation = useMutation({
+    ...createTransferRequestOptions(),
     onSuccess: () => {
-      toast.success("Successfully transfer existing payment method")
-    },
-    onError: (error) => {
-      useErrorToast("Failed to link payment method", error)
-      console.error("[v0] Link payment method error:", error)
-    },
-  })
-
-  const createCustomerMutation = useMutation({
-    ...createCustomerOptions(branch),
-    onSuccess: (data) => {
-      const { id: newCustomerId } = data
-      if (transferPaymentMethods) {
-        currentPaymentMethod?.data.forEach(async (paymentMethod) => {
-          const { paymentMethodToken } = paymentMethod
-          linkPaymentMethodMutation.mutate({
-            customerId: newCustomerId,
-            paymentMethodToken,
-          })
-        })
-      }
-
+      const sourceName = getBranchName(selectedBranch) ?? "the source branch"
       setOpen(false)
       setSelectedCustomerId("")
       setSelectedBranch("")
@@ -121,27 +89,27 @@ export function TransferCustomerDashboardDialog() {
       setAmount("")
       setCustomerSearch("")
       setShowResults(false)
-      toast.success("Customer transferred successfully")
+      toast.success(
+        `Transfer request submitted. Pending approval from ${sourceName}.`
+      )
     },
     onError: (error) => {
-      useErrorToast("Failed to transfer customer", error)
-      console.error("[v0] Transfer customer error:", error)
+      useErrorToast("Failed to submit transfer request", error)
+      console.error("[v0] Transfer request error:", error)
     },
   })
 
   const handleTransfer = async () => {
     if (!selectedCustomerId || !selectedBranch || !selectedCustomerData) return
 
-    const customerData = {
-      ...selectedCustomerData,
-      metadata: {
-        ...selectedCustomerData?.metadata,
-        originalBranch: selectedBranch,
-        ...(canTransferFunds ? { transferAmount: amount } : {}),
-      },
-    }
-
-    createCustomerMutation.mutate({ customerData })
+    createTransferRequestMutation.mutate({
+      branchRequestor: branch,
+      sourceBranch: selectedBranch,
+      ezypayReferenceNumber:
+        selectedCustomerData.number ?? selectedCustomerData.id,
+      amountRemaining: canTransferFunds && amount ? Number(amount) : null,
+      transferPaymentMethods,
+    })
   }
 
   useEffect(() => {
@@ -162,8 +130,9 @@ export function TransferCustomerDashboardDialog() {
           <DialogTitle>Transfer Customer</DialogTitle>
           <DialogDescription>
             Select a source branch that can transfer funds, then choose one of
-            its customers to transfer into the current branch. Choose whether to
-            transfer existing payment methods.
+            its customers to transfer into the current branch. Submitting raises
+            a request that must be approved by the source branch before the
+            customer is moved.
           </DialogDescription>
         </DialogHeader>
 
@@ -283,10 +252,10 @@ export function TransferCustomerDashboardDialog() {
           </div>
 
           <DialogDescription>
-            This essentially creates a new customer in the new branch with the
-            customer number from the existing branch. Existing payment method
-            tokens can be linked to the new customer account if the customer
-            agrees to it. Refer to&nbsp;
+            Once approved by the source branch, this creates a new customer in
+            the requesting branch with the customer number from the existing
+            branch. Existing payment method tokens can be linked to the new
+            customer account if the customer agrees to it. Refer to&nbsp;
             <Link
               href="https://developer.ezypay.com/docs/customer-transfer#customer-transfer"
               target="_blank"
@@ -307,10 +276,12 @@ export function TransferCustomerDashboardDialog() {
             disabled={
               !selectedCustomerId ||
               !selectedBranch ||
-              createCustomerMutation.isPending
+              createTransferRequestMutation.isPending
             }
           >
-            {createCustomerMutation.isPending ? "Transferring..." : "Transfer"}
+            {createTransferRequestMutation.isPending
+              ? "Submitting..."
+              : "Transfer"}
           </Button>
         </DialogFooter>
       </DialogContent>

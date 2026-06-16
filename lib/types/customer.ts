@@ -20,6 +20,7 @@ export type Customer = {
     dueDate?: string
     startDate?: string
     originalBranch?: string
+    transferAmount?: string
   }
   number?: string
 }
