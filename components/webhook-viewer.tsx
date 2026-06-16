@@ -255,7 +255,7 @@ export function WebhookViewer({
                 <Button
                   onClick={() =>
                     handleCopy(
-                      JSON.stringify(selectedWebhook.payload, null, 2),
+                      JSON.stringify(selectedWebhook.payload, null, 4),
                       selectedWebhook.id
                     )
                   }
