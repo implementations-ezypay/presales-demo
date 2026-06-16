@@ -3,4 +3,5 @@ export interface Branch {
   name: string
   country: string
   currency: string
+  canTransferFunds?: boolean
 }

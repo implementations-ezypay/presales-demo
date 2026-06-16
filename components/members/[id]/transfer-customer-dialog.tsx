@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { BRANCHES } from "@/lib/branches"
+import { BRANCHES, canBranchTransferFunds } from "@/lib/branches"
 import Link from "next/link"
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
 import {
@@ -52,6 +52,8 @@ export function TransferCustomerDialog() {
   const availableBranches = BRANCHES.filter(
     (b) => b.id !== branch && b.country === country
   )
+
+  const canTransferFunds = canBranchTransferFunds(branch)
 
   const {
     data: currentCustomerData,
@@ -108,7 +110,7 @@ export function TransferCustomerDialog() {
       metadata: {
         ...currentCustomerData?.metadata,
         originalBranch: branch,
-        transferAmount: amount,
+        ...(canTransferFunds ? { transferAmount: amount } : {}),
       },
     }
 
@@ -158,20 +160,25 @@ export function TransferCustomerDialog() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="transfer-amount" className="text-base font-semibold">
-              Amount Remaining for Full Payment
-            </Label>
-            <Input
-              id="transfer-amount"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
+          {canTransferFunds && (
+            <div className="space-y-2">
+              <Label
+                htmlFor="transfer-amount"
+                className="text-base font-semibold"
+              >
+                Amount Remaining for Full Payment
+              </Label>
+              <Input
+                id="transfer-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-3 py-3">
             <Checkbox
