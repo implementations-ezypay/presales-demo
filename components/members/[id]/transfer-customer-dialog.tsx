@@ -160,7 +160,7 @@ export function TransferCustomerDialog() {
 
           <div className="space-y-2">
             <Label htmlFor="transfer-amount" className="text-base font-semibold">
-              Amount
+              Remaining Paid in Full amount
             </Label>
             <Input
               id="transfer-amount"
