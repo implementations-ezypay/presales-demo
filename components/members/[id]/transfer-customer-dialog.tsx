@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { BRANCHES } from "@/lib/branches"
 import Link from "next/link"
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
@@ -43,6 +44,7 @@ export function TransferCustomerDialog() {
   const [open, setOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("")
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
+  const [amount, setAmount] = useState("")
   const branch = useBranch()
   const [country, setCountry] = useState("")
   const customerId = usePathname().split("/").at(-1) || ""
@@ -89,6 +91,7 @@ export function TransferCustomerDialog() {
       setOpen(false)
       setSelectedBranch("")
       setTransferPaymentMethods(true)
+      setAmount("")
       toast.success("Customer transferred successfully")
     },
     onError: (error) => {
@@ -102,7 +105,11 @@ export function TransferCustomerDialog() {
 
     const customerData = {
       ...currentCustomerData,
-      metadata: { ...currentCustomerData?.metadata, originalBranch: branch },
+      metadata: {
+        ...currentCustomerData?.metadata,
+        originalBranch: branch,
+        transferAmount: amount,
+      },
     }
 
     createCustomerMutation.mutate({ customerData })
@@ -149,6 +156,21 @@ export function TransferCustomerDialog() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="transfer-amount" className="text-base font-semibold">
+              Amount
+            </Label>
+            <Input
+              id="transfer-amount"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
 
           <div className="flex items-center gap-3 py-3">
