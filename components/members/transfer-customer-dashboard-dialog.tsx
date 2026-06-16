@@ -47,7 +47,14 @@ export function TransferCustomerDashboardDialog() {
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
   const [amount, setAmount] = useState("")
   const [country, setCountry] = useState("")
+  const [customerSearch, setCustomerSearch] = useState("")
+  const [showResults, setShowResults] = useState(false)
   const branch = useBranch()
+
+  const formatCustomer = (c: Customer) =>
+    `${c.email ?? "No email"} — ${c.firstName} ${c.lastName}${
+      c.number ? ` (${c.number})` : ""
+    }`
 
   // Only branches that have the fund-transfer flag can be a transfer source.
   const availableBranches = BRANCHES.filter(
@@ -59,6 +66,18 @@ export function TransferCustomerDashboardDialog() {
   // Customers belonging to the selected source branch.
   const { data: branchCustomers }: UseQueryResult<{ data: Customer[] }> =
     useQuery(listCustomerOptions(selectedBranch || null))
+
+  // Auto-filter customers by email (also matches name / Ezypay number).
+  const filteredCustomers =
+    branchCustomers?.data.filter((c) => {
+      const q = customerSearch.trim().toLowerCase()
+      if (!q) return true
+      return (
+        c.email?.toLowerCase().includes(q) ||
+        `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+        c.number?.toLowerCase().includes(q)
+      )
+    }) ?? []
 
   const { data: selectedCustomerData }: UseQueryResult<Customer> = useQuery(
     listSingleCustomerOptions(selectedCustomerId || null, selectedBranch || null)
@@ -100,6 +119,8 @@ export function TransferCustomerDashboardDialog() {
       setSelectedBranch("")
       setTransferPaymentMethods(true)
       setAmount("")
+      setCustomerSearch("")
+      setShowResults(false)
       toast.success("Customer transferred successfully")
     },
     onError: (error) => {
@@ -156,12 +177,17 @@ export function TransferCustomerDashboardDialog() {
               onValueChange={(value) => {
                 setSelectedBranch(value)
                 setSelectedCustomerId("")
+                setCustomerSearch("")
+                setShowResults(false)
               }}
             >
               <SelectTrigger id="branch-select">
                 <SelectValue placeholder="Choose a branch" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="select-branch" disabled>
+                  Select Branch
+                </SelectItem>
                 {availableBranches.map((b) => (
                   <SelectItem key={b.id} value={b.id}>
                     {b.name}
@@ -173,34 +199,54 @@ export function TransferCustomerDashboardDialog() {
 
           <div className="space-y-2">
             <Label
-              htmlFor="customer-select"
+              htmlFor="customer-search"
               className="text-base font-semibold"
             >
-              Select Customer
+              Search Customer
             </Label>
-            <Select
-              value={selectedCustomerId}
-              onValueChange={setSelectedCustomerId}
-              disabled={!selectedBranch}
-            >
-              <SelectTrigger id="customer-select">
-                <SelectValue
-                  placeholder={
-                    selectedBranch
-                      ? "Choose a customer"
-                      : "Select a branch first"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {branchCustomers?.data.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    {`${customer.firstName} ${customer.lastName}`}
-                    {customer.number ? ` (${customer.number})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Input
+                id="customer-search"
+                autoComplete="off"
+                disabled={!selectedBranch}
+                placeholder={
+                  selectedBranch
+                    ? "Search by email, name or Ezypay number"
+                    : "Select a branch first"
+                }
+                value={customerSearch}
+                onChange={(e) => {
+                  setCustomerSearch(e.target.value)
+                  setSelectedCustomerId("")
+                  setShowResults(true)
+                }}
+                onFocus={() => setShowResults(true)}
+              />
+              {showResults && selectedBranch && (
+                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+                  {filteredCustomers.length === 0 ? (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">
+                      No customers found
+                    </p>
+                  ) : (
+                    filteredCustomers.map((customer) => (
+                      <button
+                        type="button"
+                        key={customer.id}
+                        className="flex w-full items-center px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => {
+                          setSelectedCustomerId(customer.id)
+                          setCustomerSearch(formatCustomer(customer))
+                          setShowResults(false)
+                        }}
+                      >
+                        {formatCustomer(customer)}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {canTransferFunds && (
