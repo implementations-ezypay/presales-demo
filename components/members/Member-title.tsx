@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { TransferCustomerDashboardDialog } from "./transfer-customer-dashboard-dialog"
-import { TransferCustomerSearchDialog } from "./transfer-customer-search-dialog"
 
 export default function MemberTitle() {
   const router = useRouter()
@@ -21,7 +20,6 @@ export default function MemberTitle() {
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <TransferCustomerDashboardDialog />
-        <TransferCustomerSearchDialog />
         <Button
           className="w-full sm:w-auto"
           onClick={() => router.push("/members/new")}
