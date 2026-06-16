@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { TransferCustomerDashboardDialog } from "./transfer-customer-dashboard-dialog"
 
 export default function MemberTitle() {
   const router = useRouter()
@@ -17,13 +18,16 @@ export default function MemberTitle() {
           Manage your gym members and their memberships
         </p>
       </div>
-      <Button
-        className="w-full sm:w-auto"
-        onClick={() => router.push("/members/new")}
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        Add Member
-      </Button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <TransferCustomerDashboardDialog />
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => router.push("/members/new")}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Member
+        </Button>
+      </div>
     </div>
   )
 }
