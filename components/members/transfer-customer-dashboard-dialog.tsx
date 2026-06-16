@@ -27,6 +27,7 @@ import Link from "next/link"
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query"
 import {
   createCustomerOptions,
+  listCustomerOptions,
   listSingleCustomerOptions,
 } from "@/lib/query-options/customer"
 import { Customer } from "@/lib/types/customer"
@@ -37,7 +38,6 @@ import {
 } from "@/lib/query-options/payment-method"
 import { toast } from "sonner"
 import { useBranch } from "@/components/utils"
-import { useMember } from "./utils"
 import { useErrorToast } from "@/lib/utils"
 
 export function TransferCustomerDashboardDialog() {
@@ -48,26 +48,30 @@ export function TransferCustomerDashboardDialog() {
   const [amount, setAmount] = useState("")
   const [country, setCountry] = useState("")
   const branch = useBranch()
-  const { filteredMembers } = useMember()
 
+  // Only branches that have the fund-transfer flag can be a transfer source.
   const availableBranches = BRANCHES.filter(
-    (b) => b.id !== branch && b.country === country
+    (b) => b.id !== branch && b.country === country && canBranchTransferFunds(b.id)
   )
 
-  const canTransferFunds = canBranchTransferFunds(branch)
+  const canTransferFunds = canBranchTransferFunds(selectedBranch)
+
+  // Customers belonging to the selected source branch.
+  const { data: branchCustomers }: UseQueryResult<{ data: Customer[] }> =
+    useQuery(listCustomerOptions(selectedBranch || null))
 
   const { data: selectedCustomerData }: UseQueryResult<Customer> = useQuery(
-    listSingleCustomerOptions(selectedCustomerId || null, branch)
+    listSingleCustomerOptions(selectedCustomerId || null, selectedBranch || null)
   )
 
   const {
     data: currentPaymentMethod,
   }: UseQueryResult<{ data: PaymentMethod[] }> = useQuery(
-    getCustomerPaymentMethodsOptions(selectedCustomerId, branch)
+    getCustomerPaymentMethodsOptions(selectedCustomerId, selectedBranch)
   )
 
   const linkPaymentMethodMutation = useMutation({
-    ...linkPaymentMethodOptions(selectedBranch),
+    ...linkPaymentMethodOptions(branch),
     onSuccess: () => {
       toast.success("Successfully transfer existing payment method")
     },
@@ -78,7 +82,7 @@ export function TransferCustomerDashboardDialog() {
   })
 
   const createCustomerMutation = useMutation({
-    ...createCustomerOptions(selectedBranch),
+    ...createCustomerOptions(branch),
     onSuccess: (data) => {
       const { id: newCustomerId } = data
       if (transferPaymentMethods) {
@@ -111,7 +115,7 @@ export function TransferCustomerDashboardDialog() {
       ...selectedCustomerData,
       metadata: {
         ...selectedCustomerData?.metadata,
-        originalBranch: branch,
+        originalBranch: selectedBranch,
         ...(canTransferFunds ? { transferAmount: amount } : {}),
       },
     }
@@ -127,7 +131,7 @@ export function TransferCustomerDashboardDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full sm:w-auto">
+        <Button className="w-full sm:w-auto">
           <ArrowRight className="mr-2 h-4 w-4" />
           Transfer Customer
         </Button>
@@ -136,12 +140,37 @@ export function TransferCustomerDashboardDialog() {
         <DialogHeader>
           <DialogTitle>Transfer Customer</DialogTitle>
           <DialogDescription>
-            Select a customer and a destination branch to transfer them to.
-            Choose whether to transfer existing payment methods.
+            Select a source branch that can transfer funds, then choose one of
+            its customers to transfer into the current branch. Choose whether to
+            transfer existing payment methods.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="branch-select" className="text-base font-semibold">
+              Select Branch
+            </Label>
+            <Select
+              value={selectedBranch}
+              onValueChange={(value) => {
+                setSelectedBranch(value)
+                setSelectedCustomerId("")
+              }}
+            >
+              <SelectTrigger id="branch-select">
+                <SelectValue placeholder="Choose a branch" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableBranches.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label
               htmlFor="customer-select"
@@ -152,33 +181,22 @@ export function TransferCustomerDashboardDialog() {
             <Select
               value={selectedCustomerId}
               onValueChange={setSelectedCustomerId}
+              disabled={!selectedBranch}
             >
               <SelectTrigger id="customer-select">
-                <SelectValue placeholder="Choose a customer" />
+                <SelectValue
+                  placeholder={
+                    selectedBranch
+                      ? "Choose a customer"
+                      : "Select a branch first"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {filteredMembers?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {`${member.firstName} ${member.lastName}`}
-                    {member.number ? ` (${member.number})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="branch-select" className="text-base font-semibold">
-              Select Branch
-            </Label>
-            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-              <SelectTrigger id="branch-select">
-                <SelectValue placeholder="Choose a branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBranches.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.name}
+                {branchCustomers?.data.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {`${customer.firstName} ${customer.lastName}`}
+                    {customer.number ? ` (${customer.number})` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
