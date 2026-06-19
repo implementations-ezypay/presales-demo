@@ -6,6 +6,7 @@ import {
   listCustomer,
 } from "./customer"
 import { linkPaymentMethod } from "./payment-methods"
+import { createPartnerInvoice } from "./partner-invoice"
 import { CreateCustomer } from "./types/customer"
 import { TransferCustomer } from "./types/transfer-customer"
 
@@ -64,6 +65,21 @@ export async function processTransferApproval(
         record.branchRequestor
       )
     }
+  }
+
+  // Raise a partner invoice from the requesting branch (issuer) to the source
+  // branch (recipient) to recover the amount remaining for full payment.
+  if (record.amountRemaining != null) {
+    const customerName =
+      `${sourceCustomer.firstName ?? ""} ${sourceCustomer.lastName ?? ""}`.trim()
+
+    await createPartnerInvoice({
+      issuerBranch: record.branchRequestor,
+      recipientBranch: record.sourceBranch,
+      memo: `Request for transfer of customer ${customerName} - ${record.ezypayReferenceNumber}`,
+      itemDescription: "Recover amount from PIF attempts",
+      amount: record.amountRemaining,
+    })
   }
 
   return { newCustomerId: newCustomer.id }
