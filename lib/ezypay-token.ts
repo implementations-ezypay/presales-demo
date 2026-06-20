@@ -24,7 +24,7 @@ export async function getEzypayToken(
       client_secret: clientSecret,
       username: username,
       password: password,
-      scope: "integrator billing_profile create_payment_method offline_access",
+      scope: "integrator billing_profile create_payment_method offline_access partner",
     }
     const { data } = await axios.post<{ access_token: string }>(
       tokenUrl,
