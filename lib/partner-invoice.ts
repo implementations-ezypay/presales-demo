@@ -29,14 +29,14 @@ export type PartnerInvoice = {
  * token and merchant header.
  */
 export async function createPartnerInvoice({
-  issuerMerchantId,
-  recipientMerchantId,
+  issuerBranch,
+  recipientBranch,
   memo,
   itemDescription,
   amount,
 }: {
-  issuerMerchantId: string
-  recipientMerchantId: string
+  issuerBranch: string
+  recipientBranch: string
   memo: string
   itemDescription: string
   amount: number
