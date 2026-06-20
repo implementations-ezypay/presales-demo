@@ -42,6 +42,7 @@ const STATUS_VARIANT: Record<
 
 export function TransferApprovalDialog() {
   const [open, setOpen] = useState(false)
+  const [processingId, setProcessingId] = useState<string | null>(null)
   const branch = useBranch()
   const queryClient = useQueryClient()
 
@@ -67,6 +68,7 @@ export function TransferApprovalDialog() {
       useErrorToast("Failed to approve transfer", error)
       console.error("[v0] Approve transfer error:", error)
     },
+    onSettled: () => setProcessingId(null),
   })
 
   const rejectMutation = useMutation({
@@ -79,9 +81,21 @@ export function TransferApprovalDialog() {
       useErrorToast("Failed to reject transfer", error)
       console.error("[v0] Reject transfer error:", error)
     },
+    onSettled: () => setProcessingId(null),
   })
 
   const isProcessing = approveMutation.isPending || rejectMutation.isPending
+
+  // Only action the specific request whose button was clicked.
+  const handleApprove = (request: TransferCustomer) => {
+    setProcessingId(request.id)
+    approveMutation.mutate(request)
+  }
+
+  const handleReject = (id: string) => {
+    setProcessingId(id)
+    rejectMutation.mutate(id)
+  }
 
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat("en-US", {
@@ -188,18 +202,24 @@ export function TransferApprovalDialog() {
                         variant="outline"
                         size="sm"
                         disabled={isProcessing}
-                        onClick={() => rejectMutation.mutate(request.id)}
+                        onClick={() => handleReject(request.id)}
                       >
                         <X className="mr-1.5 h-4 w-4" />
-                        Reject
+                        {processingId === request.id &&
+                        rejectMutation.isPending
+                          ? "Rejecting..."
+                          : "Reject"}
                       </Button>
                       <Button
                         size="sm"
                         disabled={isProcessing}
-                        onClick={() => approveMutation.mutate(request)}
+                        onClick={() => handleApprove(request)}
                       >
                         <Check className="mr-1.5 h-4 w-4" />
-                        {approveMutation.isPending ? "Approving..." : "Approve"}
+                        {processingId === request.id &&
+                        approveMutation.isPending
+                          ? "Approving..."
+                          : "Approve"}
                       </Button>
                     </div>
                   )}
