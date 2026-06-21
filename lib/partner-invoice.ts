@@ -3,6 +3,7 @@
 import axios from "axios"
 import { logApiCall } from "./api-logger"
 import { getBranchCredentials } from "./branch-config"
+import { getBranchCurrency } from "./branches"
 import { getEzypayToken } from "./ezypay-token"
 import { processError } from "./utils"
 
@@ -10,7 +11,10 @@ const apiEndpoint = `${process.env.API_ENDPOINT}/v2/partnerinvoices`
 
 export type PartnerInvoiceItem = {
   description: string
-  amount: number
+  amount: {
+    currency: string
+    value: number
+  }
 }
 
 export type PartnerInvoice = {
@@ -62,7 +66,10 @@ export async function createPartnerInvoice({
       items: [
         {
           description: itemDescription,
-          amount,
+          amount: {
+            currency: getBranchCurrency(issuerBranch),
+            value: amount,
+          },
         },
       ],
     }
