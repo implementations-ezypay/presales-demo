@@ -25,7 +25,9 @@ import {
   listTransferRequestsOptions,
   rejectTransferRequestOptions,
 } from "@/lib/query-options/transfer-customer"
+import { listCustomerOptions } from "@/lib/query-options/customer"
 import { TransferCustomer } from "@/lib/types/transfer-customer"
+import { Customer } from "@/lib/types/customer"
 import { getBranchCurrency, getBranchName } from "@/lib/branches"
 import { useBranch } from "@/components/utils"
 import { useErrorToast } from "@/lib/utils"
@@ -50,6 +52,14 @@ export function TransferApprovalDialog() {
   const { data: requests = [] }: UseQueryResult<TransferCustomer[]> = useQuery(
     listTransferRequestsOptions(branch || null)
   )
+
+  // Customers in this (source) branch, used to resolve name + email by Ezypay number.
+  const { data: customersData }: UseQueryResult<{ data: Customer[] }> = useQuery(
+    listCustomerOptions(branch || null)
+  )
+
+  const findCustomer = (ezypayReferenceNumber: string) =>
+    customersData?.data.find((c) => c.number === ezypayReferenceNumber)
 
   const pendingCount = requests.filter((r) => r.status === "requested").length
 
