@@ -61,7 +61,9 @@ export function TransferApprovalDialog() {
   const findCustomer = (ezypayReferenceNumber: string) =>
     customersData?.data.find((c) => c.number === ezypayReferenceNumber)
 
-  const pendingCount = requests.filter((r) => r.status === "requested").length
+  // Only show pending ("requested") transfers in the approvals dialog.
+  const pendingRequests = requests.filter((r) => r.status === "requested")
+  const pendingCount = pendingRequests.length
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -150,40 +152,56 @@ export function TransferApprovalDialog() {
         </DialogHeader>
 
         <ScrollArea className="max-h-[420px] pr-3">
-          {requests.length === 0 ? (
+          {pendingRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
               <Inbox className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                No transfer requests for this branch yet.
+                No pending transfer requests for this branch.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {requests.map((request) => (
+              {pendingRequests.map((request) => (
                 <div
                   key={request.id}
                   className="rounded-lg border border-border p-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold">
-                        {getBranchName(request.branchRequestor) ??
-                          request.branchRequestor}{" "}
-                        <span className="font-normal text-muted-foreground">
-                          requested this transfer
-                        </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Ezypay ref: {request.ezypayReferenceNumber}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={STATUS_VARIANT[request.status]}
-                      className="capitalize"
-                    >
-                      {request.status}
-                    </Badge>
-                  </div>
+                  {(() => {
+                    const customer = findCustomer(request.ezypayReferenceNumber)
+                    const customerName = customer
+                      ? `${customer.firstName ?? ""} ${
+                          customer.lastName ?? ""
+                        }`.trim()
+                      : ""
+                    return (
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold">
+                            {customerName || "Customer"}
+                          </p>
+                          {customer?.email && (
+                            <p className="text-xs text-muted-foreground">
+                              {customer.email}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Ezypay ref: {request.ezypayReferenceNumber}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {getBranchName(request.branchRequestor) ??
+                              request.branchRequestor}{" "}
+                            requested this transfer
+                          </p>
+                        </div>
+                        <Badge
+                          variant={STATUS_VARIANT[request.status]}
+                          className="capitalize"
+                        >
+                          {request.status}
+                        </Badge>
+                      </div>
+                    )
+                  })()}
 
                   <Separator className="my-3" />
 
