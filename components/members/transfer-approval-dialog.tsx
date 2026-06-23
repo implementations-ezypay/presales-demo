@@ -15,6 +15,12 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
   useMutation,
   useQuery,
   useQueryClient,
@@ -160,37 +166,33 @@ export function TransferApprovalDialog() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {pendingRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="rounded-lg border border-border p-4"
-                >
-                  {(() => {
-                    const customer = findCustomer(request.ezypayReferenceNumber)
-                    const customerName = customer
-                      ? `${customer.firstName ?? ""} ${
-                          customer.lastName ?? ""
-                        }`.trim()
-                      : ""
-                    return (
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
+            <Accordion type="multiple" className="space-y-3">
+              {pendingRequests.map((request) => {
+                const customer = findCustomer(request.ezypayReferenceNumber)
+                const customerName = customer
+                  ? `${customer.firstName ?? ""} ${
+                      customer.lastName ?? ""
+                    }`.trim()
+                  : ""
+                return (
+                  <AccordionItem
+                    key={request.id}
+                    value={request.id}
+                    className="rounded-lg border border-border px-4 last:border-b"
+                  >
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex flex-1 items-center justify-between gap-3 pr-1">
+                        <div className="space-y-0.5 text-left">
                           <p className="text-sm font-semibold">
                             {customerName || "Customer"}
                           </p>
                           {customer?.email && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs font-normal text-muted-foreground">
                               {customer.email}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-normal text-muted-foreground">
                             Ezypay ref: {request.ezypayReferenceNumber}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {getBranchName(request.branchRequestor) ??
-                              request.branchRequestor}{" "}
-                            requested this transfer
                           </p>
                         </div>
                         <Badge
@@ -200,60 +202,69 @@ export function TransferApprovalDialog() {
                           {request.status}
                         </Badge>
                       </div>
-                    )
-                  })()}
-
-                  <Separator className="my-3" />
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div>
+                    </AccordionTrigger>
+                    <AccordionContent>
                       <p className="text-xs text-muted-foreground">
-                        Amount remaining
+                        {getBranchName(request.branchRequestor) ??
+                          request.branchRequestor}{" "}
+                        requested this transfer
                       </p>
-                      <p>{formatAmount(request.amountRemaining)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Transfer payment methods
-                      </p>
-                      <p>{request.transferPaymentMethods ? "Yes" : "No"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Requested</p>
-                      <p>{formatDate(request.createdAt)}</p>
-                    </div>
-                  </div>
 
-                  {request.status === "requested" && (
-                    <div className="mt-4 flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={isProcessing}
-                        onClick={() => handleReject(request.id)}
-                      >
-                        <X className="mr-1.5 h-4 w-4" />
-                        {processingId === request.id &&
-                        rejectMutation.isPending
-                          ? "Rejecting..."
-                          : "Reject"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={isProcessing}
-                        onClick={() => handleApprove(request)}
-                      >
-                        <Check className="mr-1.5 h-4 w-4" />
-                        {processingId === request.id &&
-                        approveMutation.isPending
-                          ? "Approving..."
-                          : "Approve"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                      <Separator className="my-3" />
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            Amount remaining
+                          </p>
+                          <p>{formatAmount(request.amountRemaining)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            Transfer payment methods
+                          </p>
+                          <p>{request.transferPaymentMethods ? "Yes" : "No"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            Requested
+                          </p>
+                          <p>{formatDate(request.createdAt)}</p>
+                        </div>
+                      </div>
+
+                      {request.status === "requested" && (
+                        <div className="mt-4 flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleReject(request.id)}
+                          >
+                            <X className="mr-1.5 h-4 w-4" />
+                            {processingId === request.id &&
+                            rejectMutation.isPending
+                              ? "Rejecting..."
+                              : "Reject"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleApprove(request)}
+                          >
+                            <Check className="mr-1.5 h-4 w-4" />
+                            {processingId === request.id &&
+                            approveMutation.isPending
+                              ? "Approving..."
+                              : "Approve"}
+                          </Button>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                )
+              })}
+            </Accordion>
           )}
         </ScrollArea>
       </DialogContent>
