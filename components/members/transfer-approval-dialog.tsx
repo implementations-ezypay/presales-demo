@@ -138,7 +138,7 @@ export function TransferApprovalDialog() {
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[640px]">
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[640px]">
         <DialogHeader>
           <DialogTitle>Customer Transfer Approvals</DialogTitle>
           <DialogDescription>
@@ -151,7 +151,7 @@ export function TransferApprovalDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[420px] pr-3">
+        <ScrollArea className="-mr-3 min-h-0 flex-1 pr-3">
           {pendingRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
               <Inbox className="h-8 w-8 text-muted-foreground" />
