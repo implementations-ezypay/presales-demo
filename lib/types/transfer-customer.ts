@@ -12,6 +12,8 @@ export type TransferCustomer = {
   amountRemaining?: number | null
   /** Whether to transfer existing payment methods */
   transferPaymentMethods: boolean
+  /** Whether to mark the source customer inactive once transferred */
+  inactivateSource: boolean
   /** Transfer process status */
   status: TransferCustomerStatus
   createdAt: string
@@ -24,6 +26,7 @@ export type CreateTransferCustomer = {
   ezypayReferenceNumber: string
   amountRemaining?: number | null
   transferPaymentMethods: boolean
+  inactivateSource: boolean
 }
 
 /** Shape of a row as stored in the database (snake_case columns). */
@@ -34,6 +37,7 @@ export type TransferCustomerRow = {
   ezypay_reference_number: string
   amount_remaining: number | null
   transfer_payment_methods: boolean
+  inactivate_source: boolean
   status: TransferCustomerStatus
   created_at: string
   updated_at: string
