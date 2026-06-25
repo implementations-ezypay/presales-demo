@@ -53,6 +53,7 @@ export function mapTransferCustomerRow(
     ezypayReferenceNumber: row.ezypay_reference_number,
     amountRemaining: row.amount_remaining,
     transferPaymentMethods: row.transfer_payment_methods,
+    inactivateSource: row.inactivate_source,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -4,6 +4,7 @@ import {
   createCustomer,
   getCustomerPaymentMethods,
   listCustomer,
+  updateCustomer,
 } from "./customer"
 import { linkPaymentMethod } from "./payment-methods"
 import { createPartnerInvoice } from "./partner-invoice"
@@ -65,6 +66,21 @@ export async function processTransferApproval(
         record.branchRequestor
       )
     }
+  }
+
+  // If requested, mark the original (source-branch) customer as inactive now
+  // that the transfer has completed successfully.
+  if (record.inactivateSource) {
+    await updateCustomer(
+      {
+        ...sourceCustomer,
+        metadata: {
+          ...sourceCustomer.metadata,
+          status: "inactive",
+        },
+      },
+      record.sourceBranch
+    )
   }
 
   // Raise a partner invoice from the requesting branch (issuer) to the source

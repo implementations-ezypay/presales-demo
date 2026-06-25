@@ -40,6 +40,7 @@ export function TransferCustomerDashboardDialog() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("")
   const [selectedBranch, setSelectedBranch] = useState("")
   const [transferPaymentMethods, setTransferPaymentMethods] = useState(true)
+  const [inactivateSource, setInactivateSource] = useState(false)
   const [amount, setAmount] = useState("")
   const [country, setCountry] = useState("")
   const [customerSearch, setCustomerSearch] = useState("")
@@ -86,6 +87,7 @@ export function TransferCustomerDashboardDialog() {
       setSelectedCustomerId("")
       setSelectedBranch("")
       setTransferPaymentMethods(true)
+      setInactivateSource(false)
       setAmount("")
       setCustomerSearch("")
       setShowResults(false)
@@ -109,6 +111,7 @@ export function TransferCustomerDashboardDialog() {
         selectedCustomerData.number ?? selectedCustomerData.id,
       amountRemaining: canTransferFunds && amount ? Number(amount) : null,
       transferPaymentMethods,
+      inactivateSource,
     })
   }
 
@@ -238,17 +241,38 @@ export function TransferCustomerDashboardDialog() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 py-3">
-            <Checkbox
-              id="transfer-methods"
-              checked={transferPaymentMethods}
-              onCheckedChange={(checked) =>
-                setTransferPaymentMethods(checked as boolean)
-              }
-            />
-            <Label htmlFor="transfer-methods" className="flex-1 cursor-pointer">
-              Transfer existing payment methods?
-            </Label>
+          <div className="space-y-3 py-3">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="transfer-methods"
+                checked={transferPaymentMethods}
+                onCheckedChange={(checked) =>
+                  setTransferPaymentMethods(checked as boolean)
+                }
+              />
+              <Label
+                htmlFor="transfer-methods"
+                className="flex-1 cursor-pointer"
+              >
+                Transfer existing payment methods?
+              </Label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="inactivate-source"
+                checked={inactivateSource}
+                onCheckedChange={(checked) =>
+                  setInactivateSource(checked as boolean)
+                }
+              />
+              <Label
+                htmlFor="inactivate-source"
+                className="flex-1 cursor-pointer"
+              >
+                Disabled existing account from branch
+              </Label>
+            </div>
           </div>
 
           <DialogDescription>
