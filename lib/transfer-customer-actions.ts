@@ -4,7 +4,6 @@ import {
   createCustomer,
   getCustomerPaymentMethods,
   listCustomer,
-  updateCustomer,
 } from "./customer"
 import { linkPaymentMethod } from "./payment-methods"
 import { createPartnerInvoice } from "./partner-invoice"
@@ -35,16 +34,12 @@ export async function processTransferApproval(
   }
 
   // Recreate the customer in the requesting (destination) branch.
-  // The transferred customer must always be an active, visible/searchable
-  // member in the new branch, regardless of the source customer's status or
-  // the "inactivate source" option (which only affects the previous branch).
   const { id: _id, ...rest } = sourceCustomer
   const newCustomerData: CreateCustomer = {
     ...rest,
     metadata: {
       ...sourceCustomer.metadata,
       originalBranch: record.sourceBranch,
-      status: "active",
       ...(record.amountRemaining != null
         ? { transferAmount: String(record.amountRemaining) }
         : {}),
@@ -70,21 +65,6 @@ export async function processTransferApproval(
         record.branchRequestor
       )
     }
-  }
-
-  // If requested, mark the original (source-branch) customer as inactive now
-  // that the transfer has completed successfully.
-  if (record.inactivateSource) {
-    await updateCustomer(
-      {
-        ...sourceCustomer,
-        metadata: {
-          ...sourceCustomer.metadata,
-          status: "inactive",
-        },
-      },
-      record.sourceBranch
-    )
   }
 
   // Raise a partner invoice from the requesting branch (issuer) to the source

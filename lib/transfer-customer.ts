@@ -23,7 +23,6 @@ export async function createTransferRequest(
       ezypay_reference_number: payload.ezypayReferenceNumber,
       amount_remaining: payload.amountRemaining ?? null,
       transfer_payment_methods: payload.transferPaymentMethods,
-      inactivate_source: payload.inactivateSource,
     })
     .select("*")
     .single()

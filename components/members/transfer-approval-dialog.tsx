@@ -71,15 +71,10 @@ export function TransferApprovalDialog() {
   const pendingRequests = requests.filter((r) => r.status === "requested")
   const pendingCount = pendingRequests.length
 
-  const invalidate = () => {
+  const invalidate = () =>
     queryClient.invalidateQueries({
       queryKey: ["listTransferRequests", branch],
     })
-    // Refresh customer lists for all branches so the newly transferred
-    // customer appears (and is searchable) in the destination branch and the
-    // source customer's updated status is reflected.
-    queryClient.invalidateQueries({ queryKey: ["listCustomer"] })
-  }
 
   const approveMutation = useMutation({
     ...approveTransferRequestOptions(),
