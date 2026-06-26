@@ -35,12 +35,16 @@ export async function processTransferApproval(
   }
 
   // Recreate the customer in the requesting (destination) branch.
+  // The transferred customer must always be an active, visible/searchable
+  // member in the new branch, regardless of the source customer's status or
+  // the "inactivate source" option (which only affects the previous branch).
   const { id: _id, ...rest } = sourceCustomer
   const newCustomerData: CreateCustomer = {
     ...rest,
     metadata: {
       ...sourceCustomer.metadata,
       originalBranch: record.sourceBranch,
+      status: "active",
       ...(record.amountRemaining != null
         ? { transferAmount: String(record.amountRemaining) }
         : {}),
