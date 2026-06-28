@@ -49,6 +49,25 @@ export async function listTransferRequests(
   return (data as TransferCustomerRow[]).map(mapTransferCustomerRow)
 }
 
+/**
+ * List transfer requests raised BY a given branch (as the requestor).
+ * Used by the requesting branch to track the outcome of its requests,
+ * e.g. to see which transfers were rejected by the source branch.
+ */
+export async function listTransferRequestsByRequestor(
+  branchRequestor: string
+): Promise<TransferCustomer[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("transfer_customer")
+    .select("*")
+    .eq("branch_requestor", branchRequestor)
+    .order("created_at", { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data as TransferCustomerRow[]).map(mapTransferCustomerRow)
+}
+
 /** Update the status of a transfer request (e.g. approved / rejected). */
 export async function updateTransferStatus(
   id: string,

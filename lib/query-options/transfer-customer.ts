@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions } from "@tanstack/react-query"
 import {
   createTransferRequest,
   listTransferRequests,
+  listTransferRequestsByRequestor,
   updateTransferStatus,
 } from "../transfer-customer"
 import { processTransferApproval } from "../transfer-customer-actions"
@@ -16,6 +17,17 @@ export const listTransferRequestsOptions = (sourceBranch: string | null) => {
     queryFn: () => listTransferRequests(sourceBranch!),
     refetchOnWindowFocus: false,
     enabled: !!sourceBranch,
+  })
+}
+
+export const listTransferRequestsByRequestorOptions = (
+  branchRequestor: string | null
+) => {
+  return queryOptions({
+    queryKey: ["listTransferRequestsByRequestor", branchRequestor],
+    queryFn: () => listTransferRequestsByRequestor(branchRequestor!),
+    refetchOnWindowFocus: false,
+    enabled: !!branchRequestor,
   })
 }
 

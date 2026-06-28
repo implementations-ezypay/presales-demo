@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Check, Inbox, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Check, Inbox, Trash2, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ import {
 } from "@tanstack/react-query"
 import {
   approveTransferRequestOptions,
+  listTransferRequestsByRequestorOptions,
   listTransferRequestsOptions,
   rejectTransferRequestOptions,
 } from "@/lib/query-options/transfer-customer"
@@ -59,22 +60,72 @@ export function TransferApprovalDialog() {
     listTransferRequestsOptions(branch || null)
   )
 
+  // Requests raised BY this branch (as the requestor), used to surface
+  // outcomes such as rejections back to the branch that asked for the transfer.
+  const { data: myRequests = [] }: UseQueryResult<TransferCustomer[]> = useQuery(
+    listTransferRequestsByRequestorOptions(branch || null)
+  )
+
   // Customers in this (source) branch, used to resolve name + email by Ezypay number.
   const { data: customersData }: UseQueryResult<{ data: Customer[] }> = useQuery(
     listCustomerOptions(branch || null)
   )
 
+  // Rejected requests this branch dismissed are remembered per-branch locally.
+  const clearedStorageKey = branch
+    ? `clearedTransferRejections:${branch}`
+    : null
+  const [clearedIds, setClearedIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!clearedStorageKey) {
+      setClearedIds([])
+      return
+    }
+    try {
+      const stored = window.localStorage.getItem(clearedStorageKey)
+      setClearedIds(stored ? (JSON.parse(stored) as string[]) : [])
+    } catch {
+      setClearedIds([])
+    }
+  }, [clearedStorageKey])
+
+  const clearRejectedRequest = (id: string) => {
+    if (!clearedStorageKey) return
+    setClearedIds((prev) => {
+      if (prev.includes(id)) return prev
+      const next = [...prev, id]
+      try {
+        window.localStorage.setItem(clearedStorageKey, JSON.stringify(next))
+      } catch {
+        // Ignore storage write failures (e.g. private mode).
+      }
+      return next
+    })
+    toast.success("Rejected request cleared")
+  }
+
   const findCustomer = (ezypayReferenceNumber: string) =>
     customersData?.data.find((c) => c.number === ezypayReferenceNumber)
 
-  // Only show pending ("requested") transfers in the approvals dialog.
+  // Only show pending ("requested") transfers awaiting this branch's approval.
   const pendingRequests = requests.filter((r) => r.status === "requested")
-  const pendingCount = pendingRequests.length
 
-  const invalidate = () =>
+  // Rejected requests raised by this branch that haven't been cleared yet.
+  const rejectedRequests = myRequests.filter(
+    (r) => r.status === "rejected" && !clearedIds.includes(r.id)
+  )
+
+  const pendingCount = pendingRequests.length + rejectedRequests.length
+
+  const invalidate = () => {
     queryClient.invalidateQueries({
       queryKey: ["listTransferRequests", branch],
     })
+    queryClient.invalidateQueries({
+      queryKey: ["listTransferRequestsByRequestor", branch],
+    })
+  }
 
   const approveMutation = useMutation({
     ...approveTransferRequestOptions(),
@@ -148,25 +199,31 @@ export function TransferApprovalDialog() {
         <DialogHeader>
           <DialogTitle>Customer Transfer Approvals</DialogTitle>
           <DialogDescription>
-            Requests to transfer customers out of{" "}
+            Approve or reject requests to transfer customers out of{" "}
             <span className="font-medium">
               {getBranchName(branch) ?? "this branch"}
             </span>
-            . Approve to move the customer to the requesting branch, or reject to
-            decline.
+            . Requests this branch raised that were rejected appear below and can
+            be cleared.
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="-mr-3 min-h-0 flex-1 pr-3">
-          {pendingRequests.length === 0 ? (
+          {pendingRequests.length === 0 && rejectedRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
               <Inbox className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                No pending transfer requests for this branch.
+                No transfer requests for this branch.
               </p>
             </div>
           ) : (
-            <Accordion type="multiple" className="space-y-3">
+            <div className="space-y-5">
+              {pendingRequests.length > 0 && (
+                <section className="space-y-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Pending approval
+                  </p>
+                  <Accordion type="multiple" className="space-y-3">
               {pendingRequests.map((request) => {
                 const customer = findCustomer(request.ezypayReferenceNumber)
                 const customerName = customer
@@ -264,7 +321,55 @@ export function TransferApprovalDialog() {
                   </AccordionItem>
                 )
               })}
-            </Accordion>
+                  </Accordion>
+                </section>
+              )}
+
+              {rejectedRequests.length > 0 && (
+                <section className="space-y-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Rejected requests
+                  </p>
+                  {rejectedRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="rounded-lg border border-border p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold">
+                            Ezypay ref: {request.ezypayReferenceNumber}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Transfer from{" "}
+                            {getBranchName(request.sourceBranch) ??
+                              request.sourceBranch}{" "}
+                            was rejected.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Requested {formatDate(request.createdAt)}
+                          </p>
+                        </div>
+                        <Badge variant="destructive" className="capitalize">
+                          {request.status}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => clearRejectedRequest(request.id)}
+                        >
+                          <Trash2 className="mr-1.5 h-4 w-4" />
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              )}
+            </div>
           )}
         </ScrollArea>
       </DialogContent>
