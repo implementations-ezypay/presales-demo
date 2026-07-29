@@ -98,7 +98,6 @@ const initialInvoicesData: invoices[] = [
 export function UpcomingInvoicesTable() {
   const [invoices, setInvoices] = useState(initialInvoicesData)
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null)
-  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [currentInvoice, setCurrentInvoice] = useState<invoices | undefined>(undefined)
 
@@ -107,14 +106,12 @@ export function UpcomingInvoicesTable() {
   }
 
   const handleEdit = (invoiceId: string) => {
-    setEditInvoiceId(invoiceId)
-    setCurrentInvoice(invoices.find((inv) => inv.id === editInvoiceId))
+    setCurrentInvoice(invoices.find((inv) => inv.id === invoiceId))
     setEditDialogOpen(true)
   }
 
   const handleCancel = () => {
     setDeleteInvoiceId(null)
-    setEditInvoiceId(null)
     setEditDialogOpen(false)
   }
 
