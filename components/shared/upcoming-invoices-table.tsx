@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Trash2, Edit2 } from "lucide-react"
 import {
@@ -32,14 +31,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { PaymentMethodIcon } from "../ui/payment-method-icon"
-import { useBranch } from "../utils"
-import axios from "axios"
-import { listInvoiceOptions } from "@/lib/query-options/invoice"
-import { getEzypayToken } from "@/lib/ezypay-token"
-import { getBranchCredentials } from "@/lib/branch-config"
-import { logApiCall } from "@/lib/api-logger"
 
-const upcomingInvoicesData = [
+const initialInvoicesData = [
   {
     id: "INV00012345678",
     member: "John Doe",
@@ -91,82 +84,9 @@ const upcomingInvoicesData = [
 ]
 
 export function UpcomingInvoicesTable() {
+  const [invoices, setInvoices] = useState(initialInvoicesData)
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null)
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null)
-  const branch = useBranch()
-  const queryClient = useQueryClient()
-
-  // Delete invoice mutation
-  const deleteInvoiceMutation = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const { merchantId } = await getBranchCredentials(branch)
-      const tokenData = await getEzypayToken(branch)
-      const token = tokenData.access_token
-
-      const apiEndpoint = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/v2/billing/invoices`
-      const url = `${apiEndpoint}/${invoiceId}`
-
-      const response = await axios.delete(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          merchant: merchantId,
-          "Content-type": "application/json",
-        },
-      })
-
-      logApiCall("DELETE", url, response.data, response.status, {})
-      return response.data
-    },
-    onSuccess: () => {
-      setDeleteInvoiceId(null)
-      toast.success("Invoice deleted successfully")
-      queryClient.invalidateQueries(listInvoiceOptions(branch))
-    },
-    onError: (error) => {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete invoice"
-      toast.error(`Error: ${errorMessage}`, { duration: 30000 })
-      console.error("[v0] Delete invoice error:", error)
-    },
-  })
-
-  // Edit invoice mutation (write-off for pending invoices)
-  const editInvoiceMutation = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const { merchantId } = await getBranchCredentials(branch)
-      const tokenData = await getEzypayToken(branch)
-      const token = tokenData.access_token
-
-      const apiEndpoint = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/v2/billing/invoices`
-      const url = `${apiEndpoint}/${invoiceId}/writeoff`
-
-      const response = await axios.post(
-        url,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            merchant: merchantId,
-            "Content-type": "application/json",
-          },
-        }
-      )
-
-      logApiCall("POST", url, response.data, response.status, {})
-      return response.data
-    },
-    onSuccess: () => {
-      setEditInvoiceId(null)
-      toast.success("Invoice updated successfully")
-      queryClient.invalidateQueries(listInvoiceOptions(branch))
-    },
-    onError: (error) => {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update invoice"
-      toast.error(`Error: ${errorMessage}`, { duration: 30000 })
-      console.error("[v0] Edit invoice error:", error)
-    },
-  })
 
   const handleDelete = (invoiceId: string) => {
     setDeleteInvoiceId(invoiceId)
@@ -178,13 +98,21 @@ export function UpcomingInvoicesTable() {
 
   const confirmDelete = () => {
     if (deleteInvoiceId) {
-      deleteInvoiceMutation.mutate(deleteInvoiceId)
+      setInvoices(invoices.filter((inv) => inv.id !== deleteInvoiceId))
+      setDeleteInvoiceId(null)
+      toast.success("Invoice deleted successfully")
     }
   }
 
   const confirmEdit = () => {
     if (editInvoiceId) {
-      editInvoiceMutation.mutate(editInvoiceId)
+      setInvoices(
+        invoices.map((inv) =>
+          inv.id === editInvoiceId ? { ...inv, status: "written-off" as const } : inv
+        )
+      )
+      setEditInvoiceId(null)
+      toast.success("Invoice written off successfully")
     }
   }
 
@@ -204,10 +132,9 @@ export function UpcomingInvoicesTable() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              disabled={deleteInvoiceMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete"}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -225,11 +152,8 @@ export function UpcomingInvoicesTable() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmEdit}
-              disabled={editInvoiceMutation.isPending}
-            >
-              {editInvoiceMutation.isPending ? "Processing..." : "Write Off"}
+            <AlertDialogAction onClick={confirmEdit}>
+              Write Off
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -257,7 +181,7 @@ export function UpcomingInvoicesTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {upcomingInvoicesData.map((invoice) => (
+              {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.id}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
@@ -282,7 +206,6 @@ export function UpcomingInvoicesTable() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(invoice.id)}
-                        disabled={editInvoiceMutation.isPending}
                         title="Write off invoice"
                       >
                         <Edit2 className="h-4 w-4" />
@@ -291,7 +214,6 @@ export function UpcomingInvoicesTable() {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDelete(invoice.id)}
-                        disabled={deleteInvoiceMutation.isPending}
                         title="Delete invoice"
                       >
                         <Trash2 className="h-4 w-4" />
