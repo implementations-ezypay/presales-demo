@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { PaymentMethodIcon } from "../ui/payment-method-icon"
+import { EditInvoiceDialog } from "./edit-invoice-dialog"
 
 const initialInvoicesData = [
   {
@@ -87,6 +88,9 @@ export function UpcomingInvoicesTable() {
   const [invoices, setInvoices] = useState(initialInvoicesData)
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null)
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+
+  const currentInvoice = invoices.find((inv) => inv.id === editInvoiceId)
 
   const handleDelete = (invoiceId: string) => {
     setDeleteInvoiceId(invoiceId)
@@ -94,12 +98,23 @@ export function UpcomingInvoicesTable() {
 
   const handleEdit = (invoiceId: string) => {
     setEditInvoiceId(invoiceId)
+    setEditDialogOpen(true)
   }
 
-const handleCancel = ()=> {
- setDeleteInvoiceId(null)
- setEditInvoiceId(null)
-}
+  const handleCancel = () => {
+    setDeleteInvoiceId(null)
+    setEditInvoiceId(null)
+    setEditDialogOpen(false)
+  }
+
+  const handleSaveInvoice = (updatedInvoice: any) => {
+    setInvoices(
+      invoices.map((inv) =>
+        inv.id === updatedInvoice.id ? updatedInvoice : inv
+      )
+    )
+    toast.success("Invoice updated successfully")
+  }
 
   const confirmDelete = () => {
     if (deleteInvoiceId) {
@@ -133,24 +148,15 @@ const handleCancel = ()=> {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit confirmation dialog */}
-      <AlertDialog open={!!editInvoiceId}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Write Off Invoice</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to write off this invoice? This will mark
-              it as completed without payment.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
-            <AlertDialogAction >
-              Write Off
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Edit invoice dialog */}
+      {currentInvoice && (
+        <EditInvoiceDialog
+          invoice={currentInvoice}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSave={handleSaveInvoice}
+        />
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
