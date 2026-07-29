@@ -104,22 +104,10 @@ export function UpcomingInvoicesTable() {
     }
   }
 
-  const confirmEdit = () => {
-    if (editInvoiceId) {
-      setInvoices(
-        invoices.map((inv) =>
-          inv.id === editInvoiceId ? { ...inv, status: "written-off" as const } : inv
-        )
-      )
-      setEditInvoiceId(null)
-      toast.success("Invoice written off successfully")
-    }
-  }
-
   return (
     <>
       {/* Delete confirmation dialog */}
-      <AlertDialog open={!!deleteInvoiceId} onOpenChange={setDeleteInvoiceId}>
+      <AlertDialog open={!!deleteInvoiceId} >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
@@ -141,7 +129,7 @@ export function UpcomingInvoicesTable() {
       </AlertDialog>
 
       {/* Edit confirmation dialog */}
-      <AlertDialog open={!!editInvoiceId} onOpenChange={setEditInvoiceId}>
+      <AlertDialog open={!!editInvoiceId}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Write Off Invoice</AlertDialogTitle>
@@ -152,7 +140,7 @@ export function UpcomingInvoicesTable() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEdit}>
+            <AlertDialogAction >
               Write Off
             </AlertDialogAction>
           </AlertDialogFooter>
