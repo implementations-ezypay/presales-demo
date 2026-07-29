@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Trash2, Plus } from "lucide-react"
 import {
   Dialog,
@@ -66,6 +66,22 @@ export function EditInvoiceDialog({
   )
   const [memberName, setMemberName] = useState(invoice?.member || "")
   const [dueDate, setDueDate] = useState(invoice?.dueDate || "")
+
+  useEffect(() => {
+    if (invoice) {
+      setMemberName(invoice.member || "")
+      setDueDate(invoice.dueDate || "")
+      setItems([
+        {
+          id: "1",
+          description: "Membership",
+          amount: invoice.amount.replace("$", ""),
+          quantity: 1,
+          type: "subscription_payment",
+        },
+      ])
+    }
+  }, [invoice, open])
 
   const calculateTotal = () => {
     return items
