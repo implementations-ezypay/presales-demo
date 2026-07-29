@@ -72,7 +72,7 @@ export function EditInvoiceDialog({
     return items
       .reduce((sum, item) => {
         const amount = parseFloat(item.amount) || 0
-        return sum + amount * item.quantity
+        return sum + amount
       }, 0)
       .toFixed(2)
   }
@@ -170,8 +170,6 @@ export function EditInvoiceDialog({
                     <TableHead>Description</TableHead>
                     <TableHead className="w-32">Type</TableHead>
                     <TableHead className="w-24">Amount</TableHead>
-                    <TableHead className="w-20">Quantity</TableHead>
-                    <TableHead className="w-20">Total</TableHead>
                     <TableHead className="w-12 text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -234,24 +232,6 @@ export function EditInvoiceDialog({
                             placeholder="0.00"
                             className="h-8"
                           />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              handleItemChange(
-                                item.id,
-                                "quantity",
-                                parseInt(e.target.value) || 1
-                              )
-                            }
-                            className="h-8"
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          ${itemTotal}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
