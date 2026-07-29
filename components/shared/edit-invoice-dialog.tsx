@@ -152,7 +152,7 @@ export function EditInvoiceDialog({
 
           {/* Invoice Items */}
           <div className="space-y-3">
-            <Label>Invoice Items</Label>
+            <Label>Membership</Label>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
