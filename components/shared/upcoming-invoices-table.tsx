@@ -33,7 +33,18 @@ import {
 import { PaymentMethodIcon } from "../ui/payment-method-icon"
 import { EditInvoiceDialog } from "./edit-invoice-dialog"
 
-const initialInvoicesData = [
+type invoices = {
+  id: string,
+  member: string,
+  date: string,
+  amount: string,
+  status: string,
+  dueDate: string,
+  paymentMethod: string,
+  paymentAttempts: [],
+}
+
+const initialInvoicesData: invoices[] = [
   {
     id: "INV00012345678",
     member: "John Doe",
@@ -89,8 +100,7 @@ export function UpcomingInvoicesTable() {
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null)
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-
-  const currentInvoice = invoices.find((inv) => inv.id === editInvoiceId)
+  const [currentInvoice, setCurrentInvoice] = useState<invoices | undefined>(undefined)
 
   const handleDelete = (invoiceId: string) => {
     setDeleteInvoiceId(invoiceId)
@@ -98,6 +108,7 @@ export function UpcomingInvoicesTable() {
 
   const handleEdit = (invoiceId: string) => {
     setEditInvoiceId(invoiceId)
+    setCurrentInvoice(invoices.find((inv) => inv.id === editInvoiceId))
     setEditDialogOpen(true)
   }
 
