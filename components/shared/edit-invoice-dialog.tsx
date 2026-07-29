@@ -108,6 +108,20 @@ export function EditInvoiceDialog({
     )
   }
 
+  const getDateConstraints = () => {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    const maxDate = new Date(today)
+    maxDate.setDate(maxDate.getDate() + 7)
+    
+    return {
+      min: tomorrow.toISOString().split('T')[0],
+      max: maxDate.toISOString().split('T')[0],
+    }
+  }
+
   const handleSave = () => {
     if (items.length === 0) {
       toast.error("Please add at least one item")
@@ -157,6 +171,8 @@ export function EditInvoiceDialog({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                min={getDateConstraints().min}
+                max={getDateConstraints().max}
               />
             </div>
           </div>         
