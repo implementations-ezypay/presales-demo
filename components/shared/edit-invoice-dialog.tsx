@@ -169,7 +169,7 @@ export function EditInvoiceDialog({
               <Input
                 id="due-date"
                 type="date"
-                value={getDateConstraints().min}
+                value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 min={getDateConstraints().min}
                 max={getDateConstraints().max}
