@@ -109,15 +109,13 @@ export function EditInvoiceDialog({
   }
 
   const getDateConstraints = () => {
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const today = new Date(invoice?.dueDate || '')
     
-    const maxDate = new Date(today)
+    const maxDate = new Date(invoice?.dueDate || '')
     maxDate.setDate(maxDate.getDate() + 7)
     
     return {
-      min: tomorrow.toISOString().split('T')[0],
+      min: today.toISOString().split('T')[0],
       max: maxDate.toISOString().split('T')[0],
     }
   }
