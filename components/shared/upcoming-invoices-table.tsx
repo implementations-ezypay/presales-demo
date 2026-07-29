@@ -96,6 +96,11 @@ export function UpcomingInvoicesTable() {
     setEditInvoiceId(invoiceId)
   }
 
+const handleCancel = ()=> {
+ setDeleteInvoiceId(null)
+ setEditInvoiceId(null)
+}
+
   const confirmDelete = () => {
     if (deleteInvoiceId) {
       setInvoices(invoices.filter((inv) => inv.id !== deleteInvoiceId))
@@ -117,7 +122,7 @@ export function UpcomingInvoicesTable() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
