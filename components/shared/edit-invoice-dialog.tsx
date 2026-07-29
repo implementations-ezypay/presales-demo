@@ -162,7 +162,7 @@ export function EditInvoiceDialog({
 
           {/* Invoice Items */}
           <div className="space-y-3">
-            <Label>Membership</Label>
+            <Label>Items</Label>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
