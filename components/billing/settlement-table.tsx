@@ -114,7 +114,7 @@ export function SettlementTable() {
               <TableHead>Settlement Date</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
+              <TableHead className="text-right pe-15">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

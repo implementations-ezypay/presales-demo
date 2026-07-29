@@ -33,7 +33,7 @@ export type PlanFormData = {
   billingDayOfWeek: string
   firstBillingType: "full" | "prorata" | "custom"
   firstBillingCustomAmount: string
-  planEndType: "ongoing" | "end_date" | "amount_collected"
+  planEndType: "ongoing" | "end_date" | "amount_collected" | "fixed_term"
   planEndDate: string
   planEndAmount: string
   isPopular: boolean
@@ -59,12 +59,10 @@ export default function PlanForm({
   const [intervalUnit, setIntervalUnit] = useState(
     initialData?.intervalUnit || ""
   )
-  const [startDate, setStartDate] = useState(
-    initialData?.startDate || todayISO
-  )
-  const [billingType, setBillingType] = useState<"day_of_month" | "day_of_week">(
-    initialData?.billingType || "day_of_month"
-  )
+  const [startDate, setStartDate] = useState(initialData?.startDate || todayISO)
+  const [billingType, setBillingType] = useState<
+    "day_of_month" | "day_of_week"
+  >(initialData?.billingType || "day_of_month")
   const [billingDayOfMonth, setBillingDayOfMonth] = useState(
     initialData?.billingDayOfMonth || "1"
   )
@@ -78,7 +76,7 @@ export default function PlanForm({
     initialData?.firstBillingCustomAmount || ""
   )
   const [planEndType, setPlanEndType] = useState<
-    "ongoing" | "end_date" | "amount_collected"
+    "ongoing" | "end_date" | "amount_collected" | "fixed_term"
   >(initialData?.planEndType || "ongoing")
   const [planEndDate, setPlanEndDate] = useState(initialData?.planEndDate || "")
   const [planEndAmount, setPlanEndAmount] = useState(
@@ -317,7 +315,13 @@ export default function PlanForm({
               <Select
                 value={planEndType}
                 onValueChange={(v) =>
-                  setPlanEndType(v as "ongoing" | "end_date" | "amount_collected")
+                  setPlanEndType(
+                    v as
+                      | "ongoing"
+                      | "end_date"
+                      | "amount_collected"
+                      | "fixed_term"
+                  )
                 }
               >
                 <SelectTrigger>
@@ -329,6 +333,7 @@ export default function PlanForm({
                   <SelectItem value="amount_collected">
                     After amount collected
                   </SelectItem>
+                  <SelectItem value="fixed_term">Fixed term</SelectItem>
                 </SelectContent>
               </Select>
               {planEndType === "end_date" && (
@@ -351,6 +356,20 @@ export default function PlanForm({
                   className="w-36 shrink-0"
                 />
               )}
+              {planEndType === "fixed_term" && (
+                <>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    value={planEndAmount}
+                    onChange={(e) => setPlanEndAmount(e.target.value)}
+                    className="w-36 shrink-0"
+                  />
+                  <Input value={`${intervalUnit}s`} className="w-20" />
+                </>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {planEndType === "ongoing" &&
@@ -358,7 +377,9 @@ export default function PlanForm({
               {planEndType === "end_date" &&
                 "This plan will automatically end on the specified date."}
               {planEndType === "amount_collected" &&
-                "This plan will end after the total specified amount has been collected."}
+                "This plan will end after the total specified amount has been collected."}{" "}
+              {planEndType === "fixed_term" &&
+                "This plan will end after all the terms are collected"}
             </p>
           </div>
           <div className="flex items-center justify-between rounded-lg border border-border p-4">

@@ -20,7 +20,7 @@ import { PaymentMethodIcon } from "../ui/payment-method-icon"
 
 const upcomingInvoicesData = [
   {
-    id: "INV-UP-001",
+    id: "INV00012345678",
     member: "John Doe",
     date: new Date().toISOString().split("T")[0],
     amount: "$99.00",
@@ -32,7 +32,7 @@ const upcomingInvoicesData = [
     paymentAttempts: [],
   },
   {
-    id: "INV-UP-002",
+    id: "INV00012345679",
     member: "Sarah Smith",
     date: new Date().toISOString().split("T")[0],
     amount: "$49.00",
@@ -44,7 +44,7 @@ const upcomingInvoicesData = [
     paymentAttempts: [],
   },
   {
-    id: "INV-UP-003",
+    id: "INV00012345680",
     member: "Mike Johnson",
     date: new Date().toISOString().split("T")[0],
     amount: "$149.00",
@@ -56,7 +56,7 @@ const upcomingInvoicesData = [
     paymentAttempts: [],
   },
   {
-    id: "INV-UP-004",
+    id: "INV00012345681",
     member: "Emma Wilson",
     date: new Date().toISOString().split("T")[0],
     amount: "$99.00",
@@ -86,7 +86,6 @@ export function UpcomingInvoicesTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>Invoice ID</TableHead>
-                <TableHead>Member</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Payment Method</TableHead>
@@ -97,7 +96,6 @@ export function UpcomingInvoicesTable() {
               {upcomingInvoicesData.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.member}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
                   <TableCell className="font-medium">
                     {invoice.amount}
