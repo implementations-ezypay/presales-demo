@@ -22,6 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 
 interface InvoiceItem {
@@ -29,6 +36,7 @@ interface InvoiceItem {
   description: string
   amount: string
   quantity: number
+  type: "subscription_payment" | "addon_payment" | "setup_payment"
 }
 
 interface EditInvoiceDialogProps {
@@ -52,6 +60,7 @@ export function EditInvoiceDialog({
             description: "Invoice Item",
             amount: invoice.amount.replace("$", ""),
             quantity: 1,
+            type: "subscription_payment",
           },
         ]
       : []
@@ -74,6 +83,7 @@ export function EditInvoiceDialog({
       description: "",
       amount: "",
       quantity: 1,
+      type: "subscription_payment",
     }
     setItems([...items, newItem])
   }
@@ -158,6 +168,7 @@ export function EditInvoiceDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
+                    <TableHead className="w-32">Type</TableHead>
                     <TableHead className="w-24">Amount</TableHead>
                     <TableHead className="w-20">Quantity</TableHead>
                     <TableHead className="w-20">Total</TableHead>
@@ -184,6 +195,33 @@ export function EditInvoiceDialog({
                             placeholder="Item description"
                             className="h-8"
                           />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={item.type}
+                            onValueChange={(value) =>
+                              handleItemChange(
+                                item.id,
+                                "type",
+                                value as "subscription_payment" | "addon_payment" | "setup_payment"
+                              )
+                            }
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="subscription_payment">
+                                Subscription
+                              </SelectItem>
+                              <SelectItem value="addon_payment">
+                                Addon
+                              </SelectItem>
+                              <SelectItem value="setup_payment">
+                                Setup
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <Input
