@@ -147,6 +147,7 @@ export function EditInvoiceDialog({
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
                 placeholder="Enter member name"
+                disabled
               />
             </div>
             <div className="space-y-2">
