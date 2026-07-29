@@ -58,7 +58,6 @@ export function EditInvoiceDialog({
   )
   const [memberName, setMemberName] = useState(invoice?.member || "")
   const [dueDate, setDueDate] = useState(invoice?.dueDate || "")
-  const [description, setDescription] = useState("")
 
   const calculateTotal = () => {
     return items
@@ -149,19 +148,7 @@ export function EditInvoiceDialog({
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add any notes or description"
-              rows={3}
-            />
-          </div>
+          </div>         
 
           {/* Invoice Items */}
           <div className="space-y-3">
