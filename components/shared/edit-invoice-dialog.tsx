@@ -57,7 +57,7 @@ export function EditInvoiceDialog({
       ? [
           {
             id: "1",
-            description: "Invoice Item",
+            description: "Membership",
             amount: invoice.amount.replace("$", ""),
             quantity: 1,
             type: "subscription_payment",
