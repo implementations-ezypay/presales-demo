@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { useBranch } from "@/components/utils"
 import { logApiCall } from "@/lib/api-logger"
 import { getBranchCountry } from "@/lib/branches"
+import { applyHostedGlobalSandboxTheme } from "@/lib/utils"
 import {
   getTokenOptions,
   linkPaymentMethodOptions,
@@ -19,11 +20,11 @@ import {
 import { useMutation } from "@tanstack/react-query"
 import { ArrowBigRight, Mail } from "lucide-react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { MouseEvent, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 const pcpEndpoint = process.env.NEXT_PUBLIC_PCP_ENDPOINT
-const hppEndpoint = process.env.NEXT_PUBLIC_HPP_ENDPOINT
 
 type PaymentCapturePageProps = {
   emailPreviewLink: string
@@ -37,6 +38,7 @@ export default function PaymentCapturePage({
   const [iframeUrl, setIframeUrl] = useState<string | null>(null)
   const [country, setCountry] = useState("")
   const branch = useBranch()
+  const { resolvedTheme } = useTheme()
 
   // Track selected values from Select components separately for easier UI updates
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -72,12 +74,12 @@ export default function PaymentCapturePage({
       const token = data.access_token
       if (!input) return
       const { customerId } = input
-      const pcpUrl =
-        country === "PH"
-          ? `${hppEndpoint}/paymentmethod/embed?token=${token}&countryCode=${country}`
-          : `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
-              customerId ? "&customerId=" + customerId : ""
-            }`
+      const pcpUrl = applyHostedGlobalSandboxTheme(
+        `${pcpEndpoint}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true${
+          customerId ? "&customerId=" + customerId : ""
+        }`,
+        resolvedTheme === "dark"
+      )
       setIframeUrl(pcpUrl)
       logApiCall(
         "GET",
@@ -105,8 +107,10 @@ export default function PaymentCapturePage({
   })
 
   useEffect(() => {
-    if (customerId && branch) getTokenMutation.mutate({ customerId })
-  }, [customerId, branch])
+    if (customerId && branch && resolvedTheme) {
+      getTokenMutation.mutate({ customerId })
+    }
+  }, [customerId, branch, resolvedTheme])
 
   const submitHpp = (e: MouseEvent, type: string) => {
     e.preventDefault()

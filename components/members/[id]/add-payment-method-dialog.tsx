@@ -21,10 +21,11 @@ import {
   getTokenOptions,
   linkPaymentMethodOptions,
 } from "@/lib/query-options/payment-method"
-import { useErrorToast } from "@/lib/utils"
+import { applyHostedGlobalSandboxTheme, useErrorToast } from "@/lib/utils"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Mail } from "lucide-react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { MouseEvent, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -49,6 +50,7 @@ export function AddPaymentMethodDialog({
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const iframeOriginRef = useRef<string | null>(null)
   const branch = useBranch()
+  const { resolvedTheme } = useTheme()
   const [country, setCountry] = useState("")
   const queryClient = useQueryClient()
 
@@ -65,10 +67,10 @@ export function AddPaymentMethodDialog({
   }
 
   useEffect(() => {
-    if (open && !iframeUrl) {
+    if (open && !iframeUrl && resolvedTheme) {
       loadIframeUrl()
     }
-  }, [open])
+  }, [open, iframeUrl, resolvedTheme])
 
   useEffect(() => {
     setCountry(getBranchCountry(branch))
@@ -91,10 +93,10 @@ export function AddPaymentMethodDialog({
     ...getTokenOptions(branch),
     onSuccess: (data) => {
       const token = data.access_token
-      const pcpUrl =
-        country === "PH"
-          ? `${process.env.NEXT_PUBLIC_HPP_ENDPOINT}/paymentmethod/embed?token=${token}&countryCode=${country}`
-          : `${process.env.NEXT_PUBLIC_PCP_ENDPOINT}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true&customerId=${customerId}`
+      const pcpUrl = applyHostedGlobalSandboxTheme(
+        `${process.env.NEXT_PUBLIC_PCP_ENDPOINT}/paymentmethod/embed?token=${token}&feepricing=true&submitbutton=true&customerId=${customerId}`,
+        resolvedTheme === "dark"
+      )
       setIframeUrl(pcpUrl)
       logApiCall(
         "GET",

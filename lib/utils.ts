@@ -6,6 +6,22 @@ import { plans } from "./plan"
 import { PaymentMethod } from "./types/payment-method"
 import { toast } from "sonner"
 
+const hostedGlobalSandboxHostname = "hosted-global-sandbox.ezypay.com"
+const darkThemeStylingId = "6e955b08-9e73-4240-a083-f1087308b4b0"
+
+export function applyHostedGlobalSandboxTheme(
+  iframeUrl: string,
+  isDarkTheme: boolean
+) {
+  if (!isDarkTheme) return iframeUrl
+
+  const url = new URL(iframeUrl)
+  if (url.hostname !== hostedGlobalSandboxHostname) return iframeUrl
+
+  url.searchParams.set("stylingId", darkThemeStylingId)
+  return url.toString()
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
