@@ -1,5 +1,8 @@
 "use client"
 
+import { useState } from "react"
+import { toast } from "sonner"
+import { Trash2, Edit2 } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -16,9 +19,32 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PaymentMethodIcon } from "../ui/payment-method-icon"
+import { EditInvoiceDialog } from "./edit-invoice-dialog"
 
-const upcomingInvoicesData = [
+type invoices = {
+  id: string,
+  member: string,
+  date: string,
+  amount: string,
+  status: string,
+  dueDate: string,
+  paymentMethod: string,
+  paymentAttempts: [],
+}
+
+const initialInvoicesData: invoices[] = [
   {
     id: "INV00012345678",
     member: "John Doe",
@@ -70,8 +96,76 @@ const upcomingInvoicesData = [
 ]
 
 export function UpcomingInvoicesTable() {
+  const [invoices, setInvoices] = useState(initialInvoicesData)
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [currentInvoice, setCurrentInvoice] = useState<invoices | undefined>(undefined)
+
+  const handleDelete = (invoiceId: string) => {
+    setDeleteInvoiceId(invoiceId)
+  }
+
+  const handleEdit = (invoiceId: string) => {
+    setCurrentInvoice(invoices.find((inv) => inv.id === invoiceId))
+    setEditDialogOpen(true)
+  }
+
+  const handleCancel = () => {
+    setDeleteInvoiceId(null)
+    setEditDialogOpen(false)
+  }
+
+  const handleSaveInvoice = (updatedInvoice: any) => {
+    setInvoices(
+      invoices.map((inv) =>
+        inv.id === updatedInvoice.id ? updatedInvoice : inv
+      )
+    )
+    toast.success("Invoice updated successfully")
+  }
+
+  const confirmDelete = () => {
+    if (deleteInvoiceId) {
+      setInvoices(invoices.filter((inv) => inv.id !== deleteInvoiceId))
+      setDeleteInvoiceId(null)
+      toast.success("Invoice deleted successfully")
+    }
+  }
+
   return (
     <>
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteInvoiceId} >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this invoice? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit invoice dialog */}
+      {currentInvoice && (
+        <EditInvoiceDialog
+          invoice={currentInvoice}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSave={handleSaveInvoice}
+        />
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -90,10 +184,11 @@ export function UpcomingInvoicesTable() {
                 <TableHead>Amount</TableHead>
                 <TableHead>Payment Method</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {upcomingInvoicesData.map((invoice) => (
+              {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.id}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
@@ -111,6 +206,26 @@ export function UpcomingInvoicesTable() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{invoice.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(invoice.id)}
+                        title="Write off invoice"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(invoice.id)}
+                        title="Delete invoice"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
