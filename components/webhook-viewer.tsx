@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { JsonView, allExpanded, darkStyles } from "react-json-view-lite"
-import "react-json-view-lite/dist/index.css"
 import { Check, Clipboard, Copy, Database, RefreshCw, Search, Webhook as WebhookIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -55,9 +53,9 @@ function JsonPanel({ label, value, onCopy, copied }: { label: string; value: Jso
         </Button>
       </CardHeader>
       <CardContent className="overflow-x-auto bg-[#111827] p-0 dark:bg-[#0b1120]">
-        <div className="min-w-[520px] px-5 py-5 font-mono text-[13px] leading-6 text-slate-200 [&_.json-view]:!font-mono [&_.json-view]:!text-[13px] [&_.json-view]:!leading-6">
-          <JsonView data={value && typeof value === "object" ? value : { value }} shouldExpandNode={allExpanded} style={darkStyles} aria-label={`${label} JSON viewer`} />
-        </div>
+        <pre aria-label={`${label} JSON viewer`} className="min-w-[520px] whitespace-pre px-5 py-5 font-mono text-[13px] leading-6 text-slate-200">
+          {JSON.stringify(value && typeof value === "object" ? value : { value }, null, 4)}
+        </pre>
       </CardContent>
     </Card>
   )
