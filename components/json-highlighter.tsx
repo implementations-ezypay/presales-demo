@@ -4,8 +4,8 @@ type JsonArray = JsonValue[]
 
 export function JsonHighlighter({ data }: { data: JsonValue }) {
   const renderValue = (value: JsonValue, depth = 0) => {
-    const indent = "  ".repeat(depth)
-    const nextIndent = "  ".repeat(depth + 1)
+    const indent = "    ".repeat(depth)
+    const nextIndent = "    ".repeat(depth + 1)
 
     if (value === null) {
       return <span className="text-purple-400">null</span>

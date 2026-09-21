@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { JsonHighlighter } from "@/components/json-highlighter"
 import { createClient } from "@/lib/supabase/client"
 
 type JsonValue = Record<string, unknown> | unknown[] | string | number | boolean | null
@@ -53,9 +54,9 @@ function JsonPanel({ label, value, onCopy, copied }: { label: string; value: Jso
         </Button>
       </CardHeader>
       <CardContent className="overflow-x-auto bg-[#111827] p-0 dark:bg-[#0b1120]">
-        <pre aria-label={`${label} JSON viewer`} className="min-w-[520px] whitespace-pre px-5 py-5 font-mono text-[13px] leading-6 text-slate-200">
-          {JSON.stringify(value && typeof value === "object" ? value : { value }, null, 4)}
-        </pre>
+        <div aria-label={`${label} JSON viewer`} className="min-w-[520px] overflow-x-auto px-5 py-5 font-mono text-[13px] leading-6 text-slate-200">
+          <JsonHighlighter data={value && typeof value === "object" ? value : { value }} />
+        </div>
       </CardContent>
     </Card>
   )
@@ -129,7 +130,7 @@ export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] 
         </div></ScrollArea>
       </aside>
       <section className="min-w-0 flex-1 overflow-y-auto">
-        {selectedWebhook ? <div className="mx-auto max-w-5xl p-5 sm:p-8"><div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div className="min-w-0"><div className="mb-3 flex flex-wrap items-center gap-2"><Badge className="font-mono">{selectedWebhook.webhook_type}</Badge><span className="text-xs text-muted-foreground">{formatDate(selectedWebhook.created_at)}</span></div><h2 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">Event details</h2><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><span className="truncate font-mono">{selectedWebhook.id}</span><Button variant="ghost" size="icon" className="size-6 shrink-0" onClick={() => handleCopy(selectedWebhook.id, "id")} aria-label="Copy event ID">{copiedId === "id" ? <Check /> : <Copy />}</Button></p></div><Button variant="outline" onClick={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 2), selectedWebhook.id)} className="shrink-0 gap-2"><Copy data-icon="inline-start" />{copiedId === selectedWebhook.id ? "Copied JSON" : "Copy payload"}</Button></div><Separator className="mb-6" /><div className="flex flex-col gap-5"><JsonPanel label="Payload" value={selectedWebhook.payload} onCopy={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 2), "payload")} copied={copiedId === "payload"} /><JsonPanel label="Request headers" value={selectedWebhook.headers || {}} onCopy={() => handleCopy(JSON.stringify(selectedWebhook.headers || {}, null, 2), "headers")} copied={copiedId === "headers"} /></div></div> : <div className="flex min-h-[60vh] items-center justify-center p-8 text-center"><div><div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><WebhookIcon className="size-5" /></div><h2 className="text-lg font-semibold">No webhook selected</h2><p className="mt-2 max-w-sm text-sm text-muted-foreground">Select an event from the sidebar or send a POST request to your endpoint.</p></div></div>}
+        {selectedWebhook ? <div className="mx-auto max-w-5xl p-5 sm:p-8"><div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div className="min-w-0"><div className="mb-3 flex flex-wrap items-center gap-2"><Badge className="font-mono">{selectedWebhook.webhook_type}</Badge><span className="text-xs text-muted-foreground">{formatDate(selectedWebhook.created_at)}</span></div><h2 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">Event details</h2><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><span className="truncate font-mono">{selectedWebhook.id}</span><Button variant="ghost" size="icon" className="size-6 shrink-0" onClick={() => handleCopy(selectedWebhook.id, "id")} aria-label="Copy event ID">{copiedId === "id" ? <Check /> : <Copy />}</Button></p></div><Button variant="outline" onClick={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 4), selectedWebhook.id)} className="shrink-0 gap-2"><Copy data-icon="inline-start" />{copiedId === selectedWebhook.id ? "Copied JSON" : "Copy payload"}</Button></div><Separator className="mb-6" /><div className="flex flex-col gap-5"><JsonPanel label="Payload" value={selectedWebhook.payload} onCopy={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 4), "payload")} copied={copiedId === "payload"} /><JsonPanel label="Request headers" value={selectedWebhook.headers || {}} onCopy={() => handleCopy(JSON.stringify(selectedWebhook.headers || {}, null, 4), "headers")} copied={copiedId === "headers"} /></div></div> : <div className="flex min-h-[60vh] items-center justify-center p-8 text-center"><div><div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><WebhookIcon className="size-5" /></div><h2 className="text-lg font-semibold">No webhook selected</h2><p className="mt-2 max-w-sm text-sm text-muted-foreground">Select an event from the sidebar or send a POST request to your endpoint.</p></div></div>}
       </section>
     </main>
   )
