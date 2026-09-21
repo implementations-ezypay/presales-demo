@@ -1,353 +1,140 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react"
+import { JsonView, allExpanded, darkStyles } from "react-json-view-lite"
+import "react-json-view-lite/dist/index.css"
+import { Check, Clipboard, Copy, Database, RefreshCw, Search, Webhook as WebhookIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Search, Copy, Check, RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
-import { JsonHighlighter } from "@/components/json-highlighter"
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion"
+
+type JsonValue = Record<string, unknown> | unknown[] | string | number | boolean | null
 
 type Webhook = {
   id: string
   webhook_type: string
-  // The payload can come in any shapes and we dont care as long as is json
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  headers: any
+  payload: JsonValue
+  headers: JsonValue
   created_at: string
 }
 
-export function WebhookViewer({
-  initialWebhooks,
-}: {
-  initialWebhooks: Webhook[]
-}) {
-  const [webhooks, setWebhooks] = useState<Webhook[]>(initialWebhooks)
-  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(
-    initialWebhooks[0] || null
+function formatDate(dateString: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(dateString))
+}
+
+function fieldCount(value: JsonValue) {
+  return value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).length : 0
+}
+
+function JsonPanel({ label, value, onCopy, copied }: { label: string; value: JsonValue; onCopy: () => void; copied: boolean }) {
+  return (
+    <Card className="overflow-hidden border-border/70 shadow-sm">
+      <CardHeader className="flex-row items-center justify-between gap-4 border-b bg-muted/30 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Database className="size-3.5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold">{label}</h3>
+            <p className="text-xs text-muted-foreground">{fieldCount(value)} top-level fields</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onCopy} className="shrink-0 gap-2 text-muted-foreground hover:text-foreground">
+          {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </CardHeader>
+      <CardContent className="overflow-x-auto bg-[#111827] p-0 dark:bg-[#0b1120]">
+        <div className="min-w-[520px] px-5 py-5 font-mono text-[13px] leading-6 text-slate-200 [&_.json-view]:!font-mono [&_.json-view]:!text-[13px] [&_.json-view]:!leading-6">
+          <JsonView data={value && typeof value === "object" ? value : { value }} shouldExpandNode={allExpanded} style={darkStyles} aria-label={`${label} JSON viewer`} />
+        </div>
+      </CardContent>
+    </Card>
   )
+}
+
+export function WebhookViewer({ initialWebhooks }: { initialWebhooks: Webhook[] }) {
+  const [webhooks, setWebhooks] = useState<Webhook[]>(initialWebhooks)
+  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(initialWebhooks[0] || null)
   const [searchQuery, setSearchQuery] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [webhookUrl, setWebhookUrl] = useState("")
-  const [isMounted, setIsMounted] = useState(false)
   const supabase = createClient()
 
-  // Set webhook URL and mounted state on client side only to avoid hydration mismatch
   useEffect(() => {
     setWebhookUrl(`${window.location.origin}/api/webhook`)
-    setIsMounted(true)
   }, [])
 
-  // Subscribe to real-time updates
   useEffect(() => {
-    const channel = supabase
-      .channel("webhooks")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "webhooks",
-        },
-        (payload) => {
-          const newWebhook = payload.new as Webhook
-          setWebhooks((prev) => [newWebhook, ...prev])
-          // Auto-select the new webhook
-          setSelectedWebhook(newWebhook)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    const channel = supabase.channel("webhooks").on("postgres_changes", { event: "INSERT", schema: "public", table: "webhooks" }, (payload) => {
+      const newWebhook = payload.new as Webhook
+      setWebhooks((prev) => [newWebhook, ...prev])
+      setSelectedWebhook(newWebhook)
+    }).subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [supabase])
 
-  // Filter webhooks based on search query
   const filteredWebhooks = useMemo(() => {
-    if (!searchQuery) return webhooks
-
-    const query = searchQuery.toLowerCase()
-    return webhooks.filter((webhook) => {
-      const payloadString = JSON.stringify(webhook.payload).toLowerCase()
-      const typeString = webhook.webhook_type.toLowerCase()
-      return payloadString.includes(query) || typeString.includes(query)
-    })
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return webhooks
+    return webhooks.filter((webhook) => JSON.stringify(webhook).toLowerCase().includes(query))
   }, [webhooks, searchQuery])
 
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text)
     setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
+    window.setTimeout(() => setCopiedId(null), 1800)
   }
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    const { data, error } = await supabase
-      .from("webhooks")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100)
-
-    if (!error && data) {
-      setWebhooks(data)
-      if (data.length > 0 && !selectedWebhook) {
-        setSelectedWebhook(data[0])
-      }
+    const { data } = await supabase.from("webhooks").select("*").order("created_at", { ascending: false }).limit(100)
+    if (data) {
+      setWebhooks(data as Webhook[])
+      if (data.length > 0) setSelectedWebhook((current) => current || data[0] as Webhook)
     }
     setIsRefreshing(false)
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(date)
-  }
-
-  // Don't render until mounted to prevent hydration issues
-  if (!isMounted) {
-    return (
-      <div className="flex h-screen bg-background items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Search className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Loading webhook viewer...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-80 border-r border-border flex flex-col bg-muted/30">
-        {/* Header */}
-        <div className="p-4 border-b border-border bg-background">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-lg font-semibold text-foreground">
-              Webhook Viewer
-            </h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="h-8 w-8"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
-
-          {/* Webhook URL Display */}
-          <Card className="p-3 mb-3 bg-muted">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Webhook URL:
-                </p>
-                <p className="text-xs font-mono truncate text-foreground">
-                  {webhookUrl}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleCopy(webhookUrl, "url")}
-                className="h-7 w-7 shrink-0"
-              >
-                {copiedId === "url" ? (
-                  <Check className="h-3.5 w-3.5 text-green-500" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-              </Button>
+    <main className="flex min-h-screen flex-col bg-muted/20 text-foreground lg:h-screen lg:flex-row lg:overflow-hidden">
+      <aside className="flex w-full shrink-0 flex-col border-b bg-background lg:w-[340px] lg:border-b-0 lg:border-r">
+        <header className="border-b px-5 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-primary"><WebhookIcon className="size-4" aria-hidden="true" /><span className="text-xs font-semibold uppercase tracking-[0.18em]">Event console</span></div>
+              <h1 className="text-xl font-semibold tracking-tight">Webhook activity</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Inspect incoming events in real time.</p>
             </div>
-          </Card>
-
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search webhooks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+            <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing} aria-label="Refresh webhooks"><RefreshCw className={isRefreshing ? "animate-spin" : ""} /></Button>
           </div>
-        </div>
-
-        {/* Webhook List */}
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {filteredWebhooks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                {searchQuery
-                  ? "No webhooks match your search"
-                  : "No webhooks received yet"}
-              </div>
-            ) : (
-              filteredWebhooks.map((webhook) => (
-                <button
-                  key={webhook.id}
-                  onClick={() => setSelectedWebhook(webhook)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    selectedWebhook?.id === webhook.id
-                      ? "bg-primary/10 border border-primary/20"
-                      : "hover:bg-muted border border-transparent"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <Badge variant="secondary" className="font-mono text-xs">
-                      {webhook.webhook_type}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {formatDate(webhook.created_at)}
-                    </span>
-                  </div>
-                </button>
-              ))
-            )}
+          <div className="mt-5 rounded-lg border bg-muted/40 p-3">
+            <div className="mb-1 flex items-center justify-between"><span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Endpoint</span><Badge variant="secondary" className="font-mono text-[10px]">POST</Badge></div>
+            <div className="flex items-center gap-2"><code className="min-w-0 flex-1 truncate text-xs text-foreground">{webhookUrl || "Loading endpoint..."}</code><Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => handleCopy(webhookUrl, "url")} aria-label="Copy webhook endpoint">{copiedId === "url" ? <Check /> : <Clipboard />}</Button></div>
           </div>
-        </ScrollArea>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {selectedWebhook ? (
-          <>
-            {/* Header */}
-            <div className="p-6 border-b border-border bg-background">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-semibold text-foreground">
-                      {selectedWebhook.webhook_type}
-                    </h2>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {selectedWebhook.id}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Received {formatDate(selectedWebhook.created_at)}
-                  </p>
-                </div>
-                <Button
-                  onClick={() =>
-                    handleCopy(
-                      JSON.stringify(selectedWebhook.payload, null, 4),
-                      selectedWebhook.id
-                    )
-                  }
-                  variant="outline"
-                  size="sm"
-                >
-                  {copiedId === selectedWebhook.id ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2 text-green-500" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy JSON
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* JSON Display */}
-            <ScrollArea className="flex-1 p-6">
-              <Accordion
-                type="multiple"
-                defaultValue={["payload", "headers"]}
-                className="space-y-4"
-              >
-                {/* Payload */}
-                <AccordionItem
-                  value="payload"
-                  className="border border-border rounded-lg overflow-hidden"
-                >
-                  <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3 px-4 bg-muted/40 hover:bg-muted/60">
-                    <div className="flex items-center gap-2">
-                      <span>Payload</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {Object.keys(selectedWebhook.payload).length} fields
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-3 px-4 border-t border-border">
-                    <div className="bg-black/40 rounded p-4 overflow-hidden">
-                      <div className="max-w-full overflow-hidden">
-                        <JsonHighlighter data={selectedWebhook.payload} />
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                {/* Headers */}
-                <AccordionItem
-                  value="headers"
-                  className="border border-border rounded-lg overflow-hidden"
-                >
-                  <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3 px-4 bg-muted/40 hover:bg-muted/60">
-                    <div className="flex items-center gap-2">
-                      <span>Headers</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {Object.keys(selectedWebhook.headers || {}).length}{" "}
-                        fields
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-3 px-4 border-t border-border">
-                    <div className="bg-black/40 rounded p-4 overflow-hidden">
-                      <div className="max-w-full overflow-hidden">
-                        <JsonHighlighter data={selectedWebhook.headers} />
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </ScrollArea>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No webhook selected
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Select a webhook from the sidebar to view its details, or send a
-                POST request to the webhook URL above.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+          <div className="relative mt-3"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /><Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search events..." className="pl-9" /></div>
+        </header>
+        <div className="flex items-center justify-between px-5 py-3 text-xs text-muted-foreground"><span>Recent deliveries</span><span>{filteredWebhooks.length} of {webhooks.length}</span></div>
+        <ScrollArea className="min-h-0 flex-1"><div className="flex flex-col gap-1.5 px-3 pb-4">
+          {filteredWebhooks.length === 0 ? <div className="px-2 py-10 text-center text-sm text-muted-foreground">{searchQuery ? "No matching events" : "No webhooks received yet"}</div> : filteredWebhooks.map((webhook) => <button key={webhook.id} onClick={() => setSelectedWebhook(webhook)} className={`rounded-lg border p-3 text-left transition-colors ${selectedWebhook?.id === webhook.id ? "border-primary/30 bg-primary/8 shadow-sm" : "border-transparent hover:border-border hover:bg-muted/60"}`} aria-current={selectedWebhook?.id === webhook.id ? "true" : undefined}><div className="mb-2 flex items-center justify-between gap-2"><Badge variant="outline" className="max-w-[180px] truncate font-mono text-[11px]">{webhook.webhook_type}</Badge><span className="shrink-0 text-[11px] text-muted-foreground">{formatDate(webhook.created_at)}</span></div><p className="truncate font-mono text-[11px] text-muted-foreground">{webhook.id}</p></button>)}
+        </div></ScrollArea>
+      </aside>
+      <section className="min-w-0 flex-1 overflow-y-auto">
+        {selectedWebhook ? <div className="mx-auto max-w-5xl p-5 sm:p-8"><div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div className="min-w-0"><div className="mb-3 flex flex-wrap items-center gap-2"><Badge className="font-mono">{selectedWebhook.webhook_type}</Badge><span className="text-xs text-muted-foreground">{formatDate(selectedWebhook.created_at)}</span></div><h2 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">Event details</h2><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><span className="truncate font-mono">{selectedWebhook.id}</span><Button variant="ghost" size="icon" className="size-6 shrink-0" onClick={() => handleCopy(selectedWebhook.id, "id")} aria-label="Copy event ID">{copiedId === "id" ? <Check /> : <Copy />}</Button></p></div><Button variant="outline" onClick={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 2), selectedWebhook.id)} className="shrink-0 gap-2"><Copy data-icon="inline-start" />{copiedId === selectedWebhook.id ? "Copied JSON" : "Copy payload"}</Button></div><Separator className="mb-6" /><div className="flex flex-col gap-5"><JsonPanel label="Payload" value={selectedWebhook.payload} onCopy={() => handleCopy(JSON.stringify(selectedWebhook.payload, null, 2), "payload")} copied={copiedId === "payload"} /><JsonPanel label="Request headers" value={selectedWebhook.headers || {}} onCopy={() => handleCopy(JSON.stringify(selectedWebhook.headers || {}, null, 2), "headers")} copied={copiedId === "headers"} /></div></div> : <div className="flex min-h-[60vh] items-center justify-center p-8 text-center"><div><div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><WebhookIcon className="size-5" /></div><h2 className="text-lg font-semibold">No webhook selected</h2><p className="mt-2 max-w-sm text-sm text-muted-foreground">Select an event from the sidebar or send a POST request to your endpoint.</p></div></div>}
+      </section>
+    </main>
   )
 }
+
+export type { Webhook }
