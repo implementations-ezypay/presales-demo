@@ -1,0 +1,9 @@
+/* Use a 4-space indent for the JSON viewer instead of the library default. */
+.json-highlighter .jv-indent {
+    padding-left: 4ch;
+}
+
+.json-highlighter {
+    background: transparent;
+    font-size: 0.8125rem;
+}

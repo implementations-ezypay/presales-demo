@@ -65,6 +65,7 @@
     "react-hook-form": "^7.60.0",
     "react-qrcode-logo": "^4.0.0",
     "react-resizable-panels": "^2.1.7",
+    "react18-json-view": "^0.2.10",
     "recharts": "latest",
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
